@@ -20,5 +20,12 @@ pipeline {
                 sh 'docker run --rm team-skeleton'
             }
         }
+        
+        stage('Static Analysis') {
+            steps {
+                sh 'mvn checkstyle:checkstyle'
+                sh 'mvn site'
+            }
+        }
     }
 }
