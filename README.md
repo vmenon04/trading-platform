@@ -7,5 +7,5 @@ We will use a trunk-based strategy with short-lived feature branches, reviewed b
 Efe Dincaslan
 Archana Goli
 Austin Huang
-Vasudev Menon Syamsunder
+Vasudev Menon
 Ryan Terpolilli
