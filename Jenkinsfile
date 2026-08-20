@@ -23,8 +23,7 @@ pipeline {
         
         stage('Static Analysis') {
             steps {
-                // sh 'mvn -B checkstyle:checkstyle'
-                sh 'mvn site'
+                sh 'mvn site' // this runs everything and makes the webpage
             }
         }
     }
