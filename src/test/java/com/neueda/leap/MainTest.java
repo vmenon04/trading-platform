@@ -11,4 +11,9 @@ public class MainTest {
     
     }
 
+    @Test
+    public void testGreeting() {
+        assertEquals("Hello world from the Fintech Five's Sprint 1 project skeleton", Main.greeting());
+    }
+
 }
