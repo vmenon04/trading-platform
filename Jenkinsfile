@@ -23,7 +23,7 @@ pipeline {
         
         stage('Static Analysis') {
             steps {
-                sh 'mvn checkstyle:checkstyle'
+                sh 'mvn -B checkstyle:checkstyle'
                 sh 'mvn site'
             }
         }
