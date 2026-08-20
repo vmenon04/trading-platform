@@ -19,11 +19,6 @@ pipeline {
             steps {
                 sh 'docker run --rm team-skeleton'
             }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
         }
     }
 }
