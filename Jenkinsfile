@@ -35,5 +35,6 @@ pipeline {
                     execPattern: '**/target/jacoco.exec'
                 )
             }
+        }
     }
 }
