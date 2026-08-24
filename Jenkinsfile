@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: "${params.GIT_BRANCH}"]])
+                checkout scmGit(branches: [[name: "${params.GIT_BRANCH}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
             }
         }
         stage('Build Image') {
