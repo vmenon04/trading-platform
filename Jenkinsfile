@@ -36,5 +36,11 @@ pipeline {
                 )
             }
         }
+        
+        stage('Static Analysis') {
+            steps {
+                sh 'mvn site' // this runs everything and makes the webpage
+            }
+        }
     }
 }
