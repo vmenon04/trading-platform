@@ -1,12 +1,15 @@
 pipeline {
     agent any
+    parameters {
+        gitParameter(name: 'GIT_BRANCH', type: 'PT_BRANCH', defaultValue: 'main', description: 'Branch to build')
+    }
     tools {
         maven 'Maven3'
     }
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout scmGit(branches: [[name: "${params.GIT_BRANCH}"]])
             }
         }
         stage('Build Image') {
