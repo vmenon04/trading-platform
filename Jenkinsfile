@@ -1,7 +1,7 @@
 pipeline {
     agent any
     parameters {
-        gitParameter(name: 'GIT_BRANCH', type: 'PT_BRANCH', defaultValue: 'main', description: 'Branch to build')
+        gitParameter(name: 'GIT_BRANCH', type: 'PT_BRANCH', defaultValue: 'main', selectedValue: DEFAULT, description: 'Branch to build')
     }
     tools {
         maven 'Maven3'
