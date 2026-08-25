@@ -23,6 +23,7 @@ pipeline {
             steps {
                 script{
                     echo "Starting Library Smoke Test"
+                    Smoke-Test()
                 }
             }
         }
@@ -32,6 +33,7 @@ pipeline {
                     steps {
                         script{
                             echo "Starting Library Code Coverage"
+                            Code-Coverage()
                         }
                     }
                 }
@@ -40,6 +42,7 @@ pipeline {
                     steps {
                         script{
                             echo "Starting Library Static Analysis"
+                            Static-Analysis()
                         }
                     }
                 }
