@@ -1,7 +1,7 @@
 pipeline {
     agent any
     parameters {
-        gitParameter(name: 'GIT_BRANCH', type: 'PT_BRANCH', branchFilter: 'origin/(.*)', defaultValue: 'main', selectedValue: 'DEFAULT', description: 'Branch to build')
+        gitParameter(name: 'BRANCH_NAME', type: 'PT_BRANCH', branchFilter: 'origin/(.*)', defaultValue: 'main', selectedValue: 'DEFAULT', description: 'Branch to build')
     }
     tools {
         maven 'Maven3'
@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: "${params.GIT_BRANCH}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
+                checkout scmGit(branches: [[name: "${params.BRANCH_NAME}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
             }
         }
         stage('Build Image') {
