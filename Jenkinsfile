@@ -21,29 +21,23 @@ pipeline {
         }
         stage('Smoke-Test') {
             steps {
-                script{
-                    echo "Starting Library Smoke Test"
-                    Smoke-Test()
-                }
+                echo "Starting Library Smoke Test"
+                Smoke-Test()
             }
         }
         stage('Parallel') {
             parallel {           
                 stage('Code-Coverage') {
                     steps {
-                        script{
-                            echo "Starting Library Code Coverage"
-                            Code-Coverage()
-                        }
+                        echo "Starting Library Code Coverage"
+                        Code-Coverage()
                     }
                 }
                 
                 stage('Static-Analysis') {
                     steps {
-                        script{
-                            echo "Starting Library Static Analysis"
-                            Static-Analysis()
-                        }
+                        echo "Starting Library Static Analysis"
+                        Static-Analysis()
                     }
                 }
             }
