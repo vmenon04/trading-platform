@@ -22,7 +22,7 @@ pipeline {
         stage('Smoke-Test') {
             steps {
                 echo "Starting Library Smoke Test"
-                Smoke-Test()
+                SmokeTest()
             }
         }
         stage('Parallel') {
@@ -30,14 +30,14 @@ pipeline {
                 stage('Code-Coverage') {
                     steps {
                         echo "Starting Library Code Coverage"
-                        Code-Coverage()
+                        CodeCoverage()
                     }
                 }
                 
                 stage('Static-Analysis') {
                     steps {
                         echo "Starting Library Static Analysis"
-                        Static-Analysis()
+                        StaticAnalysis()
                     }
                 }
             }
