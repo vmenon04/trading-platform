@@ -1,4 +1,4 @@
-@Library('trading-platform-tests') _
+@Library('trading-platform-tests@latest') _
 pipeline {
     agent any
     parameters {
