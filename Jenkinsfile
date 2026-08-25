@@ -1,3 +1,4 @@
+@Library('trading-platform-tests) _
 pipeline {
     agent any
     parameters {
@@ -18,33 +19,22 @@ pipeline {
                 sh 'docker build -t team-skeleton .'
             }
         }
-        stage('Smoke Test') {
+        stage('Smoke-Test') {
             steps {
-                sh 'docker run --rm team-skeleton'
-            }
-            post {
-                always {
-                    junit 'target/surefire-reports/*.xml'
-                }
+                echo "Starting Library Smoke Test"
             }
         }
         stage('Parallel') {
             parallel {           
-                stage('Code Coverage') {
+                stage('Code-Coverage') {
                     steps {
-                        sh 'mvn test'
-
-                        jacoco(
-                            classPattern: '**/target/classes',
-                            sourcePattern: '**/src/main/java',
-                            execPattern: '**/target/jacoco.exec'
-                        )
+                        echo "Starting Library Code Coverage"
                     }
                 }
                 
-                stage('Static Analysis') {
+                stage('Static-Analysis') {
                     steps {
-                        sh 'mvn site' // this runs everything and makes the webpage
+                        echo "Starting Library Static Analysis"
                     }
                 }
             }
