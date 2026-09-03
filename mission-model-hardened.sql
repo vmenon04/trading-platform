@@ -31,7 +31,9 @@ CREATE TABLE client_holdings (
     instrument_id INT REFERENCES instruments(instrument_id),
     as_of_date DATE NOT NULL,
     PRIMARY KEY (client_id, instrument_id, as_of_date),
-    quantity INT NOT NULL
+    quantity INT NOT NULL    
+        CHECK (quantity >= 0),
+    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
     
 );
 
