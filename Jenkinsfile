@@ -1,12 +1,16 @@
+@Library('trading-platform-tests@main') _
 pipeline {
     agent any
+    parameters {
+        gitParameter(name: 'BRANCH_NAME', type: 'PT_BRANCH', branchFilter: 'origin/(.*)', defaultValue: 'main', selectedValue: 'DEFAULT', description: 'Branch to build')
+    }
     tools {
         maven 'Maven3'
     }
     stages {
         stage('Checkout') {
             steps {
-                checkout scm
+                checkout scmGit(branches: [[name: "${params.BRANCH_NAME}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
             }
         }
         stage('Build Image') {
@@ -15,15 +19,27 @@ pipeline {
                 sh 'docker build -t team-skeleton .'
             }
         }
-        stage('Smoke Test') {
+        stage('Smoke-Test') {
             steps {
-                sh 'docker run --rm team-skeleton'
+                echo "Starting Library Smoke Test"
+                SmokeTest()
             }
         }
-        
-        stage('Static Analysis') {
-            steps {
-                sh 'mvn site' // this runs everything and makes the webpage
+        stage('Parallel') {
+            parallel {           
+                stage('Code-Coverage') {
+                    steps {
+                        echo "Starting Library Code Coverage"
+                        CodeCoverage()
+                    }
+                }
+                
+                stage('Static-Analysis') {
+                    steps {
+                        echo "Starting Library Static Analysis"
+                        StaticAnalysis()
+                    }
+                }
             }
         }
     }
