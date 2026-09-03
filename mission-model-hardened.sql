@@ -57,6 +57,7 @@ CREATE INDEX idx_client_trades_instrument_id ON client_trades(instrument_id);
 -- model_portfolios
 CREATE TABLE model_portfolios (
     model_portfolio_id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL,
     effective_date DATE NOT NULL,
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
