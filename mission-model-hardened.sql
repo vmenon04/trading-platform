@@ -43,8 +43,8 @@ CREATE INDEX idx_client_holdings_instrument_id ON client_holdings(instrument_id)
 
 CREATE TABLE client_trades (
     trade_id SERIAL PRIMARY KEY,
-    client_id INT REFERENCES clients(client_id),
-    instrument_id INT REFERENCES instruments(instrument_id),
+    client_id INT REFERENCES clients(client_id) NOT NULL,
+    instrument_id INT REFERENCES instruments(instrument_id) NOT NULL,
     trade_time DATE NOT NULL,
     trade_type TEXT NOT NULL
         CHECK (trade_type IN ('BUY', 'SELL')),
@@ -57,13 +57,10 @@ CREATE TABLE client_trades (
 CREATE INDEX idx_client_trades_client_id ON client_trades(client_id);
 CREATE INDEX idx_client_trades_instrument_id ON client_trades(instrument_id);
 
--- model_portfolios
 CREATE TABLE model_portfolios (
     model_portfolio_id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    name TEXT NOT NULL
 );
-
-CREATE INDEX idx_model_portfolios_status ON model_portfolios(status);
 
 -- model_portfolio_holdings
 CREATE TABLE model_portfolio_holdings (
@@ -78,10 +75,11 @@ CREATE TABLE model_portfolio_holdings (
 
 CREATE INDEX idx_model_portfolio_holdings_model_portfolio_id ON model_portfolio_holdings(model_portfolio_id);
 CREATE INDEX idx_model_portfolio_holdings_instrument_id ON model_portfolio_holdings(instrument_id);
+CREATE INDEX idx_model_portfolio_holdings_status ON model_portfolio_holdings(status);
 
 -- client_subscriptions
 CREATE TABLE client_subscriptions (
-    client_id INT REFERENCES clients(client_id),
+    client_id INT REFERENCES clients(client_id) NOT NULL,
     model_portfolio_id INT REFERENCES model_portfolios(model_portfolio_id),
     subscription_date DATE NOT NULL,
     PRIMARY KEY (client_id, model_portfolio_id, subscription_date),
