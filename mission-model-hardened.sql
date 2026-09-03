@@ -46,9 +46,9 @@ CREATE TABLE client_trades (
     trade_type TEXT NOT NULL
         CHECK (trade_type IN ('BUY', 'SELL')),
     quantity NUMERIC(14, 4) NOT NULL
-        CHECK (quantity >= 0),
+        CHECK (quantity > 0),
     price NUMERIC(14, 4) NOT NULL
-        CHECK (price >= 0)
+        CHECK (price > 0)
 );
 
 CREATE INDEX idx_client_trades_client_id ON client_trades(client_id);
