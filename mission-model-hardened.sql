@@ -24,6 +24,7 @@ CREATE TABLE instruments (
     instrument_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     ticker TEXT NOT NULL UNIQUE
+        CHECK (UPPER(ticker) = ticker)
 );
 
 CREATE TABLE client_holdings (
