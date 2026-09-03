@@ -32,7 +32,7 @@ CREATE TABLE client_holdings (
     as_of_date DATE NOT NULL,
     PRIMARY KEY (client_id, instrument_id, as_of_date),
     quantity INT NOT NULL
-        CHECK (quantity >= 0)
+    
 );
 
 CREATE INDEX idx_client_holdings_client_id ON client_holdings(client_id);
@@ -58,8 +58,6 @@ CREATE INDEX idx_client_trades_instrument_id ON client_trades(instrument_id);
 CREATE TABLE model_portfolios (
     model_portfolio_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    effective_date DATE NOT NULL,
-    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
 
 CREATE INDEX idx_model_portfolios_status ON model_portfolios(status);
@@ -68,9 +66,11 @@ CREATE INDEX idx_model_portfolios_status ON model_portfolios(status);
 CREATE TABLE model_portfolio_holdings (
     model_portfolio_id INT REFERENCES model_portfolios(model_portfolio_id),
     instrument_id INT REFERENCES instruments(instrument_id),
-    PRIMARY KEY (model_portfolio_id, instrument_id),
+    effective_date DATE NOT NULL,
+    PRIMARY KEY (model_portfolio_id, instrument_id, effective_date),
     target_weight_pct NUMERIC(5,2) NOT NULL
-        CHECK (target_weight_pct >= 0 AND target_weight_pct <= 100)
+        CHECK (target_weight_pct >= 0 AND target_weight_pct <= 100),
+    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
 
 CREATE INDEX idx_model_portfolio_holdings_model_portfolio_id ON model_portfolio_holdings(model_portfolio_id);
