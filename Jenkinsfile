@@ -1,22 +1,30 @@
 @Library('trading-platform-tests@main') _
 pipeline {
     agent any
-    parameters {
-        gitParameter(name: 'BRANCH_NAME', type: 'PT_BRANCH', branchFilter: 'origin/(.*)', defaultValue: 'main', selectedValue: 'DEFAULT', description: 'Branch to build')
-    }
     tools {
         maven 'Maven3'
+    }
+    options {
+        // by default, jenkins keeps all build logs, so we set a limit here to avoid excessive storage usage.
+        // we set it here to only keep the last 20 build logs
+        buildDiscarder(logRotator(numToKeepStr: '20'))
     }
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: "${params.BRANCH_NAME}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
+                // multibranch jobs already check out the triggering branch, here we just make it explicit.
+                checkout scm
             }
         }
         stage('Build Image') {
             steps {
                 sh 'mvn -B clean package'
-                sh 'docker build -t team-skeleton .'
+                script {
+                    // here we're sanitizing the branch name
+                    // github branch names can contain characters that are not valid in docker tags, so we replace them here with hyphens
+                    def safeTag = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-') 
+                    sh "docker build -t team-skeleton:${safeTag} ."
+                }
             }
         }
         stage('Smoke-Test') {
