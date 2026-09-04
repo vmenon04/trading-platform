@@ -17,6 +17,19 @@ CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL
     --advisor_id INT REFERENCES advisors(advisor_id)
+    birth_date DATE NOT NULL
+);
+
+CREATE TABLE accounts (
+    account_id SERIAL PRIMARY KEY,
+    account_type TEXT NOT NULL
+        -- CHECK (account_type IN ('cash', 'margin', 'retirement')),
+);
+
+CREATE TABLE client_accounts (
+    client_id INT REFERENCES clients(client_id),
+    account_id INT REFERENCES accounts(account_id),
+    PRIMARY KEY (client_id, account_id)
 );
 
 -- instruments
@@ -27,35 +40,38 @@ CREATE TABLE instruments (
         CHECK (UPPER(ticker) = ticker)
 );
 
-CREATE TABLE client_holdings (
-    client_id INT REFERENCES clients(client_id),
+CREATE TABLE account_holdings (
+    account_id INT REFERENCES accounts(account_id),
     instrument_id INT REFERENCES instruments(instrument_id),
-    as_of_date DATE NOT NULL,
-    PRIMARY KEY (client_id, instrument_id, as_of_date),
+    as_of_date TIMESTAMP NOT NULL,
+    PRIMARY KEY (account_id, instrument_id, as_of_date),
     quantity INT NOT NULL    
         CHECK (quantity >= 0),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
     
 );
 
-CREATE INDEX idx_client_holdings_client_id ON client_holdings(client_id);
-CREATE INDEX idx_client_holdings_instrument_id ON client_holdings(instrument_id);
+CREATE INDEX idx_account_holdings_account_id ON account_holdings(account_id);
+CREATE INDEX idx_account_holdings_instrument_id ON account_holdings(instrument_id);
 
-CREATE TABLE client_trades (
-    trade_id SERIAL PRIMARY KEY,
-    client_id INT REFERENCES clients(client_id) NOT NULL,
+CREATE TABLE account_trades (
+    trade_id SERIAL,
+    trade_time TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (trade_id, trade_time),
+    account_id INT REFERENCES accounts(account_id) NOT NULL,
     instrument_id INT REFERENCES instruments(instrument_id) NOT NULL,
-    trade_time DATE NOT NULL,
     trade_type TEXT NOT NULL
         CHECK (trade_type IN ('BUY', 'SELL')),
     quantity NUMERIC(14, 4) NOT NULL
         CHECK (quantity > 0),
     price NUMERIC(14, 4) NOT NULL
-        CHECK (price > 0)
+        CHECK (price > 0),
+    status TEXT CHECK (status IN ('pending', 'accepted', 'rejected', 'fulfilled')) NOT NULL
 );
 
-CREATE INDEX idx_client_trades_client_id ON client_trades(client_id);
-CREATE INDEX idx_client_trades_instrument_id ON client_trades(instrument_id);
+CREATE INDEX idx_account_trades_account_id ON account_trades(account_id);
+CREATE INDEX idx_account_trades_instrument_id ON account_trades(instrument_id);
+CREATE INDEX idx_account_trades_status ON account_trades(status);
 
 CREATE TABLE model_portfolios (
     model_portfolio_id SERIAL PRIMARY KEY,
@@ -77,18 +93,18 @@ CREATE INDEX idx_model_portfolio_holdings_model_portfolio_id ON model_portfolio_
 CREATE INDEX idx_model_portfolio_holdings_instrument_id ON model_portfolio_holdings(instrument_id);
 CREATE INDEX idx_model_portfolio_holdings_status ON model_portfolio_holdings(status);
 
--- client_subscriptions
-CREATE TABLE client_subscriptions (
-    client_id INT REFERENCES clients(client_id) NOT NULL,
+-- account_subscriptions
+CREATE TABLE account_subscriptions (
+    account_id INT REFERENCES accounts(account_id) NOT NULL,
     model_portfolio_id INT REFERENCES model_portfolios(model_portfolio_id),
     subscription_date DATE NOT NULL,
-    PRIMARY KEY (client_id, model_portfolio_id, subscription_date),
+    PRIMARY KEY (account_id, model_portfolio_id, subscription_date),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
 
-CREATE INDEX idx_client_subscriptions_client_id ON client_subscriptions(client_id);
-CREATE INDEX idx_client_subscriptions_model_portfolio_id ON client_subscriptions(model_portfolio_id);
-CREATE INDEX idx_client_subscriptions_status ON client_subscriptions(status);
+CREATE INDEX idx_account_subscriptions_account_id ON account_subscriptions(account_id);
+CREATE INDEX idx_account_subscriptions_model_portfolio_id ON account_subscriptions(model_portfolio_id);
+CREATE INDEX idx_account_subscriptions_status ON account_subscriptions(status);
 
 -- Part B: constraints
 -- Add NOT NULL where appropriate, a UNIQUE constraint on instruments.ticker, a CHECK on
