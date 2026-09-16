@@ -1,0 +1,69 @@
+classDiagram
+    class Clients {
+        -client_id: int
+        -name: string
+        -birth_date: date
+        -client_accounts: list<accounts>
+    }
+
+    class Accounts {
+        -account_id: int
+        -account_type: string
+    }
+
+
+    class Instruments {
+        -instrument_id: int
+        -name: string
+        -ticker: string
+    }
+
+    class AccountHoldings {
+        -account_id: int
+        -instrument_id: int
+        -as_of_date: timestamp
+        -quantity: int
+        -status: string
+    }
+
+    class AccountTrades {
+        -trade_id: int
+        -trade_time: timestamptz
+        -account_id: int
+        -instrument_id: int
+        -trade_type: string
+        -quantity: numeric
+        -price: numeric
+        -status: string
+    }
+
+    class ModelPortfolios {
+        -model_portfolio_id: int
+        -name: string
+    }
+
+    class ModelPortfolioHoldings {
+        -model_portfolio_id: int
+        -instrument_id: int
+        -effective_date: date
+        -target_weight_pct: numeric
+        -status: string
+    }
+
+    class AccountSubscriptions {
+        -account_id: int
+        -model_portfolio_id: int
+        -subscription_date: date
+        -status: string
+    }
+
+
+    Clients "1" -- "*" AccountTrades : initiates
+    Accounts "1" -- "*" AccountHoldings : contains
+    Accounts "1" -- "*" AccountTrades : executes
+    Accounts "1" -- "*" AccountSubscriptions : subscribes
+    Instruments "1" -- "*" AccountHoldings : held_in
+    Instruments "1" -- "*" AccountTrades : traded
+    Instruments "1" -- "*" ModelPortfolioHoldings : included_in
+    ModelPortfolios "1" -- "*" ModelPortfolioHoldings : comprises
+    ModelPortfolios "1" -- "*" AccountSubscriptions : subscribed_to
