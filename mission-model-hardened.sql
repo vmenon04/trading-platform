@@ -4,18 +4,20 @@
 
 -- Part A: close the gap — add a client_holdings table
 
-DROP TABLE IF EXISTS client_subscriptions CASCADE;
+DROP TABLE IF EXISTS account_holdings CASCADE;
+DROP TABLE IF EXISTS account_subscriptions CASCADE;
+DROP TABLE IF EXISTS account_trades CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS client_accounts CASCADE;
+DROP TABLE IF EXISTS clients CASCADE;
+DROP TABLE IF EXISTS instruments CASCADE;
 DROP TABLE IF EXISTS model_portfolio_holdings CASCADE;
 DROP TABLE IF EXISTS model_portfolios CASCADE;
-DROP TABLE IF EXISTS client_holdings CASCADE;
-DROP TABLE IF EXISTS client_trades CASCADE;
-DROP TABLE IF EXISTS instruments CASCADE;
-DROP TABLE IF EXISTS clients CASCADE;
 
 -- clients
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
     --advisor_id INT REFERENCES advisors(advisor_id)
     birth_date DATE NOT NULL
 );
@@ -36,8 +38,9 @@ CREATE TABLE client_accounts (
 CREATE TABLE instruments (
     instrument_id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
-    ticker TEXT NOT NULL UNIQUE
-        CHECK (UPPER(ticker) = ticker)
+    ticker TEXT NOT NULL
+        CHECK (UPPER(ticker) = ticker),
+    asset_class TEXT NOT NULL
 );
 
 CREATE TABLE account_holdings (
@@ -45,7 +48,7 @@ CREATE TABLE account_holdings (
     instrument_id INT REFERENCES instruments(instrument_id),
     as_of_date TIMESTAMP NOT NULL,
     PRIMARY KEY (account_id, instrument_id, as_of_date),
-    quantity INT NOT NULL    
+    quantity NUMERIC(14, 4) NOT NULL    
         CHECK (quantity >= 0),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
     
@@ -98,6 +101,7 @@ CREATE TABLE account_subscriptions (
     account_id INT REFERENCES accounts(account_id) NOT NULL,
     model_portfolio_id INT REFERENCES model_portfolios(model_portfolio_id),
     subscription_date DATE NOT NULL,
+    unsubscription_date DATE,
     PRIMARY KEY (account_id, model_portfolio_id, subscription_date),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
