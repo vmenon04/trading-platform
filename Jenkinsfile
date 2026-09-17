@@ -1,14 +1,16 @@
 def CodeCoverage() {
-    sh 'mvn test'
-    jacoco(
-        classPattern: '**/target/classes',
-        sourcePattern: '**/src/main/java',
-        execPattern: '**/target/jacoco.exec'
-    )
+    sh 'mvn test jacoco:report'
+    junit 'target/surefire-reports/*.xml'
+    archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: false
+}
+
+def getSafeTag() {
+    return env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
 }
 
 def SmokeTest() {
-    sh 'docker run --rm team-skeleton'
+    def safeTag = getSafeTag()
+    sh "docker run --rm team-skeleton:${safeTag}"
     junit 'target/surefire-reports/*.xml'
 }
 
@@ -37,9 +39,8 @@ pipeline {
             steps {
                 sh 'mvn -B clean package'
                 script {
-                    // here we're sanitizing the branch name
-                    // github branch names can contain characters that are not valid in docker tags, so we replace them here with hyphens
-                    def safeTag = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-') 
+                    // github branch names can contain characters that are not valid in docker tags.
+                    def safeTag = getSafeTag()
                     sh "docker build -t team-skeleton:${safeTag} ."
                 }
             }
