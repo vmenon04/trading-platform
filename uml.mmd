@@ -59,6 +59,7 @@ classDiagram
 
 
     Clients "1" -- "*" AccountTrades : initiates
+    Clients "1" -- "*" Accounts : holds
     Accounts "1" -- "*" AccountHoldings : contains
     Accounts "1" -- "*" AccountTrades : executes
     Accounts "1" -- "*" AccountSubscriptions : subscribes
