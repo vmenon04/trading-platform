@@ -1,4 +1,21 @@
-@Library('trading-platform-tests@main') _
+def CodeCoverage() {
+    sh 'mvn test'
+    jacoco(
+        classPattern: '**/target/classes',
+        sourcePattern: '**/src/main/java',
+        execPattern: '**/target/jacoco.exec'
+    )
+}
+
+def SmokeTest() {
+    sh 'docker run --rm team-skeleton'
+    junit 'target/surefire-reports/*.xml'
+}
+
+def StaticAnalysis() {
+    sh 'mvn site'
+}
+
 pipeline {
     agent any
     tools {
@@ -30,7 +47,9 @@ pipeline {
         stage('Smoke-Test') {
             steps {
                 echo "Starting Library Smoke Test"
-                SmokeTest()
+                script {
+                    SmokeTest()
+                }
             }
         }
         stage('Parallel') {
@@ -38,14 +57,18 @@ pipeline {
                 stage('Code-Coverage') {
                     steps {
                         echo "Starting Library Code Coverage"
-                        CodeCoverage()
+                        script {
+                            CodeCoverage()
+                        }
                     }
                 }
                 
                 stage('Static-Analysis') {
                     steps {
                         echo "Starting Library Static Analysis"
-                        StaticAnalysis()
+                        script {
+                            StaticAnalysis()
+                        }
                     }
                 }
             }
