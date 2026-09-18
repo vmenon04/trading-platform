@@ -45,14 +45,15 @@ CROSS JOIN last_names ln
 LIMIT 1000;
 
 -- accounts (5,000 rows; 5 account types, roughly 1000 of each)
-INSERT INTO accounts (account_type)
+INSERT INTO accounts (account_type, balance)
 SELECT CASE (i % 5)
   WHEN 0 THEN 'cash'
   WHEN 1 THEN 'margin'
   WHEN 2 THEN 'retirement'
   WHEN 3 THEN 'investment'
   ELSE 'savings'
-END
+END,
+  round((random() * 50000)::NUMERIC(14, 4), 2)
 FROM generate_series(1, 5000) AS i;
 
 -- client_accounts junction table (1-3 accounts per client, ~2500 rows)
