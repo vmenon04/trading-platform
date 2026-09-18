@@ -3,16 +3,21 @@
 -- and indexes on FK columns. This DDL is run in the `mission` schema in Module 13.
 
 -- Part A: close the gap — add a client_holdings table
-
-DROP TABLE IF EXISTS account_holdings CASCADE;
+-- New model
 DROP TABLE IF EXISTS account_subscriptions CASCADE;
-DROP TABLE IF EXISTS account_trades CASCADE;
-DROP TABLE IF EXISTS accounts CASCADE;
-DROP TABLE IF EXISTS client_accounts CASCADE;
-DROP TABLE IF EXISTS clients CASCADE;
-DROP TABLE IF EXISTS instruments CASCADE;
 DROP TABLE IF EXISTS model_portfolio_holdings CASCADE;
 DROP TABLE IF EXISTS model_portfolios CASCADE;
+DROP TABLE IF EXISTS account_holdings CASCADE;
+DROP TABLE IF EXISTS account_trades CASCADE;
+DROP TABLE IF EXISTS client_accounts CASCADE;
+DROP TABLE IF EXISTS accounts CASCADE;
+DROP TABLE IF EXISTS instruments CASCADE;
+DROP TABLE IF EXISTS clients CASCADE;
+
+-- Old client-level tables, replaced by the account-level ones above
+DROP TABLE IF EXISTS client_subscriptions CASCADE;
+DROP TABLE IF EXISTS client_holdings CASCADE;
+DROP TABLE IF EXISTS client_trades CASCADE;
 
 -- clients
 CREATE TABLE clients (
@@ -48,7 +53,7 @@ CREATE TABLE account_holdings (
     instrument_id INT REFERENCES instruments(instrument_id),
     as_of_date TIMESTAMP NOT NULL,
     PRIMARY KEY (account_id, instrument_id, as_of_date),
-    quantity NUMERIC(14, 4) NOT NULL    
+    quantity NUMERIC(18, 8) NOT NULL    
         CHECK (quantity >= 0),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
     
@@ -101,7 +106,7 @@ CREATE TABLE account_subscriptions (
     account_id INT REFERENCES accounts(account_id) NOT NULL,
     model_portfolio_id INT REFERENCES model_portfolios(model_portfolio_id),
     subscription_date DATE NOT NULL,
-    unsubscription_date DATE,
+    unsubscribe_date DATE,
     PRIMARY KEY (account_id, model_portfolio_id, subscription_date),
     status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
 );
