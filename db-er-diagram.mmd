@@ -1,0 +1,62 @@
+erDiagram
+    account_trades {
+        serial trade_id PK
+        timestamptz trade_time PK
+        int account_id FK
+        int instrument_id FK
+        text trade_type
+        float quantity
+        float price
+        text status
+    }
+    instruments {
+        serial instrument_id PK
+        text name
+        text ticker UK
+    }
+    model_portfolio_holdings {
+        int model_portfolio_id PK,FK
+        int instrument_id PK,FK
+        date effective_date PK
+        float target_weight_pct
+        text status
+    }
+    client_accounts {
+        int client_id PK,FK
+        int account_id PK,FK
+    }
+    clients {
+        serial client_id PK
+        text name
+    }
+    accounts {
+        serial account_id PK
+        text account_type
+    }
+    model_portfolios {
+        serial model_portfolio_id PK
+        text name
+    }
+    account_subscriptions {
+        int account_id PK,FK
+        int model_portfolio_id PK,FK
+        date subscription_date PK
+        text status
+    }
+    account_holdings {
+        int account_id PK,FK
+        int instrument_id PK,FK
+        timestamp as_of_date PK
+        int quantity
+        text status
+    }
+    clients ||--o{ client_accounts : "client_id"
+    accounts ||--o{ client_accounts : "account_id"
+    accounts ||--o{ account_holdings : "account_id"
+    instruments ||--o{ account_holdings : "instrument_id"
+    accounts ||--o{ account_trades : "account_id"
+    instruments ||--o{ account_trades : "instrument_id"
+    model_portfolios ||--o{ model_portfolio_holdings : "model_portfolio_id"
+    instruments ||--o{ model_portfolio_holdings : "instrument_id"
+    accounts ||--o{ account_subscriptions : "account_id"
+    model_portfolios ||--o{ account_subscriptions : "model_portfolio_id"
