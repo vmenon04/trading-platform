@@ -63,6 +63,7 @@ public class ClientTest {
     }
 
     // BR-03: Session management
+    // maybe make session a service? (at least do some more resarch into hw to handle and manage sessions)
     @Test
     void testClientSessionCanBeInitiated() {
         ClientSession session = client.createSession();
