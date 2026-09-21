@@ -29,7 +29,8 @@ CREATE TABLE clients (
 
 CREATE TABLE accounts (
     account_id SERIAL PRIMARY KEY,
-    account_type TEXT NOT NULL
+    account_type TEXT NOT NULL,
+    balance NUMERIC(14, 4) NOT NULL
         -- CHECK (account_type IN ('cash', 'margin', 'retirement')),
 );
 
