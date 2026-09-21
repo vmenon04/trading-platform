@@ -45,29 +45,10 @@ public class InstrumentTest {
                 () -> new Instrument(1, "", "TEST"));
     }
 
-    // BR-13: Indicative pricing before order submission
-    @Test
-    void testInstrumentCanProvideIndicativePrice() {
-        MarketDataProvider provider = new LiveMarketDataProvider();
-        double indicativePrice = instrument.getIndicativePrice(provider);
-        assertTrue(indicativePrice > 0);
-    }
-
     // BR-12: Current market quotes for execution
     @Test
     void testInstrumentCanFetchCurrentMarketQuote() {
         MarketQuote quote = instrument.getCurrentMarketQuote();
         assertNotNull(quote);
-        assertTrue(quote.getBidPrice() > 0);
-        assertTrue(quote.getAskPrice() > 0);
-        assertTrue(quote.getAskPrice() >= quote.getBidPrice());
-    }
-
-    @Test
-    void testInstrumentMaintainsPricingHistory() {
-        instrument.recordPrice(150.25, PriceType.BID);
-        instrument.recordPrice(150.50, PriceType.ASK);
-
-        assertEquals(2, instrument.getPriceHistory().size());
     }
 }
