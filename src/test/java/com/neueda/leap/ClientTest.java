@@ -11,6 +11,7 @@ public class ClientTest {
 
     @BeforeEach
     void setUp() {
+        // change this test to use first name and last name separately
         client = new Client(1, "John Doe", LocalDate.of(1990, 5, 15));
     }
 
@@ -19,7 +20,7 @@ public class ClientTest {
     void testClientCreationWithValidData() {
         assertNotNull(client);
         assertEquals(1, client.getClientId());
-        assertEquals("John Doe", client.getName());
+        assertEquals("John Doe", client.getName()); //getName() should be split for first/last name
         assertEquals(LocalDate.of(1990, 5, 15), client.getBirthDate());
     }
 
