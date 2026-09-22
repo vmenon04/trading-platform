@@ -71,10 +71,19 @@ public class AccountSubscriptionTest {
     @Test
     void testTrackSubscriptionHistory() {
         assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
+        String outputString = subscription.toString();
+        assertEquals(outputString, subscription.getSubscriptionHistory());
+
         subscription.unsubscribe();
         assertEquals(SubscriptionStatus.INACTIVE, subscription.getStatus());
+        outputString = outputString + ("\n" + subscription.toString());
+        assertEquals(outputString, subscription.getSubscriptionHistory());
+
         subscription.subscribe();
         assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
+        outputString = outputString + ("\n" + subscription.toString());
+        assertEquals(outputString, subscription.getSubscriptionHistory());
+
         assertEquals(3, subscription.getSubscriptionHistory().size());
     }
 }

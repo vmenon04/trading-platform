@@ -151,4 +151,21 @@ public class AccountTradeTest {
 
         assertTrue(acceptedTime.before(fulfilledTime));
     }
+
+    @Test
+    void testTradeHistory() {
+        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
+                TradeType.BUY, QUANTITY, PRICE);
+
+        String outputString = auditedTrade.toString();
+        assertEquals(outputString, auditedTrade.getHistory());
+
+        auditedTrade.updateStatus(TradeStatus.ACCEPTED);
+        outputString = outputString + ("\n" + auditedTrade.toString());
+        assertEquals(outputString, auditedTrade.getHistory());
+
+        auditedTrade.updateStatus(TradeStatus.FILLED);
+        outputString = outputString + ("\n" + auditedTrade.toString());
+        assertEquals(outputString, auditedTrade.getHistory());
+    }
 }

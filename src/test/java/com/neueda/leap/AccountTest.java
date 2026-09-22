@@ -18,20 +18,20 @@ public class AccountTest {
     // BR-10: Client must be able to see current holdings and cash balance
     @Test
     void testAccountInitializationWithZeroCash() {
-        assertEquals(0.0, account.getCashBalance());
+        assertEquals(0.0, account.getBalance());
     }
 
     @Test
     void testAccountCanDepositCash() {
         account.deposit(10000.0);
-        assertEquals(10000.0, account.getCashBalance());
+        assertEquals(10000.0, account.getBalance());
     }
 
     @Test
     void testAccountCanWithdraw() {
         account.deposit(10000.0);
         account.withdraw(5000.0);
-        assertEquals(5000.0, account.gethBalance());
+        assertEquals(5000.0, account.getBalance());
     }
 
     @Test
@@ -41,13 +41,15 @@ public class AccountTest {
                 () -> account.withdraw(2000.0));
     }
 
+    // addHolding should not be accessible outside of account class
+    // Will have to consider transfers and what that would look like
     @Test
-    void testAccountStoresHoldings() {
+    void testCannotAddHoldingExternally() {
         Instrument apple = new Instrument(1, "Apple", "AAPL");
-        account.addHolding(apple, 100);
+        assertThrows(UnsupportedOperationException.class,
+                () -> account.addHolding(apple, 100));
 
-        assertEquals(1, account.getHoldings().size());
-        assertEquals(100, account.getHoldingQuantity(apple.getInstrumentId()));
+        assertEquals(0, account.getHoldings().size());
     }
 
     // BR-02: Client isolation - accounts linked to specific client
@@ -68,14 +70,14 @@ public class AccountTest {
         account.deposit(50000.0);
         Instrument apple = new Instrument(1, "Apple", "AAPL");
 
-        // May need validation class instead of boolean
-        // May need to mock a current price for the ticker
+        // TODO: May need validation class instead of boolean
+        // TODO: May need to mock a current price for the ticker
         // account.executeTrade(instrument, quantity, price, tradeType)
         boolean success = account.executeTrade(apple, 100, 150.0, TradeType.BUY);
 
         assertTrue(success);
         assertEquals(100, account.getHoldingQuantity(apple.getInstrumentId()));
-        assertEquals(35000.0, account.getCashBalance()); // 50000 - (100 * 150)
+        assertEquals(35000.0, account.getBalance()); // 50000 - (100 * 150)
     }
 
     @Test
@@ -88,7 +90,7 @@ public class AccountTest {
 
         assertTrue(success);
         assertEquals(100, account.getHoldingQuantity(tesla.getInstrumentId()));
-        assertEquals(0, account.getCashBalance());
+        assertEquals(0, account.getBalance());
     }
 
     @Test
@@ -101,34 +103,46 @@ public class AccountTest {
 
         assertFalse(success);
         assertEquals(0, account.getHoldingQuantity(tesla.getInstrumentId()));
-        assertEquals(10000.0, account.getCashBalance()); // Unchanged
+        assertEquals(10000.0, account.getBalance()); // Unchanged
     }
 
     @Test
     void testAccountHistoryTracked() {
         account.depositCash(10000.0);
+        Instrument apple = new Instrument(1, "Apple", "AAPL");
         Instrument tesla = new Instrument(2, "Tesla", "TSLA");
 
         // Buy some tesla
         boolean success = account.executeTrade(tesla, 10, 200.0, TradeType.BUY);
         assertTrue(success);
 
-        Map<Instrument, Double> origHoldings = account.getHoldings();
+        String holding = account.getHoldings().get(tesla).toString();
+        String accountHoldingHistory = account.getHoldingHistory();
 
-        success = false;
+        String expectedHistory = holding;
+
+        assertEquals(holding, accountHoldingHistory);
+
+        boolean success2 = account.executeTrade(apple, 10, 100, TradeType.BUY);
+        assertTrue(success2);
+
+        String holding2 = account.getHoldings().get(apple).toString();
+        accountHoldingHistory = account.getHoldingHistory();
+
+        expectedHistory = expectedHistory + "\n" + holding2;
+        assertEquals(expectedHistory, accountHoldingHistory);
 
         //Buy more tesla
-        success = account.executeTrade(tesla, 10, 200.0, TradeType.BUY);
-        assertTrue(success);
+        boolean success3 = account.executeTrade(tesla, 10, 200.0, TradeType.BUY);
+        assertTrue(success3);
 
-        Map<Instrument, Double> updatedHoldings = account.getHoldings();
+        String holding3 = account.getHoldings().get(tesla).toString();
+        accountHoldingHistory = account.getHoldingHistory();
 
-        assertEquals(1, updatedHoldings.size());
+        expectedHistory = expectedHistory + "\n" + holding2;
+        assertEquals(expectedHistory, accountHoldingHistory);
 
-        List<Map<Instrument, Double>> holdingHistory = account.getHistory();
-        assertEquals(2, holdingHistory.size());
+        assertEquals(2, account.getHoldings().size());
 
-        assertEquals(holdingHistory.get(0).getHolding(), updatedHoldings);
-        assertEquals(holdingHistory.get(1).getHolding(), origHoldings);
     }
 }
