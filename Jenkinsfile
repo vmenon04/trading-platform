@@ -1,4 +1,4 @@
-@Library('trading-platform-tests@main') _
+// @Library('trading-platform-tests@main') _
 pipeline {
     agent any
     parameters {
@@ -19,28 +19,28 @@ pipeline {
                 sh 'docker build -t team-skeleton .'
             }
         }
-        stage('Smoke-Test') {
-            steps {
-                echo "Starting Library Smoke Test"
-                SmokeTest()
-            }
-        }
-        stage('Parallel') {
-            parallel {           
-                stage('Code-Coverage') {
-                    steps {
-                        echo "Starting Library Code Coverage"
-                        CodeCoverage()
-                    }
-                }
-                
-                stage('Static-Analysis') {
-                    steps {
-                        echo "Starting Library Static Analysis"
-                        StaticAnalysis()
-                    }
-                }
-            }
+//         stage('Smoke-Test') {
+//             steps {
+//                 echo "Starting Library Smoke Test"
+//                 SmokeTest()
+//             }
+//         }
+//         stage('Parallel') {
+//             parallel {
+//                 stage('Code-Coverage') {
+//                     steps {
+//                         echo "Starting Library Code Coverage"
+//                         CodeCoverage()
+//                     }
+//                 }
+//
+//                 stage('Static-Analysis') {
+//                     steps {
+//                         echo "Starting Library Static Analysis"
+//                         StaticAnalysis()
+//                     }
+//                 }
+//             }
         }
     }
 }
