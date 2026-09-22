@@ -2,58 +2,73 @@ package com.neueda.leap;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.time.Instant;
+import java.time.LocalDate;
+import java.util.Date;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AccountTradeTest {
 
     private AccountTrade trade;
-    private int accountId = 101;
-    private int instrumentId = 1;
+    private final int ACCOUNT_ID = 101;
+    private final int INSTRUMENT_ID = 1;
+
+    private final int TRADE_ID = 1001;
+    private final double QUANTITY = 100;
+    private final double PRICE = 150.25;
 
     @BeforeEach
     void setUp() {
-        trade = new AccountTrade(1001, accountId, instrumentId, TradeType.BUY,
-                100, 150.25, TradeStatus.ACCEPTED);
+        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+                QUANTITY, PRICE);
     }
 
     // BR-04: Client can submit order
     @Test
     void testTradeCanBeCreatedWithValidData() {
         assertNotNull(trade);
-        assertEquals(1001, trade.getTradeId());
-        assertEquals(accountId, trade.getAccountId());
-        assertEquals(instrumentId, trade.getInstrumentId());
-        assertEquals(100, trade.getQuantity());
-        assertEquals(150.25, trade.getPrice());
+        assertEquals(TRADE_ID, trade.getTradeId());
+        assertEquals(ACCOUNT_ID, trade.getAccountId());
+        assertEquals(INSTRUMENT_ID, trade.getInstrumentId());
+        assertEquals(TradeType.BUY, trade.getTradeType());
+        assertEquals(QUANTITY, trade.getQuantity());
+        assertEquals(PRICE, trade.getPrice());
+        assertEquals(TradeStatus.PENDING, trade.getStatus());
     }
 
     // BR-05: Order validation before acceptance
     @Test
     void testTradeCannotHaveNegativeQuantity() {
         assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1002, accountId, instrumentId, TradeType.BUY,
-                        -50, 150.25, TradeStatus.SUBMITTED));
+                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+                        -QUANTITY, PRICE));
     }
 
     @Test
     void testTradeCannotHaveNegativePrice() {
         assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1003, accountId, instrumentId, TradeType.BUY,
-                        100, -150.25, TradeStatus.SUBMITTED));
+                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+                        QUANTITY, -PRICE));
     }
 
     @Test
     void testTradeCannotHaveZeroQuantity() {
         assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1004, accountId, instrumentId, TradeType.BUY,
-                        0, 150.25, TradeStatus.SUBMITTED));
+                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+                        0, PRICE));
+    }
+
+    @Test
+    void testTradeCannotHaveZeroPrice() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+                        QUANTITY, 0.0));
     }
 
     @Test
     void testValidateTradeChecksAccountHasSufficientCash() {
         Account account = new Account(101, "Trading", 1);
-        account.depositCash(5000.0);
+        account.deposit(5000.0);
 
         // Try to buy 100 shares at 150.25 = 15025.00 (exceeds 5000.00)
         boolean isValid = trade.validateTrade(account);
@@ -63,7 +78,16 @@ public class AccountTradeTest {
     @Test
     void testValidateTradePassesWithSufficientCash() {
         Account account = new Account(101, "Trading", 1);
-        account.depositCash(20000.0);
+        account.deposit(20000.0);
+
+        boolean isValid = trade.validateTrade(account);
+        assertTrue(isValid);
+    }
+
+    @Test
+    void testValidateTradePassesWithExactCash() {
+        Account account = new Account(101, "Trading", 1);
+        account.deposit(15025.0);
 
         boolean isValid = trade.validateTrade(account);
         assertTrue(isValid);
@@ -72,71 +96,59 @@ public class AccountTradeTest {
     // BR-06: Order recorded before execution
     @Test
     void testTradeStatusStartsAsSubmitted() {
-        AccountTrade newTrade = new AccountTrade(1005, accountId, instrumentId,
-                TradeType.BUY, 50, 100.0,
-                TradeStatus.SUBMITTED);
-        assertEquals(TradeStatus.SUBMITTED, newTrade.getStatus());
-    }
-
-    @Test
-    void testTradeRecordingIsImmutable() {
-        Instant createdTime = Instant.now();
-        AccountTrade recordedTrade = new AccountTrade(1006, accountId, instrumentId,
-                TradeType.BUY, 100, 150.25,
-                TradeStatus.ACCEPTED);
-        recordedTrade.recordCreationTime(createdTime);
-
-        assertEquals(createdTime, recordedTrade.getCreatedTime());
-        // Attempt to change should fail or be ignored
-        assertThrows(UnsupportedOperationException.class,
-                () -> recordedTrade.recordCreationTime(Instant.now()));
+        AccountTrade newTrade = new AccountTrade(1005, ACCOUNT_ID, INSTRUMENT_ID,
+                TradeType.BUY, QUANTITY, PRICE);
+        assertEquals(TradeStatus.PENDING, newTrade.getStatus());
     }
 
     // BR-07: Order status changes
     @Test
     void testTradeStatusProgression() {
-        AccountTrade newTrade = new AccountTrade(1007, accountId, instrumentId,
-                TradeType.BUY, 100, 150.25,
-                TradeStatus.SUBMITTED);
-
-        assertEquals(TradeStatus.SUBMITTED, newTrade.getStatus());
+        assertEquals(TradeStatus.PENDING, trade.getStatus());
         newTrade.updateStatus(TradeStatus.ACCEPTED);
-        assertEquals(TradeStatus.ACCEPTED, newTrade.getStatus());
-        newTrade.updateStatus(TradeStatus.FILLED);
-        assertEquals(TradeStatus.FILLED, newTrade.getStatus());
+        assertEquals(TradeStatus.ACCEPTED, trade.getStatus());
+        newTrade.updateStatus(TradeStatus.FULFILLED);
+        assertEquals(TradeStatus.FULFILLED, trade.getStatus());
     }
 
     @Test
     void testTradeCanBeRejected() {
-        AccountTrade newTrade = new AccountTrade(1008, accountId, instrumentId,
-                TradeType.BUY, 100, 150.25,
-                TradeStatus.SUBMITTED);
+        assertEquals(TradeStatus.PENDING, trade.getStatus());
         newTrade.updateStatus(TradeStatus.REJECTED);
-        assertEquals(TradeStatus.REJECTED, newTrade.getStatus());
+        assertEquals(TradeStatus.REJECTED, trade.getStatus());
     }
 
-    // BR-08: Pricing based on market quote
     @Test
-    void testTradePriceIsSetAtExecution() {
-        MarketQuote quote = new MarketQuote(instrumentId, 155.50, 155.75);
-        trade.setPriceFromQuote(quote);
-        // Price should be execution price, not submitted price
-        assertEquals(155.75, trade.getExecutionPrice()); // bid or ask based on trade type
+    void testTradeCreationTime() {
+        LocalDate start = LocalDate.now();
+        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
+                TradeType.BUY, QUANTITY, PRICE);
+        LocalDate end = LocalDate.now();
+
+        assertAll(
+            () -> assertTrue(auditedTrade.getCreatedTime().after(start) || auditedTrade.getCreatedTime().equals(start)),
+            () -> assertTrue(auditedTrade.getCreatedTime().before(end) || auditedTrade.getCreatedTime().equals(end))
+        );
     }
 
     // BR-15: Full lifecycle reconstruction
     @Test
-    void testTradeAuditTrailContainsAllsteps() {
-        AccountTrade auditedTrade = new AccountTrade(1009, accountId, instrumentId,
-                TradeType.BUY, 100, 150.25,
-                TradeStatus.SUBMITTED);
+    void testFullValidTradeLifeCycle() {
+        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
+                TradeType.BUY, QUANTITY, PRICE);
 
-        auditedTrade.recordCreationTime(Instant.now());
+        Date creationTime = auditedTrade.getCreationTime();
+
+        assertNull(auditedTrade.getProcessTime());
         auditedTrade.updateStatus(TradeStatus.ACCEPTED);
-        auditedTrade.updateStatus(TradeStatus.FILLED);
+        Date acceptedTime = auditedTrade.getProcessTime();
 
-        AuditTrail trail = auditedTrade.getAuditTrail();
-        assertNotNull(trail);
-        assertEquals(4, trail.getEvents().size()); // Created, Submitted, Accepted, Filled
+        assertTrue(creationTime.before(acceptedTime));
+
+        assertNull(auditedTrade.getFulfilledTime());
+        auditedTrade.updateStatus(TradeStatus.FILLED);
+        Date fulfilledTime = auditedTrade.getFulfilledTime();
+
+        assertTrue(acceptedTime.before(fulfilledTime));
     }
 }
