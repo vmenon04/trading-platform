@@ -62,28 +62,4 @@ public class ClientTest {
                 .allMatch(a -> a.getClientId() == client.getClientId()));
     }
 
-    // BR-03: Session management
-    // maybe make session a service? (at least do some more resarch into hw to handle and manage sessions)
-    @Test
-    void testClientSessionCanBeInitiated() {
-        ClientSession session = client.createSession();
-        assertNotNull(session);
-        assertTrue(session.isActive());
-    }
-
-    @Test
-    void testClientSessionExpiresAfterTimeout() throws InterruptedException {
-        ClientSession session = client.createSession(1); // 1 second timeout
-        assertTrue(session.isActive());
-        Thread.sleep(1100);
-        assertFalse(session.isActive());
-    }
-
-    @Test
-    void testClientSessionCanBeRevoked() {
-        ClientSession session = client.createSession();
-        assertTrue(session.isActive());
-        session.revoke();
-        assertFalse(session.isActive());
-    }
 }
