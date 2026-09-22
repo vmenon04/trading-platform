@@ -1,16 +1,13 @@
 // @Library('trading-platform-tests@main') _
 pipeline {
     agent any
-    parameters {
-        gitParameter(name: 'BRANCH_NAME', type: 'PT_BRANCH', branchFilter: 'origin/(.*)', defaultValue: 'main', selectedValue: 'DEFAULT', description: 'Branch to build')
-    }
     tools {
         maven 'Maven3'
     }
     stages {
         stage('Checkout') {
             steps {
-                checkout scmGit(branches: [[name: "${params.BRANCH_NAME}"]], userRemoteConfigs: [[url: 'https://github.com/vmenon04/trading-platform.git']])
+                checkout scm
             }
         }
         stage('Build Image') {
