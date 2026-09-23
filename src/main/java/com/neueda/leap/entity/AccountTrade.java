@@ -1,4 +1,4 @@
-package com.neueda.leap;
+package com.neueda.leap.entity;
 
 public class AccountTrade {
     private int trade_id;

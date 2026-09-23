@@ -1,4 +1,4 @@
-package com.neueda.leap;
+package com.neueda.leap.entity;
 
 public class AccountSubscription {
     private int account_id;
