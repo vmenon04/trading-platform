@@ -1,7 +1,5 @@
-package com.neueda.leap;
+package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.Account;
-import com.neueda.leap.entity.Instrument;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
