@@ -1,0 +1,73 @@
+openapi: 3.0.3
+info:
+  title: Account Trade Management Service
+  description: API for managing account trades, including creating, updating, and retrieving trade information.
+  version: 1.0.0
+
+servers:
+  - url: /v1
+
+paths:
+  /trades:
+    post:
+      summary: Submit a new trade request
+      operationId: submitTrade
+      security:
+        - bearedAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradeRequest'
+            example:
+              accountId: "123456"
+              instrument_id: "AAPL"
+              tradeType: "BUY"
+              quantity: 10
+              price: 150.00
+      responses:
+        '201':
+          description: Trade executed successfully
+          headers:
+            Location:
+              description: URL of the newly created trade resource
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeResponse'
+              example:
+                tradeId: "abc123"
+                status: "EXECUTED"
+                executedPrice: 150.00
+                executedQuantity: 10
+        '400':
+          description: Invalid trade request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+            description: Unprocessable entity, trade request could not be processed because of a business rule violation
+            content:
+                application/json:
+                  schema:
+                      $ref: '#/components/schemas/OrderResponse'
+                example:
+                    id: 123
+                    status: "REJECTED"
+                    reason: "Insufficient funds for the requested trade"
+
+components:
+  schemas:
+    TradeRequest:
+      type: object
+
