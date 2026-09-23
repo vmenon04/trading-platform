@@ -1,5 +1,7 @@
 package com.neueda.leap;
 
+import com.neueda.leap.entity.Account;
+import com.neueda.leap.entity.AccountTrade;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;

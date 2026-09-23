@@ -1,9 +1,9 @@
 package com.neueda.leap;
 
+import com.neueda.leap.entity.AccountSubscription;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import javax.swing.plaf.SeparatorUI;
 import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.*;

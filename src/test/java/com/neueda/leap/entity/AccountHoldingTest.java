@@ -1,8 +1,9 @@
 package com.neueda.leap;
 
+import com.neueda.leap.entity.AccountHolding;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import java.time.LocalDate;
+
 import static org.junit.jupiter.api.Assertions.*;
 
 public class AccountHoldingTest {
