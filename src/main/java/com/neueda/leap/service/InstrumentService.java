@@ -54,7 +54,8 @@ public class InstrumentService {
         return price;
     }
 
+    // note that we need Instrument.getTicker() from entity
     public BigDecimal getCurrentPrice(int instrumentId) {
-        throw new UnsupportedOperationException("Not implemented yet");
+        return getCurrentPrice(getInstrumentById(instrumentId).getTicker());
     }
 }
