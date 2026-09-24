@@ -104,4 +104,15 @@ class InstrumentServiceTest {
         when(marketDataClient.getPrice("AAPL")).thenReturn(BigDecimal.ZERO);
         assertThrows(IllegalStateException.class, () -> instrumentService.getCurrentPrice("AAPL"));
     }
+
+    // note that this needs Instrument.getTicker() from entity
+    @Test
+    void getCurrentPriceByIdLooksUpTickerAndReturnsPrice() {
+        Instrument apple = mock(Instrument.class);
+        when(apple.getTicker()).thenReturn("AAPL");
+        when(instrumentMapper.findById(1)).thenReturn(apple);
+        when(instrumentMapper.findByTicker("AAPL")).thenReturn(apple);
+        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("189.25"));
+        assertEquals(new BigDecimal("189.25"), instrumentService.getCurrentPrice(1));
+    }
 }
