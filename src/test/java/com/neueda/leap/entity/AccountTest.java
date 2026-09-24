@@ -1,5 +1,7 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.entity.AccountTrade.TradeType;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
@@ -82,7 +84,7 @@ public class AccountTest {
 
     @Test
     void testTradeSuccessExactBalance() {
-        account.depositCash(10000.0);
+        account.deposit(10000.0);
         Instrument tesla = new Instrument(2, "Tesla", "TSLA");
 
         // Try to buy exactly how much we can afford
