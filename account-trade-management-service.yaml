@@ -1,4 +1,4 @@
-openapi: 3.2.1
+openapi: 3.0.3
 info:
   title: Account Trade Management Service
   description: API for managing account trades, including creating and retrieving trade information.
