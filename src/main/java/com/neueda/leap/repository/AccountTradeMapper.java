@@ -26,26 +26,21 @@ public interface AccountTradeMapper {
     @Options(useGeneratedKeys = true, keyProperty = "trade_Id")
     void insert(AccountTrade accountTrade);
 
-    @Update("UPDATE account_trades SET status = #{status} WHERE trade_id = #{trade_Id}")
-    void updateStatus(AccountTrade trade);
-
     @Delete("DELETE FROM account_trades WHERE trade_id = #{trade_Id}")
     void deleteById(Integer trade_Id);
 
     // Vasu's additions for accounttrademapper
-    @Select("SELECT quantity FROM account_holdings "
-            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
-    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
 
-    // marks the current holding as inactive before we replace it
-    @Update("UPDATE account_holdings SET status = 'inactive' "
-            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
-    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    // Postgres INSERT ... RETURNING goes through @Select so MyBatis returns the generated trade_id
+    @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_type, quantity, price, status) "
+            + "VALUES (NOW(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}, #{price}, #{status}) "
+            + "RETURNING trade_id")
+    int insertTrade(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
+                    @Param("tradeType") String tradeType, @Param("quantity") BigDecimal quantity,
+                    @Param("price") BigDecimal price, @Param("status") String status);
 
-    @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
-            + "VALUES (#{accountId}, #{instrumentId}, NOW(), #{quantity}, #{status})")
-    void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
-                        @Param("quantity") BigDecimal quantity, @Param("status") String status);
-    
+    // Replaces the old updateStatus(AccountTrade): MyBatis can't have two methods with the same name
+    @Update("UPDATE account_trades SET status = #{status} WHERE trade_id = #{tradeId}")
+    void updateStatus(@Param("tradeId") int tradeId, @Param("status") String status);
 }
 

@@ -1,5 +1,6 @@
 package com.neueda.leap.repository;
 
+import com.neueda.leap.entity.AccountSubscription;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Select;
 import java.util.List;
@@ -8,7 +9,7 @@ import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 
 @Mapper 
-public interface AccountSubscription {
+public interface AccountSubscriptionMapper {
     @Select("SELECT * FROM account_subscriptions WHERE account_id = #{account_Id} AND model_portfolio_id = #{model_Portfolio_Id}")
     AccountSubscription findByAccountAndModelPortfolio(Integer account_Id, Integer model_Portfolio_Id);
 

@@ -30,10 +30,16 @@ public interface AccountHoldingMapper {
     void delete(Integer account_Id, Integer instrument_Id, String as_Of_Date);
 
     //vasus additions for accountholdingmapper
-     @Select("SELECT quantity FROM account_holdings "
-            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} "
-            + "ORDER BY as_of_date DESC LIMIT 1")
-    BigDecimal findLatestQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    // The 'active' row is the current holding; older rows are 'inactive' history
+    // get quantity of the current (active) holding; null if there is none
+    @Select("SELECT quantity FROM account_holdings "
+            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
+    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+
+    // marks the current holding as inactive before we replace it
+    @Update("UPDATE account_holdings SET status = 'inactive' "
+            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
+    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
             + "VALUES (#{accountId}, #{instrumentId}, NOW(), #{quantity}, #{status})")
