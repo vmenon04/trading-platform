@@ -3,6 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.OrderRequest;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class ExecutionService {
@@ -15,7 +16,8 @@ public class ExecutionService {
         this.accountHoldingService = accountHoldingService;
     }
 
-    // Takes from the account first, so a failure leaves nothing half-applied
+    // do transactional so everything gets executed together so if one part fails, the whole operation is rolled back
+    @Transactional
     public void execute(OrderRequest order, BigDecimal price) {
         int accountId = order.accountId();
         int instrumentId = order.instrumentId();
