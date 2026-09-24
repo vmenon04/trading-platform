@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 @Service
 public class AccountHoldingService {
 
-    // Must match the CHECK constraint on account_holdings.status
+    // Must match the CHECK constraint on account_holdings.status (I think we should change it to capitalization)
     private static final String ACTIVE = "active";
     private static final String INACTIVE = "inactive";
 
