@@ -22,9 +22,9 @@ class AccountServiceTest {
     @InjectMocks
     private AccountService accountService;
 
-    // Compares by value, ignoring scale (so 1250.5 matches 1250.50)
+    // Compares by value, ignoring scale (so 250.5 matches 250.50)
     private static BigDecimal amountEqualTo(String expected) {
-        return argThat(actual -> actual.compareTo(new BigDecimal(expected)) == 0);
+        return argThat(actual -> actual != null && actual.compareTo(new BigDecimal(expected)) == 0);
     }
 
     @Test
@@ -40,10 +40,10 @@ class AccountServiceTest {
     }
 
     @Test
-    void depositAddsToBalance() {
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
+    void depositPassesAmountToMapper() {
+        when(accountMapper.deposit(eq(1), amountEqualTo("250.50"))).thenReturn(1);
         accountService.deposit(1, new BigDecimal("250.50"));
-        verify(accountMapper).updateBalance(eq(1), amountEqualTo("1250.50"));
+        verify(accountMapper).deposit(eq(1), amountEqualTo("250.50"));
     }
 
     @Test
@@ -55,30 +55,15 @@ class AccountServiceTest {
 
     @Test
     void depositThrowsWhenAccountNotFound() {
-        when(accountMapper.findBalance(99)).thenReturn(null);
+        when(accountMapper.deposit(eq(99), any())).thenReturn(0);
         assertThrows(NoSuchElementException.class, () -> accountService.deposit(99, new BigDecimal("100")));
-        verify(accountMapper, never()).updateBalance(anyInt(), any());
     }
 
     @Test
-    void withdrawSubtractsFromBalance() {
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
+    void withdrawPassesAmountToMapper() {
+        when(accountMapper.withdraw(eq(1), amountEqualTo("250.50"))).thenReturn(1);
         accountService.withdraw(1, new BigDecimal("250.50"));
-        verify(accountMapper).updateBalance(eq(1), amountEqualTo("749.50"));
-    }
-
-    @Test
-    void withdrawAllowsExactBalance() {
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
-        accountService.withdraw(1, new BigDecimal("1000.00"));
-        verify(accountMapper).updateBalance(eq(1), amountEqualTo("0"));
-    }
-
-    @Test
-    void withdrawThrowsWhenInsufficientFunds() {
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
-        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1, new BigDecimal("1000.01")));
-        verify(accountMapper, never()).updateBalance(anyInt(), any());
+        verify(accountMapper).withdraw(eq(1), amountEqualTo("250.50"));
     }
 
     @Test
@@ -89,9 +74,16 @@ class AccountServiceTest {
     }
 
     @Test
+    void withdrawThrowsWhenInsufficientFunds() {
+        when(accountMapper.withdraw(eq(1), any())).thenReturn(0);
+        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
+        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1, new BigDecimal("1000.01")));
+    }
+
+    @Test
     void withdrawThrowsWhenAccountNotFound() {
+        when(accountMapper.withdraw(eq(99), any())).thenReturn(0);
         when(accountMapper.findBalance(99)).thenReturn(null);
         assertThrows(NoSuchElementException.class, () -> accountService.withdraw(99, new BigDecimal("100")));
-        verify(accountMapper, never()).updateBalance(anyInt(), any());
     }
 }
