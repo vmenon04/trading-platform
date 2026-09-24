@@ -1,7 +1,9 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
@@ -18,6 +20,9 @@ class InstrumentServiceTest {
 
     @Mock
     private InstrumentMapper instrumentMapper;
+
+    @Mock
+    private MarketDataClient marketDataClient;
 
     @InjectMocks
     private InstrumentService instrumentService;
@@ -64,5 +69,39 @@ class InstrumentServiceTest {
     void getAllInstrumentsReturnsEmptyListWhenNoneExist() {
         when(instrumentMapper.findAll()).thenReturn(List.of());
         assertTrue(instrumentService.getAllInstruments().isEmpty());
+    }
+
+    @Test
+    void getCurrentPriceReturnsPriceFromClient() {
+        when(instrumentMapper.findByTicker("AAPL")).thenReturn(instrument);
+        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("189.25"));
+        assertEquals(new BigDecimal("189.25"), instrumentService.getCurrentPrice("AAPL"));
+    }
+
+    @Test
+    void getCurrentPriceThrowsForUnknownInstrumentWithoutCallingApi() {
+        when(instrumentMapper.findByTicker("NOPE")).thenReturn(null);
+        assertThrows(NoSuchElementException.class, () -> instrumentService.getCurrentPrice("NOPE"));
+        verifyNoInteractions(marketDataClient);
+    }
+
+    @Test
+    void getCurrentPriceRejectsBlankTicker() {
+        assertThrows(IllegalArgumentException.class, () -> instrumentService.getCurrentPrice(" "));
+        verifyNoInteractions(instrumentMapper, marketDataClient);
+    }
+
+    @Test
+    void getCurrentPriceThrowsWhenApiHasNoQuote() {
+        when(instrumentMapper.findByTicker("AAPL")).thenReturn(instrument);
+        when(marketDataClient.getPrice("AAPL")).thenReturn(null);
+        assertThrows(IllegalStateException.class, () -> instrumentService.getCurrentPrice("AAPL"));
+    }
+
+    @Test
+    void getCurrentPriceRejectsNonPositivePrice() {
+        when(instrumentMapper.findByTicker("AAPL")).thenReturn(instrument);
+        when(marketDataClient.getPrice("AAPL")).thenReturn(BigDecimal.ZERO);
+        assertThrows(IllegalStateException.class, () -> instrumentService.getCurrentPrice("AAPL"));
     }
 }
