@@ -39,36 +39,36 @@ class ExecutionServiceTest {
     }
 
     @Test
-    void buyWithdrawsCostThenAddsHoldings() {
+    void buyPurchasesThenAddsHoldings() {
         executionService.execute(order("BUY", "5"), PRICE);
 
         InOrder inOrder = inOrder(accountService, accountHoldingService);
-        inOrder.verify(accountService).withdraw(eq(ACCOUNT_ID), amountEqualTo("500"));
+        inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
         inOrder.verify(accountHoldingService).addQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
         verifyNoMoreInteractions(accountService, accountHoldingService);
     }
 
     @Test
-    void sellRemovesHoldingsThenDepositsProceeds() {
+    void sellRemovesHoldingsThenSellsForProceeds() {
         executionService.execute(order("SELL", "5"), PRICE);
 
         InOrder inOrder = inOrder(accountHoldingService, accountService);
         inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
-        inOrder.verify(accountService).deposit(eq(ACCOUNT_ID), amountEqualTo("500"));
+        inOrder.verify(accountService).sell(eq(ACCOUNT_ID), amountEqualTo("500"));
         verifyNoMoreInteractions(accountService, accountHoldingService);
     }
 
     @Test
-    void buyDoesNotAddHoldingsWhenWithdrawFails() {
+    void buyDoesNotAddHoldingsWhenPurchaseFails() {
         doThrow(new IllegalStateException("Insufficient funds"))
-                .when(accountService).withdraw(eq(ACCOUNT_ID), any());
+                .when(accountService).purchase(eq(ACCOUNT_ID), any());
 
         assertThrows(IllegalStateException.class, () -> executionService.execute(order("BUY", "5"), PRICE));
         verifyNoInteractions(accountHoldingService);
     }
 
     @Test
-    void sellDoesNotDepositWhenRemoveFails() {
+    void sellDoesNotCreditWhenRemoveFails() {
         doThrow(new IllegalStateException("Insufficient quantity"))
                 .when(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), any());
 
