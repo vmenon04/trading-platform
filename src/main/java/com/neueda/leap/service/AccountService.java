@@ -24,18 +24,26 @@ public class AccountService {
 
     public void deposit(int accountId, BigDecimal amount) {
         requirePositive(amount);
-        if (accountMapper.deposit(accountId, amount) == 0) {
+        if (accountMapper.increaseBalance(accountId, amount) == 0) {
             throw new NoSuchElementException("No account with id " + accountId);
         }
     }
 
     public void withdraw(int accountId, BigDecimal amount) {
         requirePositive(amount);
-        if (accountMapper.withdraw(accountId, amount) == 0) {
+        if (accountMapper.reduceBalance(accountId, amount) == 0) {
             BigDecimal balance = getBalance(accountId);
             throw new IllegalStateException(
                     "Insufficient funds in account " + accountId + ": balance " + balance + ", requested " + amount);
         }
+    }
+
+    public void purchase(int accountId, BigDecimal amount) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
+
+    public void sell(int accountId, BigDecimal amount) {
+        throw new UnsupportedOperationException("Not implemented yet");
     }
 
     private static void requirePositive(BigDecimal amount) {
