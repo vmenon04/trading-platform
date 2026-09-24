@@ -53,4 +53,8 @@ public class InstrumentService {
         }
         return price;
     }
+
+    public BigDecimal getCurrentPrice(int instrumentId) {
+        throw new UnsupportedOperationException("Not implemented yet");
+    }
 }
