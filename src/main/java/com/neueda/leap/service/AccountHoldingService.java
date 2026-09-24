@@ -18,13 +18,14 @@ public class AccountHoldingService {
     }
 
     public BigDecimal getQuantity(int accountId, int instrumentId) {
-        BigDecimal quantity = accountHoldingMapper.findLatestQuantity(accountId, instrumentId);
+        BigDecimal quantity = accountHoldingMapper.findActiveQuantity(accountId, instrumentId);
         return quantity == null ? BigDecimal.ZERO : quantity;
     }
 
     public void addQuantity(int accountId, int instrumentId, BigDecimal quantity) {
         requirePositive(quantity);
         BigDecimal newQuantity = getQuantity(accountId, instrumentId).add(quantity);
+        accountHoldingMapper.deactivateHolding(accountId, instrumentId);
         accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, ACTIVE);
     }
 
@@ -36,7 +37,9 @@ public class AccountHoldingService {
                     + " in account " + accountId + ": holding " + current + ", requested " + quantity);
         }
         BigDecimal newQuantity = current.subtract(quantity);
+        // a fully sold position should be marked as inactive
         String status = newQuantity.compareTo(BigDecimal.ZERO) == 0 ? INACTIVE : ACTIVE;
+        accountHoldingMapper.deactivateHolding(accountId, instrumentId);
         accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, status);
     }
 
