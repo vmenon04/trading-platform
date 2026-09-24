@@ -1,4 +1,4 @@
-package com.neueda.leap.mapper;
+package com.neueda.leap.repository;
 
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
@@ -33,15 +33,19 @@ public interface AccountTradeMapper {
     void deleteById(Integer trade_Id);
 
     // Vasu's additions for accounttrademapper
-    @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_type, quantity, price, status) "
-            + "VALUES (NOW(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}, #{price}, #{status}) "
-            + "RETURNING trade_id")
-    int insertTrade(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
-                    @Param("tradeType") String tradeType, @Param("quantity") BigDecimal quantity,
-                    @Param("price") BigDecimal price, @Param("status") String status);
+    @Select("SELECT quantity FROM account_holdings "
+            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
+    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
 
-    @Update("UPDATE account_trades SET status = #{status} WHERE trade_id = #{tradeId}")
-    void updateStatus(@Param("tradeId") int tradeId, @Param("status") String status);
+    // marks the current holding as inactive before we replace it
+    @Update("UPDATE account_holdings SET status = 'inactive' "
+            + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
+    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+
+    @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
+            + "VALUES (#{accountId}, #{instrumentId}, NOW(), #{quantity}, #{status})")
+    void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
+                        @Param("quantity") BigDecimal quantity, @Param("status") String status);
     
 }
 

@@ -1,4 +1,4 @@
-package com.neueda.leap.mapper;
+package com.neueda.leap.repository;
 
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Insert;

@@ -1,4 +1,4 @@
-package com.neueda.leap.mapper;
+package com.neueda.leap.repository;
 
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -20,8 +20,8 @@ public interface AccountHoldingMapper {
     @Select("SELECT * FROM account_holdings WHERE account_id = #{account_Id}")
     List<AccountHolding> findByAccountId(Integer account_Id);
 
-    @Insert("INSERT INTO account_holdings(account_id, instrument_id, quantity, as_of_date, status) VALUES(#{account_Id}, #{instrument_Id}, #{quantity}, #{as_Of_Date}, #{status})")
-    void insert(AccountHolding accountHolding);
+//     @Insert("INSERT INTO account_holdings(account_id, instrument_id, quantity, as_of_date, status) VALUES(#{account_Id}, #{instrument_Id}, #{quantity}, #{as_Of_Date}, #{status})")
+//     void insert(AccountHolding accountHolding);
 
     @Update("UPDATE account_holdings SET quantity = #{quantity}, status = #{status} WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
     void update(AccountHolding accountHolding);
