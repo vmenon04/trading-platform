@@ -4,6 +4,7 @@ import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InOrder;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -29,34 +30,48 @@ class AccountHoldingServiceTest {
         return argThat(actual -> actual != null && actual.compareTo(new BigDecimal(expected)) == 0);
     }
 
-    private void verifyNothingInserted() {
+    private void givenActiveQuantity(String quantity) {
+        when(accountHoldingMapper.findActiveQuantity(ACCOUNT_ID, INSTRUMENT_ID))
+                .thenReturn(quantity == null ? null : new BigDecimal(quantity));
+    }
+
+    // The previous active holding is deactivated before the new snapshot is inserted
+    private void verifyDeactivatedThenInserted(String quantity, String status) {
+        InOrder inOrder = inOrder(accountHoldingMapper);
+        inOrder.verify(accountHoldingMapper).deactivateHolding(ACCOUNT_ID, INSTRUMENT_ID);
+        inOrder.verify(accountHoldingMapper)
+                .insertSnapshot(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo(quantity), eq(status));
+    }
+
+    private void verifyNothingChanged() {
+        verify(accountHoldingMapper, never()).deactivateHolding(anyInt(), anyInt());
         verify(accountHoldingMapper, never()).insertSnapshot(anyInt(), anyInt(), any(), any());
     }
 
     @Test
-    void getQuantityReturnsLatestQuantity() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("100"));
+    void getQuantityReturnsActiveQuantity() {
+        givenActiveQuantity("100");
         assertEquals(0, new BigDecimal("100").compareTo(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)));
     }
 
     @Test
-    void getQuantityReturnsZeroWhenNeverHeld() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(null);
+    void getQuantityReturnsZeroWhenNoActiveHolding() {
+        givenActiveQuantity(null);
         assertEquals(0, BigDecimal.ZERO.compareTo(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)));
     }
 
     @Test
     void addQuantityInsertsIncreasedSnapshot() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("100"));
+        givenActiveQuantity("100");
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verify(accountHoldingMapper).insertSnapshot(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("150"), eq("active"));
+        verifyDeactivatedThenInserted("150", "active");
     }
 
     @Test
     void addQuantityStartsFromZeroForNewHolding() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(null);
+        givenActiveQuantity(null);
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verify(accountHoldingMapper).insertSnapshot(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("50"), eq("active"));
+        verifyDeactivatedThenInserted("50", "active");
     }
 
     @Test
@@ -70,32 +85,32 @@ class AccountHoldingServiceTest {
 
     @Test
     void removeQuantityInsertsDecreasedSnapshot() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("100"));
+        givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("30"));
-        verify(accountHoldingMapper).insertSnapshot(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("70"), eq("active"));
+        verifyDeactivatedThenInserted("70", "active");
     }
 
     @Test
     void removeQuantityMarksInactiveOnFullSell() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("100"));
+        givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("100"));
-        verify(accountHoldingMapper).insertSnapshot(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("0"), eq("inactive"));
+        verifyDeactivatedThenInserted("0", "inactive");
     }
 
     @Test
     void removeQuantityThrowsWhenInsufficient() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("100"));
+        givenActiveQuantity("100");
         assertThrows(IllegalStateException.class,
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("100.5")));
-        verifyNothingInserted();
+        verifyNothingChanged();
     }
 
     @Test
-    void removeQuantityThrowsWhenNeverHeld() {
-        when(accountHoldingMapper.findLatestQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(null);
+    void removeQuantityThrowsWhenNoActiveHolding() {
+        givenActiveQuantity(null);
         assertThrows(IllegalStateException.class,
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("10")));
-        verifyNothingInserted();
+        verifyNothingChanged();
     }
 
     @Test
