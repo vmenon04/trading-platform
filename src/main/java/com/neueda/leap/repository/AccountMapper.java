@@ -34,15 +34,15 @@ public interface AccountMapper {
 
     // Vasu's additions for accountmapper
 
-     @Select("SELECT balance FROM accounts WHERE account_id = #{accountId}")
+    @Select("SELECT balance FROM accounts WHERE account_id = #{accountId}")
     BigDecimal findBalance(int accountId);
 
     //returns rows updated: 0 = no such account
     @Update("UPDATE accounts SET balance = balance + #{amount} WHERE account_id = #{accountId}")
-    int deposit(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int increaseBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
 
     // returns rows updated: 0 = no such account OR insufficient funds (we check and update in one statement)
     @Update("UPDATE accounts SET balance = balance - #{amount} "
             + "WHERE account_id = #{accountId} AND balance >= #{amount}")
-    int withdraw(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int reduceBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
 }
