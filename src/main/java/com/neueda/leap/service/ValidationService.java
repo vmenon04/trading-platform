@@ -48,6 +48,9 @@ public class ValidationService {
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Quantity must be positive");
         }
+        if (quantity.stripTrailingZeros().scale() > 8) {
+            throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
+        }
 
         int accountId = order.accountId();
         int instrumentId = order.instrumentId();
