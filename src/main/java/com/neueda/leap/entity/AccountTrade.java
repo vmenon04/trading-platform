@@ -23,15 +23,6 @@ public class AccountTrade {
 
     public AccountTrade(int accountId, LocalDate tradeTime, int instrumentId, TradeType tradeType, double quantity, double price) {
         this.tradeId = null;
-
-        if(quantity <= 0) {
-            throw new IllegalArgumentException("Trade quantity must be positive.");
-        }
-
-        if(price <= 0) {
-            throw new IllegalArgumentException("Trade price must be positive.");
-        }
-
         this.accountId = accountId;
         this.tradeTime = tradeTime;
         this.instrumentId = instrumentId;
