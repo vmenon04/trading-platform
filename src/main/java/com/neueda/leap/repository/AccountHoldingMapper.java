@@ -31,6 +31,7 @@ public interface AccountHoldingMapper {
 
     //vasus additions for accountholdingmapper
     // The 'active' row is the current holding; older rows are 'inactive' history
+    // we use clock_timestamp() rather than NOW() since NOW() is fixed for a whole transaction
     // get quantity of the current (active) holding; null if there is none
     @Select("SELECT quantity FROM account_holdings "
             + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'active'")
@@ -42,7 +43,7 @@ public interface AccountHoldingMapper {
     void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
-            + "VALUES (#{accountId}, #{instrumentId}, NOW(), #{quantity}, #{status})")
+            + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
     void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
                         @Param("quantity") BigDecimal quantity, @Param("status") String status);
 }
