@@ -22,7 +22,9 @@ DROP TABLE IF EXISTS client_trades CASCADE;
 -- clients
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
-    name TEXT NOT NULL,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL UNIQUE,
     --advisor_id INT REFERENCES advisors(advisor_id)
     birth_date DATE NOT NULL
 );

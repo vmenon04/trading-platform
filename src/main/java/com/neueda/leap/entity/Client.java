@@ -7,6 +7,7 @@ public class Client {
     private Long clientId;
     private String firstName;
     private String lastName;
+    private String email;
     private LocalDate birthDate;
     private ArrayList<Account> clientAccounts;
 
@@ -19,6 +20,11 @@ public class Client {
         this.lastName = lastName;
         this.birthDate = birthDate;
         this.clientAccounts = new ArrayList<>();
+    }
+
+    public Client(String firstName, String lastName, String email, LocalDate birthDate) {
+        this(firstName, lastName, birthDate);
+        this.email = email;
     }
 
     public Long getClientId() {
@@ -43,6 +49,14 @@ public class Client {
 
     public void setLastName(String lastName) {
         this.lastName = lastName;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 
     public LocalDate getBirthDate() {
