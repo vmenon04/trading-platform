@@ -87,6 +87,18 @@ class ValidationServiceTest {
     }
 
     @Test
+    void rejectsQuantityWithMoreThanEightDecimals() {
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "0.000000001"), PRICE));
+        verifyNoInteractions(instrumentService, accountService, accountHoldingService);
+    }
+
+    @Test
+    void acceptsQuantityWithEightDecimals() {
+        givenInstrumentAndBalance("1000");
+        assertDoesNotThrow(() -> validationService.validate(order("BUY", "0.12345678"), PRICE));
+    }
+
+    @Test
     void rejectsNullOrder() {
         assertThrows(IllegalArgumentException.class, () -> validationService.validate(null, PRICE));
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
