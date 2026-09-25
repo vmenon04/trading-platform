@@ -59,9 +59,9 @@ class OrderManagementServiceTest {
         InOrder inOrder = inOrder(validationService, accountTradeMapper, executionService);
         inOrder.verify(validationService).validate(ORDER, PRICE);
         inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "pending");
-        inOrder.verify(accountTradeMapper).updateStatus(TRADE_ID, "accepted");
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "accepted");
         inOrder.verify(executionService).execute(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).updateStatus(TRADE_ID, "fulfilled");
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "fulfilled");
     }
 
     @Test
@@ -72,7 +72,7 @@ class OrderManagementServiceTest {
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
         verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "rejected");
-        verify(accountTradeMapper, never()).updateStatus(anyInt(), any());
+        verify(accountTradeMapper, never()).insertStatus(anyInt(), any());
         verifyNoInteractions(executionService);
     }
 
@@ -104,8 +104,8 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).updateStatus(TRADE_ID, "rejected");
-        verify(accountTradeMapper, never()).updateStatus(TRADE_ID, "fulfilled");
+        verify(accountTradeMapper).insertStatus(TRADE_ID, "rejected");
+        verify(accountTradeMapper, never()).insertStatus(TRADE_ID, "fulfilled");
     }
 
     @Test

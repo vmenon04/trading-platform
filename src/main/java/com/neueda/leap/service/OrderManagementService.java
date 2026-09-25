@@ -39,16 +39,16 @@ public class OrderManagementService {
         }
 
         int tradeId = recordTrade(order, price, PENDING);
-        accountTradeMapper.updateStatus(tradeId, ACCEPTED);
+        accountTradeMapper.insertStatus(tradeId, ACCEPTED);
 
         try {
             executionService.execute(order, price);
         } catch (RuntimeException e) {
-            accountTradeMapper.updateStatus(tradeId, REJECTED);
+            accountTradeMapper.insertStatus(tradeId, REJECTED);
             throw e;
         }
 
-        accountTradeMapper.updateStatus(tradeId, FULFILLED);
+        accountTradeMapper.insertStatus(tradeId, FULFILLED);
         return tradeId;
     }
 
