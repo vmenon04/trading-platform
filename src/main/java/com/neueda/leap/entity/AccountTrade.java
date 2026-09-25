@@ -1,6 +1,8 @@
 package com.neueda.leap.entity;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+
+import java.time.OffsetDateTime;
 
 public class AccountTrade {
 
@@ -13,18 +15,18 @@ public class AccountTrade {
     }
 
     private Long tradeId;
-    private LocalDate tradeTime;
+    private OffsetDateTime tradeTime;
     private int accountId;
     private int instrumentId;
     private TradeType tradeType;
-    private double quantity;
-    private double price;
+    private BigDecimal quantity;
+    private BigDecimal price;
     private TradeStatus tradeStatus;
 
     public AccountTrade() {
     }
 
-    public AccountTrade(int accountId, LocalDate tradeTime, int instrumentId, TradeType tradeType, double quantity, double price) {
+    public AccountTrade(int accountId, OffsetDateTime tradeTime, int instrumentId, TradeType tradeType, BigDecimal quantity, BigDecimal price) {
         this.tradeId = null;
         this.accountId = accountId;
         this.tradeTime = tradeTime;
@@ -67,19 +69,19 @@ public class AccountTrade {
         this.tradeType = tradeType;
     }
 
-    public double getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(double quantity) {
+    public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
 
-    public double getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
-    public void setPrice(double price) {
+    public void setPrice(BigDecimal price) {
         this.price = price;
     }
 
@@ -91,11 +93,11 @@ public class AccountTrade {
         this.tradeStatus = tradeStatus;
     }
 
-    public LocalDate getTradeTime() {
+    public OffsetDateTime getTradeTime() {
         return tradeTime;
     }
 
-    public void setTradeTime(LocalDate tradeTime) {
+    public void setTradeTime(OffsetDateTime tradeTime) {
         this.tradeTime = tradeTime;
     }
 }

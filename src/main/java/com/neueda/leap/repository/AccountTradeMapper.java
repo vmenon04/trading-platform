@@ -17,22 +17,27 @@ import com.neueda.leap.entity.*;
 @Mapper
 public interface AccountTradeMapper {
 
+    // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
+    // (the status column goes into the tradeStatus field)
+    String COLUMNS = "trade_id AS tradeId, trade_time AS tradeTime, account_id AS accountId, instrument_id AS instrumentId, "
+            + "trade_type AS tradeType, quantity, price, status AS tradeStatus";
+
     // current state of a trade (its latest row)
-    @Select("SELECT * FROM account_trades WHERE trade_id = #{trade_Id} ORDER BY trade_time DESC LIMIT 1")
+    @Select("SELECT " + COLUMNS + " FROM account_trades WHERE trade_id = #{trade_Id} ORDER BY trade_time DESC LIMIT 1")
     AccountTrade findById(Integer trade_Id);
 
     // current state of each of the account's trades (one row per trade)
-    @Select("SELECT DISTINCT ON (trade_id) * FROM account_trades WHERE account_id = #{account_Id} "
+    @Select("SELECT DISTINCT ON (trade_id) " + COLUMNS + " FROM account_trades WHERE account_id = #{account_Id} "
             + "ORDER BY trade_id, trade_time DESC")
     List<AccountTrade> findByAccountId(Integer account_Id);
 
     // every status a trade went through, oldest first
-    @Select("SELECT * FROM account_trades WHERE trade_id = #{trade_Id} ORDER BY trade_time")
+    @Select("SELECT " + COLUMNS + " FROM account_trades WHERE trade_id = #{trade_Id} ORDER BY trade_time")
     List<AccountTrade> findHistoryById(Integer trade_Id);
 
-
-    @Insert("INSERT INTO account_trades(trade_time, account_id, instrument_id, trade_type, quantity, price, status) VALUES (#{trade_Time}, #{account_Id}, #{instrument_Id}, #{trade_Type}, #{quantity}, #{price}, #{status})")
-    @Options(useGeneratedKeys = true, keyProperty = "trade_Id")
+    // #{...} are AccountTrade field names
+    @Insert("INSERT INTO account_trades(trade_time, account_id, instrument_id, trade_type, quantity, price, status) VALUES (#{tradeTime}, #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}, #{price}, #{tradeStatus})")
+    @Options(useGeneratedKeys = true, keyProperty = "tradeId", keyColumn = "trade_id")
     void insert(AccountTrade accountTrade);
 
     @Delete("DELETE FROM account_trades WHERE trade_id = #{trade_Id}")

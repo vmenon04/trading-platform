@@ -1,5 +1,7 @@
 package com.neueda.leap.entity;
 
+import java.math.BigDecimal;
+
 import java.util.HashMap;
 
 public class Account {
@@ -7,13 +9,13 @@ public class Account {
     private Long accountId;
     private String accountType;
     private int clientId;
-    private double balance;
+    private BigDecimal balance;
     HashMap<Instrument, AccountHolding> holdings;
 
     public Account() {
         this.accountId = null;
         this.holdings = new HashMap<>();
-        this.balance = 0;
+        this.balance = BigDecimal.ZERO;
     }
 
     public Account(String accountType, int clientId) {
@@ -21,7 +23,7 @@ public class Account {
         this.accountType = accountType;
         this.clientId = clientId;
         this.holdings = new HashMap<>();
-        balance = 0;
+        balance = BigDecimal.ZERO;
     }
 
     public Long getAccountId() {
@@ -56,11 +58,11 @@ public class Account {
         this.holdings = holdings;
     }
 
-    public double getBalance() {
+    public BigDecimal getBalance() {
         return balance;
     }
 
-    public void setBalance(double balance) {
+    public void setBalance(BigDecimal balance) {
         this.balance = balance;
     }
 

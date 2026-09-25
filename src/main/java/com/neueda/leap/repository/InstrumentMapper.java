@@ -9,23 +9,27 @@ import org.apache.ibatis.annotations.Mapper;
 import com.neueda.leap.entity.Instrument;
 import java.util.List;
 
-@Mapper 
+@Mapper
 public interface InstrumentMapper {
 
-    @Select("SELECT * FROM instruments WHERE instrument_id = #{instrument_Id}")
+    // columns aliased to the Instrument field names, so MyBatis fills the right fields
+    // (asset_class holds the InstrumentType name, e.g. 'STOCK')
+    String COLUMNS = "instrument_id AS instrumentId, name, ticker, asset_class AS instrumentType";
+
+    @Select("SELECT " + COLUMNS + " FROM instruments WHERE instrument_id = #{instrument_Id}")
     Instrument findById(Integer instrument_Id);
-    
-    @Select("SELECT * FROM instruments")
+
+    @Select("SELECT " + COLUMNS + " FROM instruments")
     List<Instrument> findAll();
 
-    @Select("SELECT * FROM instruments WHERE ticker = #{ticker}")
+    @Select("SELECT " + COLUMNS + " FROM instruments WHERE ticker = #{ticker}")
     Instrument findByTicker(String ticker);
 
-    @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{asset_Class})")
-    @Options(useGeneratedKeys = true, keyProperty = "instrument_Id")
+    @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType})")
+    @Options(useGeneratedKeys = true, keyProperty = "instrumentId", keyColumn = "instrument_id")
     void insert(Instrument instrument);
 
-    @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{asset_Class} WHERE instrument_id = #{instrument_Id}")
+    @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{instrumentType} WHERE instrument_id = #{instrumentId}")
     void update(Instrument instrument);
 
     @Delete("DELETE FROM instruments WHERE instrument_id = #{instrument_Id}")

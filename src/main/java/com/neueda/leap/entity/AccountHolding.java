@@ -1,6 +1,8 @@
 package com.neueda.leap.entity;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+
+import java.time.LocalDateTime;
 
 public class AccountHolding {
 
@@ -10,14 +12,14 @@ public class AccountHolding {
 
     private int accountId;
     private int instrumentId;
-    private LocalDate asOfDate;
-    private double quantity;
+    private LocalDateTime asOfDate;
+    private BigDecimal quantity;
     private HoldingStatus status;
 
     public AccountHolding() {
     }
 
-    public AccountHolding(int accountId, int instrumentId, LocalDate asOfDate, double quantity, HoldingStatus status) {
+    public AccountHolding(int accountId, int instrumentId, LocalDateTime asOfDate, BigDecimal quantity, HoldingStatus status) {
         this.accountId = accountId;
         this.instrumentId = instrumentId;
         this.asOfDate = asOfDate;
@@ -41,19 +43,19 @@ public class AccountHolding {
         this.instrumentId = instrumentId;
     }
 
-    public LocalDate getAsOfDate() {
+    public LocalDateTime getAsOfDate() {
         return asOfDate;
     }
 
-    public void setAsOfDate(LocalDate asOfDate) {
+    public void setAsOfDate(LocalDateTime asOfDate) {
         this.asOfDate = asOfDate;
     }
 
-    public double getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public void setQuantity(double quantity) {
+    public void setQuantity(BigDecimal quantity) {
         this.quantity = quantity;
     }
 
