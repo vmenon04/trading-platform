@@ -73,9 +73,10 @@ CREATE TABLE account_trades (
     instrument_id INT REFERENCES instruments(instrument_id) NOT NULL,
     trade_type TEXT NOT NULL
         CHECK (trade_type IN ('BUY', 'SELL')),
-    quantity NUMERIC(14, 4) NOT NULL
+    -- make this the precision as account_holdings.quantity
+    quantity NUMERIC(18, 8) NOT NULL
         CHECK (quantity > 0),
-    price NUMERIC(14, 4) NOT NULL
+    price NUMERIC(18, 8) NOT NULL
         CHECK (price > 0),
     status TEXT CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'FULFILLED')) NOT NULL
 );
