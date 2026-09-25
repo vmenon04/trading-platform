@@ -7,10 +7,13 @@ public class AccountSubscription {
     public enum SubscriptionStatus {
         ACTIVE, INACTIVE
     }
-    private final int accountId;
-    private final int modelPortfolioId;
-    private final LocalDate subscriptionDate;
+    private int accountId;
+    private int modelPortfolioId;
+    private LocalDate subscriptionDate;
     private SubscriptionStatus status;
+
+    public AccountSubscription() {
+    }
 
     public AccountSubscription(int accountId, int modelPortfolioId, LocalDate subscriptionDate) {
         this.accountId = accountId;
@@ -23,12 +26,24 @@ public class AccountSubscription {
         return accountId;
     }
 
+    public void setAccountId(int accountId) {
+        this.accountId = accountId;
+    }
+
     public int getModelPortfolioId() {
         return modelPortfolioId;
     }
 
+    public void setModelPortfolioId(int modelPortfolioId) {
+        this.modelPortfolioId = modelPortfolioId;
+    }
+
     public LocalDate getSubscriptionDate() {
         return subscriptionDate;
+    }
+
+    public void setSubscriptionDate(LocalDate subscriptionDate) {
+        this.subscriptionDate = subscriptionDate;
     }
 
     public SubscriptionStatus getStatus() {

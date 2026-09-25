@@ -10,9 +10,12 @@ public class AccountHolding {
 
     private int accountId;
     private int instrumentId;
-    private final LocalDate asOfDate;
+    private LocalDate asOfDate;
     private double quantity;
     private HoldingStatus status;
+
+    public AccountHolding() {
+    }
 
     public AccountHolding(int accountId, int instrumentId, LocalDate asOfDate, double quantity, HoldingStatus status) {
         this.accountId = accountId;
@@ -40,6 +43,10 @@ public class AccountHolding {
 
     public LocalDate getAsOfDate() {
         return asOfDate;
+    }
+
+    public void setAsOfDate(LocalDate asOfDate) {
+        this.asOfDate = asOfDate;
     }
 
     public double getQuantity() {
