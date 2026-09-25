@@ -4,6 +4,9 @@ import com.neueda.leap.dto.OrderRequest;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 
+/**
+ * Validates incoming orders against supported order sides, available cash, and held quantities.
+ */
 @Service
 public class ValidationService {
 
@@ -11,6 +14,13 @@ public class ValidationService {
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
 
+    /**
+     * Creates a validation service with access to instrument, account, and holding data.
+     *
+     * @param instrumentService service used to verify referenced instruments
+     * @param accountService service used to inspect account balances
+     * @param accountHoldingService service used to inspect account holdings
+     */
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
                              AccountHoldingService accountHoldingService) {
         this.instrumentService = instrumentService;
@@ -18,6 +28,14 @@ public class ValidationService {
         this.accountHoldingService = accountHoldingService;
     }
 
+    /**
+     * Validates that an order is well formed and can be executed at the supplied price.
+     *
+     * @param order order to validate
+     * @param price execution price used to calculate required cash for buy orders
+     * @throws IllegalArgumentException if the order, side, or quantity is invalid
+     * @throws IllegalStateException if the account lacks enough cash or holdings to satisfy the order
+     */
     public void validate(OrderRequest order, BigDecimal price) {
         if (order == null) {
             throw new IllegalArgumentException("Order must not be null");
