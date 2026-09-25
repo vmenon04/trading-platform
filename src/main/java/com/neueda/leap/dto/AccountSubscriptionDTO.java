@@ -1,10 +1,14 @@
 package com.neueda.leap.dto;
 
-public class AccountSubscriptionDTO {
-    private int accountId;
-    private int modelPortfolioId;
-    private String subscriptionDate;
-    private String status;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+
+public record AccountSubscriptionDTO(
+        @Positive int accountId,
+        @Positive int modelPortfolioId,
+        @NotBlank String subscriptionDate,
+        @NotBlank String status
+) {
 
     public int getAccountId() {
         return accountId;
@@ -20,9 +24,5 @@ public class AccountSubscriptionDTO {
 
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

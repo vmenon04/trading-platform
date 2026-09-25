@@ -1,41 +1,31 @@
 package com.neueda.leap.dto;
 
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Past;
+import jakarta.validation.constraints.Positive;
 import java.time.LocalDate;
 import java.util.List;
 
-public class ClientDTO {
-    private int clientId;
-    private String firstName;
-    private String lastName;
-    private LocalDate birthDate;
-    private List<AccountDTO> clientAccounts;
-    
-    public ClientDTO(int clientId, String firstName, String lastName, LocalDate birthDate, List<AccountDTO> clientAccounts) {
-        this.clientId = clientId;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.birthDate = birthDate;
-        this.clientAccounts = clientAccounts;
-    }
-    
+public record ClientDTO(
+        @Positive int clientId,
+        @NotBlank String firstName,
+        @NotBlank String lastName,
+        @NotNull @Past LocalDate birthDate,
+        @NotNull @Valid List<AccountDTO> clientAccounts
+) {
+
     public int getClientId() {
         return clientId;
     }
-    
+
     public String getFirstName() {
         return firstName;
     }
 
-    public void setFirstName(String firstName) {
-        this.firstName = firstName;
-    }
-    
     public String getLastName() {
         return lastName;
-    }
-
-    public void setLastName(String lastName) {
-        this.lastName = lastName;
     }
 
     public LocalDate getBirthDate() {
@@ -44,13 +34,5 @@ public class ClientDTO {
 
     public List<AccountDTO> getClientAccounts() {
         return clientAccounts;
-    }
-
-    public void addClientAccount(AccountDTO accountDTO) {
-        this.clientAccounts.add(accountDTO);
-    }
-
-    public void removeClientAccount(AccountDTO accountDTO) {
-        this.clientAccounts.remove(accountDTO);
     }
 }
