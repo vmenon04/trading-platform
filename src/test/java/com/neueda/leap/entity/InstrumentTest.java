@@ -11,15 +11,15 @@ public class InstrumentTest {
 
     @BeforeEach
     void setUp() {
-        instrument = new Instrument("Apple Inc.", "AAPL", InstrumentType.EQUITY);
+        instrument = new Instrument("Apple Inc.", "AAPL", InstrumentType.STOCK);
     }
 
     // BR-12: Platform pricing various instrument classes
     @Test
     void testEquityInstrumentCanBeCreated() {
-        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.EQUITY);
+        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.STOCK);
         assertEquals("MSFT", equity.getTicker());
-        assertEquals(InstrumentType.EQUITY, equity.getInstrumentType());
+        assertEquals(InstrumentType.STOCK, equity.getInstrumentType());
     }
 
     @Test
@@ -37,12 +37,12 @@ public class InstrumentTest {
     @Test
     void testInstrumentCannotHaveNullTicker() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Instrument("Invalid", null, InstrumentType.EQUITY));
+                () -> new Instrument("Invalid", null, InstrumentType.STOCK));
     }
 
     @Test
     void testInstrumentCannotHaveEmptyName() {
         assertThrows(IllegalArgumentException.class,
-                () -> new Instrument("", "", InstrumentType.EQUITY));
+                () -> new Instrument("", "", InstrumentType.STOCK));
     }
 }

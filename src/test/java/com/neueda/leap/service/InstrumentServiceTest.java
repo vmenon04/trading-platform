@@ -27,7 +27,7 @@ class InstrumentServiceTest {
     @InjectMocks
     private InstrumentService instrumentService;
 
-    private final Instrument instrument = new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.EQUITY);
+    private final Instrument instrument = new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK);
 
     @Test
     void getInstrumentByIdReturnsInstrumentFromMapper() {

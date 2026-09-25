@@ -2,8 +2,10 @@ package com.neueda.leap.entity;
 
 public class Instrument {
 
+    // match the values stored in instruments.asset_class (MyBatis maps enums by name)
     public enum InstrumentType {
-        EQUITY,
+        STOCK,
+        ETF,
         BOND,
         FOREX,
         CRYPTO

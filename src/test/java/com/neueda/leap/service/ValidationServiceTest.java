@@ -37,7 +37,7 @@ class ValidationServiceTest {
     }
 
     private void givenInstrumentAndBalance(String balance) {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.EQUITY));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(balance));
     }
 
@@ -100,7 +100,7 @@ class ValidationServiceTest {
 
     @Test
     void rejectsUnknownAccount() {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.EQUITY));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenThrow(new NoSuchElementException());
         assertThrows(NoSuchElementException.class, () -> validationService.validate(order("BUY", "5"), PRICE));
     }
