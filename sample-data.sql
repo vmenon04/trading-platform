@@ -39,7 +39,7 @@ last_names AS (
     ('Stevens'), ('Tucker'), ('Porter'), ('Hunter'), ('Hicks'), ('Crawford'), ('Henry'), ('Boyd')
   ) AS t(name)
 )
-SELECT fn.name, ln.name, LOWER(fn.name || '.' || ln.name || '@example.com'), DATE '1950-01-01' + (random() * 25000)::INT
+SELECT fn.name, ln.name, LOWER(fn.name || '.' || ln.name) || '.' || ROW_NUMBER() OVER () || '@example.com', DATE '1950-01-01' + (random() * 25000)::INT
 FROM first_names fn
 CROSS JOIN last_names ln
 LIMIT 1000;
