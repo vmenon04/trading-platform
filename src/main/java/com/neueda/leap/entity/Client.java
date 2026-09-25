@@ -7,8 +7,12 @@ public class Client {
     private Long clientId;
     private String firstName;
     private String lastName;
-    private final LocalDate birthDate;
+    private LocalDate birthDate;
     private ArrayList<Account> clientAccounts;
+
+    public Client() {
+        this.clientAccounts = new ArrayList<>();
+    }
 
     public Client(String firstName, String lastName, LocalDate birthDate) {
         this.firstName = firstName;
@@ -45,7 +49,15 @@ public class Client {
         return birthDate;
     }
 
+    public void setBirthDate(LocalDate birthDate) {
+        this.birthDate = birthDate;
+    }
+
     public ArrayList<Account> getClientAccounts() {
         return clientAccounts;
+    }
+
+    public void setClientAccounts(ArrayList<Account> clientAccounts) {
+        this.clientAccounts = clientAccounts;
     }
 }

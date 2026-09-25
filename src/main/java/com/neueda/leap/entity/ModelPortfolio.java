@@ -7,10 +7,8 @@ public class ModelPortfolio {
     private String name;
     private HashMap<ModelPortfolioHolding, Double> holdings;
 
-    public ModelPortfolio(Long modelPortfolioId, String name, HashMap<ModelPortfolioHolding, Double> holdings) {
-        this.modelPortfolioId = modelPortfolioId;
-        this.name = name;
-        this.holdings = holdings;
+    public ModelPortfolio() {
+        this.holdings = new HashMap<>();
     }
 
     public Long getModelPortfolioId() {
@@ -32,5 +30,9 @@ public class ModelPortfolio {
 
     public HashMap<ModelPortfolioHolding, Double> getHoldings() {
         return holdings;
+    }
+
+    public void setHoldings(HashMap<ModelPortfolioHolding, Double> holdings) {
+        this.holdings = holdings;
     }
 }
