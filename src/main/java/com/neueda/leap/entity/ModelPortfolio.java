@@ -17,6 +17,11 @@ public class ModelPortfolio {
         return modelPortfolioId;
     }
 
+
+    public void  setModelPortfolioId(Long modelPortfolioId) {
+        this.modelPortfolioId = modelPortfolioId;
+    }
+
     public String getName() {
         return name;
     }

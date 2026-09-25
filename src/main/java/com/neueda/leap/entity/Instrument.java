@@ -11,7 +11,7 @@ public class Instrument {
     private Long instrumentId;
     private String name;
     private String ticker;
-    private InstrumentType instrumentType;
+    private final InstrumentType instrumentType;
 
     public Instrument(String name, String ticker, InstrumentType instrumentType) {
         instrumentId = null;
@@ -22,6 +22,10 @@ public class Instrument {
 
     public Long getInstrumentId() {
         return instrumentId;
+    }
+
+    public void  setInstrumentId(Long instrumentId) {
+        this.instrumentId = instrumentId;
     }
 
     public String getName() {

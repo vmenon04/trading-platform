@@ -1,12 +1,11 @@
 package com.neueda.leap.entity;
 
 import java.util.HashMap;
-import java.util.Map;
 
 public class Account {
 
     private Long accountId;
-    private String accountType;
+    private final String accountType;
     private final int clientId;
     private double balance;
     HashMap<Instrument, AccountHolding> holdings;
@@ -21,6 +20,10 @@ public class Account {
 
     public Long getAccountId() {
         return accountId;
+    }
+
+    public  void setAccountId(Long accountId) {
+        this.accountId = accountId;
     }
 
     public String getAccountType() {

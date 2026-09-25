@@ -6,7 +6,7 @@ public class AccountHolding {
 
     public enum HoldingStatus {
         ACTIVE, INACTIVE
-    };
+    }
 
     private int accountId;
     private int instrumentId;

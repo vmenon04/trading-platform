@@ -6,16 +6,14 @@ public class AccountTrade {
 
     public enum TradeType {
         BUY, SELL
-    };
+    }
 
     public enum TradeStatus {
         PENDING, ACCEPTED, REJECTED, FULFILLED
-    };
+    }
 
-    private final Long tradeId;
-    private final LocalDate createdTime;
-    private LocalDate processTime;
-    private LocalDate fulfilledTime;
+    private Long tradeId;
+    private final LocalDate tradeTime;
     private final int accountId;
     private final int instrumentId;
     private final TradeType tradeType;
@@ -23,7 +21,7 @@ public class AccountTrade {
     private final double price;
     private final TradeStatus tradeStatus;
 
-    public AccountTrade(int accountId, LocalDate createdTime, int instrumentId, TradeType tradeType, double quantity, double price) {
+    public AccountTrade(int accountId, LocalDate tradeTime, int instrumentId, TradeType tradeType, double quantity, double price) {
         this.tradeId = null;
 
         if(quantity <= 0) {
@@ -35,7 +33,7 @@ public class AccountTrade {
         }
 
         this.accountId = accountId;
-        this.createdTime = createdTime;
+        this.tradeTime = tradeTime;
         this.instrumentId = instrumentId;
         this.tradeType = tradeType;
         this.quantity = quantity;
@@ -45,6 +43,10 @@ public class AccountTrade {
 
     public Long getTradeId() {
         return tradeId;
+    }
+
+    public void setTradeId(Long tradeId) {
+        this.tradeId = tradeId;
     }
 
     public int getAccountId() {
@@ -71,7 +73,7 @@ public class AccountTrade {
         return tradeStatus;
     }
 
-    public LocalDate getCreationTime() {
-        return createdTime;
+    public LocalDate getTradeTime() {
+        return tradeTime;
     }
 }

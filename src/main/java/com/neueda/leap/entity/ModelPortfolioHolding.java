@@ -6,16 +6,16 @@ public class ModelPortfolioHolding {
 
     public enum ModelPortfolioStatus {
         ACTIVE, INACTIVE
-    };
+    }
 
-    private Long modelPortfolioId;
-    private Long instrumentId;
-    private LocalDate effectiveDate;
-    private double targetWeightPct;
+    private final Long modelPortfolioId;
+    private final Long instrumentId;
+    private final LocalDate effectiveDate;
+    private final double targetWeightPct;
     private ModelPortfolioStatus status;
 
-    public ModelPortfolioHolding(Long instrumentId, LocalDate effectiveDate, double targetWeightPct, ModelPortfolioStatus status) {
-        this.modelPortfolioId = null;
+    public ModelPortfolioHolding(Long modelPortfolioId, Long instrumentId, LocalDate effectiveDate, double targetWeightPct, ModelPortfolioStatus status) {
+        this.modelPortfolioId = modelPortfolioId;
         this.instrumentId = instrumentId;
         this.effectiveDate = effectiveDate;
         this.targetWeightPct = targetWeightPct;

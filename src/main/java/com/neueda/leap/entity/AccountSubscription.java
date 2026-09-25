@@ -12,7 +12,7 @@ public class AccountSubscription {
     private final LocalDate subscriptionDate;
     private SubscriptionStatus status;
 
-    public AccountSubscription(int accountId, int modelPortfolioId, LocalDate subscriptionDate, SubscriptionStatus status) {
+    public AccountSubscription(int accountId, int modelPortfolioId, LocalDate subscriptionDate) {
         this.accountId = accountId;
         this.modelPortfolioId = modelPortfolioId;
         this.subscriptionDate = subscriptionDate;
