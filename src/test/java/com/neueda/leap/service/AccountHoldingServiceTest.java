@@ -64,14 +64,14 @@ class AccountHoldingServiceTest {
     void addQuantityInsertsIncreasedSnapshot() {
         givenActiveQuantity("100");
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verifyDeactivatedThenInserted("150", "active");
+        verifyDeactivatedThenInserted("150", "ACTIVE");
     }
 
     @Test
     void addQuantityStartsFromZeroForNewHolding() {
         givenActiveQuantity(null);
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verifyDeactivatedThenInserted("50", "active");
+        verifyDeactivatedThenInserted("50", "ACTIVE");
     }
 
     @Test
@@ -87,14 +87,14 @@ class AccountHoldingServiceTest {
     void removeQuantityInsertsDecreasedSnapshot() {
         givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("30"));
-        verifyDeactivatedThenInserted("70", "active");
+        verifyDeactivatedThenInserted("70", "ACTIVE");
     }
 
     @Test
     void removeQuantityMarksInactiveOnFullSell() {
         givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("100"));
-        verifyDeactivatedThenInserted("0", "inactive");
+        verifyDeactivatedThenInserted("0", "INACTIVE");
     }
 
     @Test

@@ -195,7 +195,7 @@ SELECT
     (i % 334) + 1,
     NOW() - INTERVAL '1 day' * (10000 - i),
     (random() * 100000)::INT,
-    CASE WHEN random() < 0.8 THEN 'active' ELSE 'inactive' END
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
 -- account_trades (10,000 rows)
@@ -209,10 +209,10 @@ SELECT
     round((1 + random() * 9999)::NUMERIC, 4),
     round((1 + random() * 999)::NUMERIC, 4),
     CASE (random() * 3)::INT
-      WHEN 0 THEN 'pending'
-      WHEN 1 THEN 'accepted'
-      WHEN 2 THEN 'fulfilled'
-      ELSE 'rejected'
+      WHEN 0 THEN 'PENDING'
+      WHEN 1 THEN 'ACCEPTED'
+      WHEN 2 THEN 'FULFILLED'
+      ELSE 'REJECTED'
     END
 FROM generate_series(0, 9999) AS i;
 
@@ -225,7 +225,7 @@ SELECT
     (i % 334) + 1,
     DATE '2024-01-01' + (i / 1000),
     round((random() * 100)::NUMERIC, 2),
-    CASE WHEN random() < 0.8 THEN 'active' ELSE 'inactive' END
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
 -- account_subscriptions (10,000 rows)
@@ -236,5 +236,5 @@ SELECT
     (i % 5000) + 1,
     (i % 200) + 1,
     DATE '2024-01-01' + (i / 5000),
-    CASE WHEN random() < 0.8 THEN 'active' ELSE 'inactive' END
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;

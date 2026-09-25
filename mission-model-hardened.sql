@@ -56,7 +56,7 @@ CREATE TABLE account_holdings (
     PRIMARY KEY (account_id, instrument_id, as_of_date),
     quantity NUMERIC(18, 8) NOT NULL    
         CHECK (quantity >= 0),
-    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
+    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
     
 );
 
@@ -75,7 +75,7 @@ CREATE TABLE account_trades (
         CHECK (quantity > 0),
     price NUMERIC(14, 4) NOT NULL
         CHECK (price > 0),
-    status TEXT CHECK (status IN ('pending', 'accepted', 'rejected', 'fulfilled')) NOT NULL
+    status TEXT CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'FULFILLED')) NOT NULL
 );
 
 CREATE INDEX idx_account_trades_account_id ON account_trades(account_id);
@@ -95,7 +95,7 @@ CREATE TABLE model_portfolio_holdings (
     PRIMARY KEY (model_portfolio_id, instrument_id, effective_date),
     target_weight_pct NUMERIC(5,2) NOT NULL
         CHECK (target_weight_pct >= 0 AND target_weight_pct <= 100),
-    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
+    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
 );
 
 CREATE INDEX idx_model_portfolio_holdings_model_portfolio_id ON model_portfolio_holdings(model_portfolio_id);
@@ -109,7 +109,7 @@ CREATE TABLE account_subscriptions (
     subscription_date DATE NOT NULL,
     unsubscribe_date DATE,
     PRIMARY KEY (account_id, model_portfolio_id, subscription_date),
-    status TEXT CHECK (status IN ('active', 'inactive')) NOT NULL
+    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
 );
 
 CREATE INDEX idx_account_subscriptions_account_id ON account_subscriptions(account_id);

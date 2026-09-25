@@ -11,11 +11,11 @@ import org.springframework.stereotype.Service;
 @Service
 public class OrderManagementService {
 
-    // must match the CHECK constraint on account_trades.status ( i say make this caps later )
-    private static final String PENDING = "pending";
-    private static final String ACCEPTED = "accepted";
-    private static final String REJECTED = "rejected";
-    private static final String FULFILLED = "fulfilled";
+    // must match the CHECK constraint on account_trades.status
+    private static final String PENDING = "PENDING";
+    private static final String ACCEPTED = "ACCEPTED";
+    private static final String REJECTED = "REJECTED";
+    private static final String FULFILLED = "FULFILLED";
 
     private final InstrumentService instrumentService;
     private final ValidationService validationService;
