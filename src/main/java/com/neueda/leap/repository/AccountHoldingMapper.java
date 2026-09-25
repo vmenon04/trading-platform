@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 
 // The 'active' row is current holding and older rows are 'inactive'
+// we use clock_timestamp() rather than NOW() since NOW() is fixed for a whole transaction
 @Mapper
 public interface AccountHoldingMapper {
     // get quantity of the current (active) holding
@@ -21,7 +22,7 @@ public interface AccountHoldingMapper {
     void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
-            + "VALUES (#{accountId}, #{instrumentId}, NOW(), #{quantity}, #{status})")
+            + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
     void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
                         @Param("quantity") BigDecimal quantity, @Param("status") String status);
 }
