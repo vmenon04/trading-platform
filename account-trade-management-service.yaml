@@ -34,7 +34,6 @@ paths:
               instrument_id: 1
               tradeType: "BUY"
               quantity: 10
-              price: 150.00
       responses:
         '201':
           description: Trade accepted and executed successfully
@@ -64,6 +63,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '422':
             description: Unprocessable entity, trade request could not be processed because of a business rule violation
             content:
@@ -79,7 +84,7 @@ components:
   schemas:
     TradeRequest:
       type: object
-      required: ["instrument_id", "tradeType", "quantity", "price"]
+      required: ["instrument_id", "tradeType", "quantity"]
       properties:
         instrument_id:
             type: integer
@@ -87,10 +92,6 @@ components:
             type: string
             enum: ["BUY", "SELL"]
         quantity:
-            type: number
-            format: double
-            exclusiveMinimum: 0
-        price:
             type: number
             format: double
             exclusiveMinimum: 0
