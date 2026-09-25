@@ -7,10 +7,10 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record OrderResponseDTO(
-        @Positive int accountId,
-        @Positive int instrumentId,
+        @Positive int tradeId,
         @NotBlank String status,
-        @Positive BigDecimal fee,
+        @Positive BigDecimal executedPrice,
+        @Positive BigDecimal executedQuantity,
         @NotBlank String reason
 ) {
 }
