@@ -2,7 +2,8 @@ FROM maven:3.9-eclipse-temurin-21-alpine AS build
 WORKDIR /src
 COPY pom.xml .
 COPY src ./src
-RUN mvn -B clean package -DskipTests
+# skip running tests during the build process
+RUN mvn -B clean package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:21-jre-alpine
 WORKDIR /app

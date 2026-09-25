@@ -11,7 +11,6 @@ def getSafeTag() {
 def SmokeTest() {
     def safeTag = getSafeTag()
     sh "docker run --rm fintech-five:${safeTag}"
-    junit 'target/surefire-reports/*.xml'
 }
 
 def StaticAnalysis() {
@@ -37,7 +36,8 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh 'mvn -B clean package'
+                // skip compiling and running them while building (tests will be run in the Code-Coverage stage)
+                sh 'mvn -B clean package -Dmaven.test.skip=true'
                 script {
                     // github branch names can contain characters that are not valid in docker tags.
                     def safeTag = getSafeTag()
