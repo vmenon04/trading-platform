@@ -1,11 +1,16 @@
 package com.neueda.leap.dto;
 
-public class ModelPortfolioHoldingDTO {
-    private int modelPortfolioId;
-    private int instrumentId;
-    private String effectiveDate;
-    private double targetWeightPct;
-    private String status;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+import jakarta.validation.constraints.PositiveOrZero;
+
+public record ModelPortfolioHoldingDTO(
+        @Positive int modelPortfolioId,
+        @Positive int instrumentId,
+        @NotBlank String effectiveDate,
+        @PositiveOrZero double targetWeightPct,
+        @NotBlank String status
+) {
 
     public int getModelPortfolioId() {
         return modelPortfolioId;
@@ -23,15 +28,7 @@ public class ModelPortfolioHoldingDTO {
         return targetWeightPct;
     }
 
-    public void setTargetWeightPct(double targetWeightPct) {
-        this.targetWeightPct = targetWeightPct;
-    }
-
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus(String status) {
-        this.status = status;
     }
 }

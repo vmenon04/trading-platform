@@ -1,11 +1,17 @@
 package com.neueda.leap.dto;
 
-public class AccountHoldingDTO {
-    private int accountId;
-    private int instrumentId;
-    private String asOfDate;
-    private int quantity;
-    private String status;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+
+import java.math.BigDecimal;
+
+public record AccountHoldingDTO(
+        @Positive int accountId,
+        @Positive int instrumentId,
+        @NotBlank String asOfDate,
+        @Positive BigDecimal quantity,
+        @NotBlank String status
+) {
 
     public int getAccountId() {
         return accountId;
@@ -19,15 +25,11 @@ public class AccountHoldingDTO {
         return asOfDate;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus() {
-        this.status = status;
     }
 }

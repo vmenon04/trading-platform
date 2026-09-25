@@ -1,20 +1,16 @@
 package com.neueda.leap.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
-public class OrderRequestDTO {
-
-    private int accountId;
-    private int instrumentId;
-    private String side;
-    private BigDecimal quantity;
-
-    public OrderRequestDTO(int accountId, int instrumentId, String side, BigDecimal quantity) {
-        this.accountId = accountId;
-        this.instrumentId = instrumentId;
-        this.side = side;
-        this.quantity = quantity;
-    }
+public record OrderRequestDTO(
+        @Positive int accountId,
+        @Positive int instrumentId,
+        @NotBlank String side,
+        @NotNull @Positive BigDecimal quantity
+) {
 
     public int getAccountId() {
         return accountId;

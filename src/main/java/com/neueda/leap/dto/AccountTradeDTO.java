@@ -1,14 +1,20 @@
 package com.neueda.leap.dto;
 
-public class AccountTradeDTO {
-    private int tradeId;
-    private String tradeTime;
-    private int accountId;
-    private int instrumentId;
-    private String tradeType;
-    private int quantity;
-    private int price;
-    private String status;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Positive;
+
+import java.math.BigDecimal;
+
+public record AccountTradeDTO(
+        @Positive int tradeId,
+        @NotBlank String tradeTime,
+        @Positive int accountId,
+        @Positive int instrumentId,
+        @NotBlank String tradeType,
+        @Positive BigDecimal quantity,
+        @Positive BigDecimal price,
+        @NotBlank String status
+) {
 
     public int getTradeId() {
         return tradeId;
@@ -30,19 +36,15 @@ public class AccountTradeDTO {
         return tradeType;
     }
 
-    public int getQuantity() {
+    public BigDecimal getQuantity() {
         return quantity;
     }
 
-    public int getPrice() {
+    public BigDecimal getPrice() {
         return price;
     }
 
     public String getStatus() {
         return status;
-    }
-
-    public void setStatus() {
-        this.status = status;
     }
 }
