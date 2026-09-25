@@ -1,15 +1,33 @@
 package com.neueda.leap.repository;
 
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Update;
+import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Mapper;
 import com.neueda.leap.entity.Instrument;
 import java.util.List;
-import org.apache.ibatis.annotations.Mapper;
 
-// TODO: temporary code so tests work, we need to replace this with code from the feature/repository branch
-@Mapper
+@Mapper 
 public interface InstrumentMapper {
-    Instrument findById(int instrumentId);
 
+    @Select("SELECT * FROM instruments WHERE instrument_id = #{instrument_Id}")
+    Instrument findById(Integer instrument_Id);
+    
+    @Select("SELECT * FROM instruments")
+    List<Instrument> findAll();
+
+    @Select("SELECT * FROM instruments WHERE ticker = #{ticker}")
     Instrument findByTicker(String ticker);
 
-    List<Instrument> findAll();
+    @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{asset_Class})")
+    @Options(useGeneratedKeys = true, keyProperty = "instrument_Id")
+    void insert(Instrument instrument);
+
+    @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{asset_Class} WHERE instrument_id = #{instrument_Id}")
+    void update(Instrument instrument);
+
+    @Delete("DELETE FROM instruments WHERE instrument_id = #{instrument_Id}")
+    void delete(Integer instrument_Id);
 }
