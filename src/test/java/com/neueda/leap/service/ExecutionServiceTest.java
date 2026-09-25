@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -34,8 +34,8 @@ class ExecutionServiceTest {
         return argThat(actual -> actual != null && actual.compareTo(new BigDecimal(expected)) == 0);
     }
 
-    private static OrderRequest order(String side, String quantity) {
-        return new OrderRequest(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
+    private static OrderRequestDTO order(String side, String quantity) {
+        return new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
     }
 
     @Test

@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -23,7 +23,7 @@ class OrderManagementServiceTest {
     private static final int TRADE_ID = 42;
     private static final BigDecimal QUANTITY = new BigDecimal("5");
     private static final BigDecimal PRICE = new BigDecimal("100");
-    private static final OrderRequest ORDER = new OrderRequest(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
+    private static final OrderRequestDTO ORDER = new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
 
     @Mock
     private InstrumentService instrumentService;

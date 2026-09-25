@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import com.neueda.leap.entity.Instrument;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -32,8 +32,8 @@ class ValidationServiceTest {
     @InjectMocks
     private ValidationService validationService;
 
-    private static OrderRequest order(String side, String quantity) {
-        return new OrderRequest(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
+    private static OrderRequestDTO order(String side, String quantity) {
+        return new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
     }
 
     private void givenInstrumentAndBalance(String balance) {
