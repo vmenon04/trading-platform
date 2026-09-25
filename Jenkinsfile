@@ -10,7 +10,7 @@ def getSafeTag() {
 
 def SmokeTest() {
     def safeTag = getSafeTag()
-    sh "docker run --rm team-skeleton:${safeTag}"
+    sh "docker run --rm fintech-five:${safeTag}"
     junit 'target/surefire-reports/*.xml'
 }
 
@@ -41,7 +41,7 @@ pipeline {
                 script {
                     // github branch names can contain characters that are not valid in docker tags.
                     def safeTag = getSafeTag()
-                    sh "docker build -t team-skeleton:${safeTag} ."
+                    sh "docker build -t fintech-five:${safeTag} ."
                 }
             }
         }
