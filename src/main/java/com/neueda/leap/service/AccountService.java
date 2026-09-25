@@ -22,16 +22,36 @@ public class AccountService {
         return balance;
     }
 
+    // cash added to the account by the client
     public void deposit(int accountId, BigDecimal amount) {
+        increaseBalance(accountId, amount);
+    }
+
+    // cash taken out of the account by the client
+    public void withdraw(int accountId, BigDecimal amount) {
+        reduceBalance(accountId, amount);
+    }
+
+    // cash spent buying an instrument
+    public void purchase(int accountId, BigDecimal amount) {
+        reduceBalance(accountId, amount);
+    }
+
+    // cash received from selling an instrument
+    public void sell(int accountId, BigDecimal amount) {
+        increaseBalance(accountId, amount);
+    }
+
+    private void increaseBalance(int accountId, BigDecimal amount) {
         requirePositive(amount);
-        if (accountMapper.deposit(accountId, amount) == 0) {
+        if (accountMapper.increaseBalance(accountId, amount) == 0) {
             throw new NoSuchElementException("No account with id " + accountId);
         }
     }
 
-    public void withdraw(int accountId, BigDecimal amount) {
+    private void reduceBalance(int accountId, BigDecimal amount) {
         requirePositive(amount);
-        if (accountMapper.withdraw(accountId, amount) == 0) {
+        if (accountMapper.reduceBalance(accountId, amount) == 0) {
             BigDecimal balance = getBalance(accountId);
             throw new IllegalStateException(
                     "Insufficient funds in account " + accountId + ": balance " + balance + ", requested " + amount);

@@ -25,11 +25,11 @@ public class ExecutionService {
         BigDecimal total = price.multiply(quantity);
 
         if ("BUY".equals(order.side())) {
-            accountService.withdraw(accountId, total);
+            accountService.purchase(accountId, total);
             accountHoldingService.addQuantity(accountId, instrumentId, quantity);
         } else if ("SELL".equals(order.side())) {
             accountHoldingService.removeQuantity(accountId, instrumentId, quantity);
-            accountService.deposit(accountId, total);
+            accountService.sell(accountId, total);
         } else {
             throw new IllegalArgumentException("Side must be BUY or SELL, got " + order.side());
         }
