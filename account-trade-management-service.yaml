@@ -29,7 +29,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TradeRequest'
+              $ref: '#/components/schemas/OrderRequest'
             example:
               instrument_id: 1
               tradeType: "BUY"
@@ -45,7 +45,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/TradeResponse'
+                $ref: '#/components/schemas/OrderResponse'
               example:
                 tradeId: 123
                 status: "SUBMITTED"
@@ -63,18 +63,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
         '422':
             description: Unprocessable entity, trade request could not be processed because of a business rule violation
             content:
                 application/json:
                   schema:
-                      $ref: '#/components/schemas/TradeResponse'
+                      $ref: '#/components/schemas/OrderResponse'
                   example:
                     tradeId: 123
                     status: "REJECTED"
@@ -82,7 +76,7 @@ paths:
 
 components:
   schemas:
-    TradeRequest:
+    OrderRequest:
       type: object
       required: ["instrument_id", "tradeType", "quantity"]
       properties:
@@ -95,7 +89,7 @@ components:
             type: number
             format: double
             exclusiveMinimum: 0
-    TradeResponse:
+    OrderResponse:
         type: object
         required: ["tradeId", "status"]
         properties:
