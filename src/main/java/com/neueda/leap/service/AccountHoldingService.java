@@ -4,24 +4,47 @@ import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 
+/**
+ * Manages active account holding quantities by creating new holding snapshots for position changes.
+ */
 @Service
 public class AccountHoldingService {
 
-    // Must match the CHECK constraint on account_holdings.status (I think we should change it to capitalization)
-    private static final String ACTIVE = "active";
-    private static final String INACTIVE = "inactive";
+    // Must match the CHECK constraint on account_holdings.status
+    private static final String ACTIVE = "ACTIVE";
+    private static final String INACTIVE = "INACTIVE";
 
     private final AccountHoldingMapper accountHoldingMapper;
 
+    /**
+     * Creates an account holding service backed by the holding mapper.
+     *
+     * @param accountHoldingMapper mapper used to query and store holding snapshots
+     */
     public AccountHoldingService(AccountHoldingMapper accountHoldingMapper) {
         this.accountHoldingMapper = accountHoldingMapper;
     }
 
+    /**
+     * Returns the active quantity held for an instrument in an account.
+     *
+     * @param accountId account identifier
+     * @param instrumentId instrument identifier
+     * @return active quantity, or {@link BigDecimal#ZERO} when no active holding exists
+     */
     public BigDecimal getQuantity(int accountId, int instrumentId) {
         BigDecimal quantity = accountHoldingMapper.findActiveQuantity(accountId, instrumentId);
         return quantity == null ? BigDecimal.ZERO : quantity;
     }
 
+    /**
+     * Increases the active quantity held for an instrument in an account.
+     *
+     * @param accountId account identifier
+     * @param instrumentId instrument identifier
+     * @param quantity positive quantity to add
+     * @throws IllegalArgumentException if the quantity is null or not positive
+     */
     public void addQuantity(int accountId, int instrumentId, BigDecimal quantity) {
         requirePositive(quantity);
         BigDecimal newQuantity = getQuantity(accountId, instrumentId).add(quantity);
@@ -29,6 +52,15 @@ public class AccountHoldingService {
         accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, ACTIVE);
     }
 
+    /**
+     * Decreases the active quantity held for an instrument in an account.
+     *
+     * @param accountId account identifier
+     * @param instrumentId instrument identifier
+     * @param quantity positive quantity to remove
+     * @throws IllegalArgumentException if the quantity is null or not positive
+     * @throws IllegalStateException if the account holds less than the requested quantity
+     */
     public void removeQuantity(int accountId, int instrumentId, BigDecimal quantity) {
         requirePositive(quantity);
         BigDecimal current = getQuantity(accountId, instrumentId);

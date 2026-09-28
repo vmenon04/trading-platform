@@ -1,5 +1,7 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.entity.AccountSubscription.SubscriptionStatus;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

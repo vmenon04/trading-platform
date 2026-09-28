@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -23,7 +23,7 @@ class OrderManagementServiceTest {
     private static final int TRADE_ID = 42;
     private static final BigDecimal QUANTITY = new BigDecimal("5");
     private static final BigDecimal PRICE = new BigDecimal("100");
-    private static final OrderRequest ORDER = new OrderRequest(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
+    private static final OrderRequestDTO ORDER = new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
 
     @Mock
     private InstrumentService instrumentService;
@@ -45,7 +45,7 @@ class OrderManagementServiceTest {
     }
 
     private void givenPendingTradeRecorded(BigDecimal price) {
-        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, price, "pending"))
+        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, price, "PENDING"))
                 .thenReturn(TRADE_ID);
     }
 
@@ -58,10 +58,10 @@ class OrderManagementServiceTest {
 
         InOrder inOrder = inOrder(validationService, accountTradeMapper, executionService);
         inOrder.verify(validationService).validate(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "pending");
-        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "accepted");
+        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "PENDING");
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "ACCEPTED");
         inOrder.verify(executionService).execute(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "fulfilled");
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "FULFILLED");
     }
 
     @Test
@@ -71,7 +71,7 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "rejected");
+        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "REJECTED");
         verify(accountTradeMapper, never()).insertStatus(anyInt(), any());
         verifyNoInteractions(executionService);
     }
@@ -104,8 +104,8 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).insertStatus(TRADE_ID, "rejected");
-        verify(accountTradeMapper, never()).insertStatus(TRADE_ID, "fulfilled");
+        verify(accountTradeMapper).insertStatus(TRADE_ID, "REJECTED");
+        verify(accountTradeMapper, never()).insertStatus(TRADE_ID, "FULFILLED");
     }
 
     @Test

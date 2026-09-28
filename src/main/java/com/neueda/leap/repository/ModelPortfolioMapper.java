@@ -12,23 +12,27 @@ import java.util.List;
 
 @Mapper
 public interface ModelPortfolioMapper {
-    @Select ("SELECT * FROM model_portfolios WHERE model_portoflio_id = #{model_Portoflio_Id}")
-    ModelPortfolio findById(Integer model_Portoflio_Id);
+    // columns aliased to the ModelPortfolio field names, so MyBatis fills the right fields
+    String COLUMNS = "model_portfolio_id AS modelPortfolioId, name";
+
+    @Select ("SELECT " + COLUMNS + " FROM model_portfolios WHERE model_portfolio_id = #{model_Portfolio_Id}")
+    ModelPortfolio findById(Integer model_Portfolio_Id);
 
 
-    @Select("SELECT * FROM model_portfolios")
+    @Select("SELECT " + COLUMNS + " FROM model_portfolios")
     List<ModelPortfolio> findAll();
 
-    @Select("SELECT * FROM model_portfolios WHERE name = #{name}")
+    @Select("SELECT " + COLUMNS + " FROM model_portfolios WHERE name = #{name}")
     ModelPortfolio findByName(String name);
 
+    // #{...} are ModelPortfolio field names
     @Insert("INSERT INTO model_portfolios(name) VALUES(#{name})")
-    @Options(useGeneratedKeys = true, keyProperty = "model_Portoflio_Id")
+    @Options(useGeneratedKeys = true, keyProperty = "modelPortfolioId", keyColumn = "model_portfolio_id")
     void insert(ModelPortfolio modelPortfolio);
 
-    @Update("UPDATE model_portfolios SET name = #{name} WHERE model_portoflio_id = #{model_Portoflio_Id}")
+    @Update("UPDATE model_portfolios SET name = #{name} WHERE model_portfolio_id = #{modelPortfolioId}")
     void update(ModelPortfolio modelPortfolio);
 
-    @Delete("DELETE FROM model_portfolios WHERE model_portoflio_id = #{model_Portoflio_Id}")
-    void delete(Integer model_Portoflio_Id);
+    @Delete("DELETE FROM model_portfolios WHERE model_portfolio_id = #{model_Portfolio_Id}")
+    void delete(Integer model_Portfolio_Id);
 }

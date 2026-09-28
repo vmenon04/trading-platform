@@ -1,0 +1,77 @@
+sequenceDiagram
+    autonumber
+
+    actor Client
+    participant OMS as Order Management Service
+    participant Validation as Validation Service
+    participant InstrumentSvc as Instrument Service
+    participant AccountSvc as Account Service
+    participant HoldingSvc as Holding Service
+    participant Pricing as Pricing Service
+    participant MarketData as External Price API
+    participant Execution as Execution Service
+
+    Client->>OMS: Place order
+    activate OMS
+    Note over OMS: Order is recorded with status = pending
+
+    OMS->>Validation: Validate order
+    Validation-->>OMS: valid/invalid
+    activate Validation
+
+
+    alt Buy order
+        Validation->>AccountSvc: Check sufficient balance
+        AccountSvc-->>Validation: Sufficient / Insufficient
+        alt Insufficient balance
+            Validation-->>OMS: Validation failed
+        else Sufficient balance
+            Validation-->>OMS: Validation passed
+
+
+            OMS->>Pricing: Request execution price
+            Pricing->>MarketData: Get latest market price
+            MarketData-->>Pricing: Market price
+            Pricing-->>OMS: Execution price
+
+            OMS->>Execution: Execute buy order
+            activate Execution
+            Execution->>AccountSvc: Debit cash balance
+            AccountSvc-->>Execution: Balance updated
+            Execution->>HoldingSvc: Increase holding quantity
+            HoldingSvc-->>Execution: Holding updated
+            Execution-->>OMS: Order filled
+            deactivate Execution
+
+
+        end
+    else Sell order
+        Validation->>HoldingSvc: Check sufficient holding
+        HoldingSvc-->>Validation: Sufficient / Insufficient
+        alt Insufficient holding
+            Validation-->>OMS: Validation failed
+
+        else Sufficient holding
+            Validation-->>OMS: Validation passed
+
+
+            OMS->>Pricing: Request execution price
+            Pricing->>MarketData: Get latest market price
+            MarketData-->>Pricing: Market price
+            Pricing-->>OMS: Execution price
+
+            OMS->>Execution: Execute sell order
+            activate Execution
+            Execution->>HoldingSvc: Reduce holding quantity
+            HoldingSvc-->>Execution: Holding updated
+            Execution->>AccountSvc: Credit cash balance
+            AccountSvc-->>Execution: Balance updated
+            Execution-->>OMS: Order filled
+            deactivate Execution
+
+        end
+    end
+
+    deactivate Validation
+    deactivate OMS
+

@@ -5,15 +5,30 @@ import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
 
+/**
+ * Provides account cash balance lookups and balance adjustments for cash movements and trade execution.
+ */
 @Service
 public class AccountService {
 
     private final AccountMapper accountMapper;
 
+    /**
+     * Creates an account service backed by the account mapper.
+     *
+     * @param accountMapper mapper used to query and update account balances
+     */
     public AccountService(AccountMapper accountMapper) {
         this.accountMapper = accountMapper;
     }
 
+    /**
+     * Returns the current balance for an account.
+     *
+     * @param accountId account identifier
+     * @return current account balance
+     * @throws NoSuchElementException if the account does not exist
+     */
     public BigDecimal getBalance(int accountId) {
         BigDecimal balance = accountMapper.findBalance(accountId);
         if (balance == null) {
@@ -22,22 +37,50 @@ public class AccountService {
         return balance;
     }
 
-    // cash added to the account by the client
+    /**
+     * Adds client cash to an account.
+     *
+     * @param accountId account identifier
+     * @param amount positive amount to deposit
+     * @throws IllegalArgumentException if the amount is null or not positive
+     * @throws NoSuchElementException if the account does not exist
+     */
     public void deposit(int accountId, BigDecimal amount) {
         increaseBalance(accountId, amount);
     }
 
-    // cash taken out of the account by the client
+    /**
+     * Removes client cash from an account.
+     *
+     * @param accountId account identifier
+     * @param amount positive amount to withdraw
+     * @throws IllegalArgumentException if the amount is null or not positive
+     * @throws IllegalStateException if the account has insufficient funds
+     */
     public void withdraw(int accountId, BigDecimal amount) {
         reduceBalance(accountId, amount);
     }
 
-    // cash spent buying an instrument
+    /**
+     * Deducts cash from an account to settle a purchase.
+     *
+     * @param accountId account identifier
+     * @param amount positive cash amount to remove
+     * @throws IllegalArgumentException if the amount is null or not positive
+     * @throws IllegalStateException if the account has insufficient funds
+     */
     public void purchase(int accountId, BigDecimal amount) {
         reduceBalance(accountId, amount);
     }
 
-    // cash received from selling an instrument
+    /**
+     * Credits cash to an account after a sale.
+     *
+     * @param accountId account identifier
+     * @param amount positive cash amount to add
+     * @throws IllegalArgumentException if the amount is null or not positive
+     * @throws NoSuchElementException if the account does not exist
+     */
     public void sell(int accountId, BigDecimal amount) {
         increaseBalance(accountId, amount);
     }

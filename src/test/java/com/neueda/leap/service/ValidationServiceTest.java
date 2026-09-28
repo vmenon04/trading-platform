@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import com.neueda.leap.entity.Instrument;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
@@ -32,12 +32,12 @@ class ValidationServiceTest {
     @InjectMocks
     private ValidationService validationService;
 
-    private static OrderRequest order(String side, String quantity) {
-        return new OrderRequest(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
+    private static OrderRequestDTO order(String side, String quantity) {
+        return new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
     }
 
     private void givenInstrumentAndBalance(String balance) {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument());
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(balance));
     }
 
@@ -87,6 +87,18 @@ class ValidationServiceTest {
     }
 
     @Test
+    void rejectsQuantityWithMoreThanEightDecimals() {
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "0.000000001"), PRICE));
+        verifyNoInteractions(instrumentService, accountService, accountHoldingService);
+    }
+
+    @Test
+    void acceptsQuantityWithEightDecimals() {
+        givenInstrumentAndBalance("1000");
+        assertDoesNotThrow(() -> validationService.validate(order("BUY", "0.12345678"), PRICE));
+    }
+
+    @Test
     void rejectsNullOrder() {
         assertThrows(IllegalArgumentException.class, () -> validationService.validate(null, PRICE));
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
@@ -100,7 +112,7 @@ class ValidationServiceTest {
 
     @Test
     void rejectsUnknownAccount() {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument());
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenThrow(new NoSuchElementException());
         assertThrows(NoSuchElementException.class, () -> validationService.validate(order("BUY", "5"), PRICE));
     }

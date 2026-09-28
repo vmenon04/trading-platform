@@ -16,17 +16,22 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface AccountMapper {
 
-    @Select("SELECT * FROM accounts WHERE account_id = #{account_Id}")
+    // columns aliased to the Account field names, so MyBatis fills the right fields
+    // (accounts has no client_id column, so clientId is not filled here; the link is in client_accounts)
+    String COLUMNS = "account_id AS accountId, account_type AS accountType, balance";
+
+    @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{account_Id}")
     Account findById(Integer account_Id);
 
-    @Select("SELECT * FROM accounts")
-    List<Account> findAll(); 
+    @Select("SELECT " + COLUMNS + " FROM accounts")
+    List<Account> findAll();
 
-    @Insert("INSERT INTO accounts(account_type, balance) VALUES(#{account_Type}, #{balance})")
-    @Options(useGeneratedKeys = true, keyProperty = "account_Id")
+    // #{...} are Account field names
+    @Insert("INSERT INTO accounts(account_type, balance) VALUES(#{accountType}, #{balance})")
+    @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")
     void insert(Account account);
 
-    @Update("UPDATE accounts SET account_type = #{account_Type}, balance = #{balance} WHERE account_id = #{account_Id}")
+    @Update("UPDATE accounts SET account_type = #{accountType}, balance = #{balance} WHERE account_id = #{accountId}")
     void update(Account account);
 
     @Delete("DELETE FROM accounts WHERE account_id = #{account_Id}")

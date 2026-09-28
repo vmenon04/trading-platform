@@ -3,7 +3,9 @@ package com.neueda.leap.entity;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
-import java.util.Date;
+
+import com.neueda.leap.entity.AccountTrade.TradeType;
+import com.neueda.leap.entity.AccountTrade.TradeStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -19,7 +21,7 @@ public class AccountTradeTest {
 
     @BeforeEach
     void setUp() {
-        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
+        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, AccountTrade.TradeType.BUY,
                 QUANTITY, PRICE);
     }
 
@@ -30,10 +32,10 @@ public class AccountTradeTest {
         assertEquals(TRADE_ID, trade.getTradeId());
         assertEquals(ACCOUNT_ID, trade.getAccountId());
         assertEquals(INSTRUMENT_ID, trade.getInstrumentId());
-        assertEquals(TradeType.BUY, trade.getTradeType());
+        assertEquals(AccountTrade.TradeType.BUY, trade.getTradeType());
         assertEquals(QUANTITY, trade.getQuantity());
         assertEquals(PRICE, trade.getPrice());
-        assertEquals(TradeStatus.PENDING, trade.getStatus());
+        assertEquals(AccountTrade.TradeStatus.PENDING, trade.getStatus());
     }
 
     // BR-05: Order validation before acceptance
@@ -105,16 +107,16 @@ public class AccountTradeTest {
     @Test
     void testTradeStatusProgression() {
         assertEquals(TradeStatus.PENDING, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.ACCEPTED);
+        trade.updateStatus(TradeStatus.ACCEPTED);
         assertEquals(TradeStatus.ACCEPTED, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.FULFILLED);
+        trade.updateStatus(TradeStatus.FULFILLED);
         assertEquals(TradeStatus.FULFILLED, trade.getStatus());
     }
 
     @Test
     void testTradeCanBeRejected() {
         assertEquals(TradeStatus.PENDING, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.REJECTED);
+        trade.updateStatus(TradeStatus.REJECTED);
         assertEquals(TradeStatus.REJECTED, trade.getStatus());
     }
 
@@ -126,8 +128,8 @@ public class AccountTradeTest {
         LocalDate end = LocalDate.now();
 
         assertAll(
-            () -> assertTrue(auditedTrade.getCreatedTime().after(start) || auditedTrade.getCreatedTime().equals(start)),
-            () -> assertTrue(auditedTrade.getCreatedTime().before(end) || auditedTrade.getCreatedTime().equals(end))
+            () -> assertTrue(auditedTrade.getCreationTime().isAfter(start) || auditedTrade.getCreationTime().equals(start)),
+            () -> assertTrue(auditedTrade.getCreationTime().isBefore(end) || auditedTrade.getCreationTime().equals(end))
         );
     }
 
@@ -137,19 +139,19 @@ public class AccountTradeTest {
         AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
                 TradeType.BUY, QUANTITY, PRICE);
 
-        Date creationTime = auditedTrade.getCreationTime();
+        LocalDate creationTime = auditedTrade.getCreationTime();
 
         assertNull(auditedTrade.getProcessTime());
         auditedTrade.updateStatus(TradeStatus.ACCEPTED);
-        Date acceptedTime = auditedTrade.getProcessTime();
+        LocalDate acceptedTime = auditedTrade.getProcessTime();
 
-        assertTrue(creationTime.before(acceptedTime));
+        assertTrue(creationTime.isBefore(acceptedTime));
 
         assertNull(auditedTrade.getFulfilledTime());
-        auditedTrade.updateStatus(TradeStatus.FILLED);
-        Date fulfilledTime = auditedTrade.getFulfilledTime();
+        auditedTrade.updateStatus(TradeStatus.FULFILLED);
+        LocalDate fulfilledTime = auditedTrade.getFulfilledTime();
 
-        assertTrue(acceptedTime.before(fulfilledTime));
+        assertTrue(acceptedTime.isBefore(fulfilledTime));
     }
 
     @Test
@@ -164,7 +166,7 @@ public class AccountTradeTest {
         outputString = outputString + ("\n" + auditedTrade.toString());
         assertEquals(outputString, auditedTrade.getHistory());
 
-        auditedTrade.updateStatus(TradeStatus.FILLED);
+        auditedTrade.updateStatus(TradeStatus.FULFILLED);
         outputString = outputString + ("\n" + auditedTrade.toString());
         assertEquals(outputString, auditedTrade.getHistory());
     }

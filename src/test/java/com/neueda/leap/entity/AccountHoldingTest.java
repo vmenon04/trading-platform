@@ -2,6 +2,7 @@ package com.neueda.leap.entity;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import com.neueda.leap.entity.AccountHolding.HoldingStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 
