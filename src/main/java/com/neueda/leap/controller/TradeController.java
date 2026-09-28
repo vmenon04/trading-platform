@@ -21,14 +21,14 @@ public class TradeController {
     }
 
     @PostMapping
-    public ResponseEntity<TradeResponse> placeTrade(
+    public ResponseEntity<OrderResponseDTO> placeTrade(
             @PathVariable int accountId,
             @Valid @RequestBody OrderRequestDTO orderRequestDTO) {
 
         long tradeId = orderManagementService.placeOrder(orderRequestDTO);
         
-        TradeResponse response = new TradeResponse();
-        response.setStatus("ACCEPTED");
+        OrderResponseDTO response = new OrderResponseDTO();
+        response.setStatus("EXECUTED");
         response.setTradeId(tradeId);
         
         return ResponseEntity.ok(response);

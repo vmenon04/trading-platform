@@ -15,8 +15,8 @@ import java.util.NoSuchElementException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<TradeResponse> handleIllegalStateException(IllegalStateException ex) {
-        TradeResponse response = new TradeResponse();
+    public ResponseEntity<TradeResponseDTO> handleIllegalStateException(IllegalStateException ex) {
+        TradeResponseDTO response = new TradeResponseDTO();
         response.setStatus("REJECTED");
         
         String message = ex.getMessage();
@@ -34,8 +34,8 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<TradeResponse> handleNoSuchElementException(NoSuchElementException ex) {
-        TradeResponse response = new TradeResponse();
+    public ResponseEntity<ErrorResponseDTO> handleNoSuchElementException(NoSuchElementException ex) {
+        ErrorResponseDTO response = new ErrorResponseDTO();
         response.setError("404");
         response.setMessage("Resource not found");
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
