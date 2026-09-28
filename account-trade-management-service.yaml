@@ -42,6 +42,7 @@ paths:
               description: URL of the newly created trade resource
               schema:
                 type: string
+                format: uri
           content:
             application/json:
               schema:
