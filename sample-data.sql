@@ -1,13 +1,15 @@
 -- Sample data loader for mission-model-hardened.sql
 -- Populates clients, accounts, client_accounts, instruments, model_portfolios (dimension tables) plus
--- account_holdings, account_trades, model_portfolio_holdings, account_subscriptions
--- with 10,000 rows each. Run mission-model-hardened.sql first to create the schema.
+-- account_holdings, account_trades (with account_trade_status and trade_total_price),
+-- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run mission-model-hardened.sql first to create the schema.
 
 TRUNCATE TABLE
     account_subscriptions,
     model_portfolio_holdings,
     model_portfolios,
     account_holdings,
+    trade_total_price,
+    account_trade_status,
     account_trades,
     client_accounts,
     accounts,
@@ -199,22 +201,32 @@ SELECT
 FROM generate_series(0, 9999) AS i;
 
 -- account_trades (10,000 rows)
--- Uses account_id, instrument_id, random trade_time within 365 days, and trade status.
-INSERT INTO account_trades (account_id, instrument_id, trade_time, trade_type, quantity, price, status)
+-- Uses account_id, instrument_id, random trade_time within 365 days and a unit price.
+INSERT INTO account_trades (account_id, instrument_id, trade_time, trade_type, quantity, price)
 SELECT
     ((i % 2500) % 5000) + 1,
     (i % 334) + 1,
     NOW() - INTERVAL '1 day' * (random() * 365)::INT,
     CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END,
     round((1 + random() * 9999)::NUMERIC, 4),
-    round((1 + random() * 999)::NUMERIC, 4),
-    CASE (random() * 3)::INT
-      WHEN 0 THEN 'PENDING'
-      WHEN 1 THEN 'ACCEPTED'
-      WHEN 2 THEN 'FULFILLED'
-      ELSE 'REJECTED'
-    END
+    round((1 + random() * 999)::NUMERIC, 4)
 FROM generate_series(0, 9999) AS i;
+
+-- account_trade_status: each trade's status history, a second apart.
+-- trade_id % 4 picks where the trade ended up:
+--   0 = PENDING, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
+INSERT INTO account_trade_status (trade_id, status, trade_time)
+SELECT trade_id, 'PENDING', trade_time FROM account_trades
+UNION ALL
+SELECT trade_id, 'ACCEPTED', trade_time + INTERVAL '1 second' FROM account_trades WHERE trade_id % 4 IN (1, 2, 3)
+UNION ALL
+SELECT trade_id, 'FULFILLED', trade_time + INTERVAL '2 seconds' FROM account_trades WHERE trade_id % 4 = 2
+UNION ALL
+SELECT trade_id, 'REJECTED', trade_time + INTERVAL '2 seconds' FROM account_trades WHERE trade_id % 4 = 3;
+
+-- trade_total_price: price * quantity for every trade
+INSERT INTO trade_total_price (trade_id, total_price)
+SELECT trade_id, price * quantity FROM account_trades;
 
 -- model_portfolio_holdings (10,000 rows)
 -- Composite key: (model_portfolio_id, instrument_id, effective_date)
