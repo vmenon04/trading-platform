@@ -46,31 +46,31 @@ public class OrderManagementService {
      * @throws IllegalArgumentException if the order request is invalid
      * @throws IllegalStateException if validation or execution fails due to business constraints
      */
-    public synchronized int placeOrder(OrderRequestDTO order) {
-        BigDecimal price = instrumentService.getCurrentPrice(order.instrumentId());
+//    public synchronized int placeOrder(OrderRequestDTO order) {
+//        BigDecimal price = instrumentService.getCurrentPrice(order.instrumentId());
+//
+//        try {
+//            validationService.validate(order, price);
+//        } catch (IllegalStateException e) {
+//            recordTrade(order, price, REJECTED);
+//            throw e;
+//        }
+//
+//        int tradeId = recordTrade(order, price, PENDING);
+//        accountTradeMapper.insertStatus(tradeId, ACCEPTED);
+//
+//        try {
+//            executionService.execute(order, price);
+//        } catch (RuntimeException e) {
+//            accountTradeMapper.insertStatus(tradeId, REJECTED);
+//            throw e;
+//        }
+//
+//        accountTradeMapper.insertStatus(tradeId, FULFILLED);
+//        return tradeId;
+//    }
 
-        try {
-            validationService.validate(order, price);
-        } catch (IllegalStateException e) {
-            recordTrade(order, price, REJECTED);
-            throw e;
-        }
-
-        int tradeId = recordTrade(order, price, PENDING);
-        accountTradeMapper.insertStatus(tradeId, ACCEPTED);
-
-        try {
-            executionService.execute(order, price);
-        } catch (RuntimeException e) {
-            accountTradeMapper.insertStatus(tradeId, REJECTED);
-            throw e;
-        }
-
-        accountTradeMapper.insertStatus(tradeId, FULFILLED);
-        return tradeId;
-    }
-
-    private int recordTrade(OrderRequestDTO order, BigDecimal price, String status) {
+    public int recordTrade(OrderRequestDTO order, BigDecimal price, String status) {
         return accountTradeMapper.insertTrade(order.accountId(), order.instrumentId(), order.side(),
                 order.quantity(), price, status);
     }

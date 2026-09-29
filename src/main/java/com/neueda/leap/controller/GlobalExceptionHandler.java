@@ -1,5 +1,6 @@
 package com.neueda.leap.controller;
 
+import com.neueda.leap.dto.ErrorResponseDTO;
 import com.neueda.leap.dto.TradeResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -15,8 +16,8 @@ import java.util.NoSuchElementException;
 public class GlobalExceptionHandler {
 
     @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<TradeResponseDTO> handleIllegalStateException(IllegalStateException ex) {
-        TradeResponseDTO response = new TradeResponseDTO();
+    public ResponseEntity<ErrorResponseDTO> handleIllegalStateException(IllegalStateException ex) {
+        ErrorResponseDTO response = new ErrorResponseDTO();
         response.setStatus("REJECTED");
         
         String message = ex.getMessage();
