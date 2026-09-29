@@ -19,6 +19,16 @@ DROP TABLE IF EXISTS client_subscriptions CASCADE;
 DROP TABLE IF EXISTS client_holdings CASCADE;
 DROP TABLE IF EXISTS client_trades CASCADE;
 
+
+
+CREATE TABLE users (
+    user_id SERIAL PRIMARY KEY,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('admin', 'client')),
+    client_id INT REFERENCES clients(client_id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
 -- clients
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
@@ -67,8 +77,7 @@ CREATE INDEX idx_account_holdings_instrument_id ON account_holdings(instrument_i
 
 CREATE TABLE account_trades (
     trade_id SERIAL,
-    trade_time TIMESTAMPTZ NOT NULL,
-    PRIMARY KEY (trade_id, trade_time),
+    PRIMARY KEY (trade_id),
     account_id INT REFERENCES accounts(account_id) NOT NULL,
     instrument_id INT REFERENCES instruments(instrument_id) NOT NULL,
     trade_type TEXT NOT NULL
@@ -76,9 +85,20 @@ CREATE TABLE account_trades (
     -- make this the precision as account_holdings.quantity
     quantity NUMERIC(18, 8) NOT NULL
         CHECK (quantity > 0),
-    price NUMERIC(18, 8) NOT NULL
-        CHECK (price > 0),
-    status TEXT CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'FULFILLED')) NOT NULL
+    trade_time TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE account_trade_status (
+    trade_id SERIAL ,
+    status TEXT CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'FULFILLED')) NOT NULL,
+    PRIMARY KEY (trade_id, status),
+    trade_time TIMESTAMPTZ NOT NULL
+);
+
+CREATE TABLE trade_total_price (
+    trade_id SERIAL PRIMARY KEY,
+    total_price NUMERIC(18, 8) NOT NULL
+        CHECK (total_price >= 0)
 );
 
 CREATE INDEX idx_account_trades_account_id ON account_trades(account_id);
