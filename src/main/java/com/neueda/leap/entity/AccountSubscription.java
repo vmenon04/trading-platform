@@ -1,16 +1,15 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.ActivityStatus;
+
 import java.time.LocalDate;
 
 public class AccountSubscription {
 
-    public enum SubscriptionStatus {
-        ACTIVE, INACTIVE
-    }
     private int accountId;
     private int modelPortfolioId;
     private LocalDate subscriptionDate;
-    private SubscriptionStatus status;
+    private ActivityStatus status;
 
     public AccountSubscription() {
     }
@@ -19,7 +18,7 @@ public class AccountSubscription {
         this.accountId = accountId;
         this.modelPortfolioId = modelPortfolioId;
         this.subscriptionDate = subscriptionDate;
-        this.status = SubscriptionStatus.ACTIVE;
+        this.status = ActivityStatus.ACTIVE;
     }
 
     public int getAccountId() {
@@ -46,11 +45,11 @@ public class AccountSubscription {
         this.subscriptionDate = subscriptionDate;
     }
 
-    public SubscriptionStatus getStatus() {
+    public ActivityStatus getStatus() {
         return status;
     }
 
-    public void setStatus(SubscriptionStatus status) {
+    public void setStatus(ActivityStatus status) {
         this.status = status;
     }
 }

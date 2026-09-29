@@ -1,6 +1,6 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.AccountTrade.TradeType;
+import com.neueda.leap.enums.TradeType;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

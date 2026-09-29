@@ -1,18 +1,13 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.enums.TradeType;
+
 import java.math.BigDecimal;
 
 import java.time.OffsetDateTime;
 
 public class AccountTrade {
-
-    public enum TradeType {
-        BUY, SELL
-    }
-
-    public enum TradeStatus {
-        PENDING, ACCEPTED, REJECTED, FULFILLED
-    }
 
     private Long tradeId;
     private OffsetDateTime tradeTime;

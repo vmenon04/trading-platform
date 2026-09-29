@@ -4,8 +4,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 
-import com.neueda.leap.entity.AccountTrade.TradeType;
-import com.neueda.leap.entity.AccountTrade.TradeStatus;
+import com.neueda.leap.enums.TradeType;
+import com.neueda.leap.enums.TradeStatus;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -21,7 +21,7 @@ public class AccountTradeTest {
 
     @BeforeEach
     void setUp() {
-        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, AccountTrade.TradeType.BUY,
+        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
                 QUANTITY, PRICE);
     }
 
@@ -32,10 +32,10 @@ public class AccountTradeTest {
         assertEquals(TRADE_ID, trade.getTradeId());
         assertEquals(ACCOUNT_ID, trade.getAccountId());
         assertEquals(INSTRUMENT_ID, trade.getInstrumentId());
-        assertEquals(AccountTrade.TradeType.BUY, trade.getTradeType());
+        assertEquals(TradeType.BUY, trade.getTradeType());
         assertEquals(QUANTITY, trade.getQuantity());
         assertEquals(PRICE, trade.getPrice());
-        assertEquals(AccountTrade.TradeStatus.PENDING, trade.getStatus());
+        assertEquals(TradeStatus.PENDING, trade.getStatus());
     }
 
     // BR-05: Order validation before acceptance
