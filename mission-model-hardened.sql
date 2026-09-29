@@ -19,6 +19,11 @@ DROP TABLE IF EXISTS client_subscriptions CASCADE;
 DROP TABLE IF EXISTS client_holdings CASCADE;
 DROP TABLE IF EXISTS client_trades CASCADE;
 
+
+
+CREATE TABLE user_accounts (
+    
+)
 -- clients
 CREATE TABLE clients (
     client_id SERIAL PRIMARY KEY,
