@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequest;
+import com.neueda.leap.dto.OrderRequestDTO;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +36,7 @@ public class ValidationService {
      * @throws IllegalArgumentException if the order, side, or quantity is invalid
      * @throws IllegalStateException if the account lacks enough cash or holdings to satisfy the order
      */
-    public void validate(OrderRequest order, BigDecimal price) {
+    public void validate(OrderRequestDTO order, BigDecimal price) {
         if (order == null) {
             throw new IllegalArgumentException("Order must not be null");
         }
@@ -47,6 +47,9 @@ public class ValidationService {
         BigDecimal quantity = order.quantity();
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Quantity must be positive");
+        }
+        if (quantity.stripTrailingZeros().scale() > 8) {
+            throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
         }
 
         int accountId = order.accountId();

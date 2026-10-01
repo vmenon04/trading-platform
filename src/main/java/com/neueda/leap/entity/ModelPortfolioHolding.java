@@ -1,5 +1,7 @@
 package com.neueda.leap.entity;
 
+import java.math.BigDecimal;
+
 import java.time.LocalDate;
 
 public class ModelPortfolioHolding {
@@ -11,13 +13,13 @@ public class ModelPortfolioHolding {
     private Long modelPortfolioId;
     private Long instrumentId;
     private LocalDate effectiveDate;
-    private double targetWeightPct;
+    private BigDecimal targetWeightPct;
     private ModelPortfolioStatus status;
 
     public ModelPortfolioHolding() {
     }
 
-    public ModelPortfolioHolding(Long modelPortfolioId, Long instrumentId, LocalDate effectiveDate, double targetWeightPct) {
+    public ModelPortfolioHolding(Long modelPortfolioId, Long instrumentId, LocalDate effectiveDate, BigDecimal targetWeightPct) {
         this.modelPortfolioId = modelPortfolioId;
         this.instrumentId = instrumentId;
         this.effectiveDate = effectiveDate;
@@ -49,11 +51,11 @@ public class ModelPortfolioHolding {
         this.effectiveDate = effectiveDate;
     }
 
-    public double getTargetWeightPct() {
+    public BigDecimal getTargetWeightPct() {
         return targetWeightPct;
     }
 
-    public void setTargetWeightPct(double targetWeightPct) {
+    public void setTargetWeightPct(BigDecimal targetWeightPct) {
         this.targetWeightPct = targetWeightPct;
     }
 

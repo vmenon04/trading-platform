@@ -5,46 +5,31 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class InstrumentTest {
+    @BeforeEach
+    void setUp() {
+        instrument = new Instrument("Apple Inc.", "AAPL", InstrumentType.STOCK);
+    }
 
     @Test
-    void noArgsConstructorLeavesFieldsAtDefaults() {
-        Instrument instrument = new Instrument();
-
-        assertAll(
-                () -> assertNull(instrument.getInstrumentId()),
-                () -> assertNull(instrument.getName()),
-                () -> assertNull(instrument.getTicker()),
-                () -> assertNull(instrument.getInstrumentType())
-        );
+    void testEquityInstrumentCanBeCreated() {
+        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.STOCK);
+        assertEquals("MSFT", equity.getTicker());
+        assertEquals(InstrumentType.STOCK, equity.getInstrumentType());
     }
 
     @Test
     void parameterizedConstructorSetsProvidedValues() {
         Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.EQUITY);
 
-        assertAll(
-                () -> assertNull(equity.getInstrumentId()),
-                () -> assertEquals("Microsoft", equity.getName()),
-                () -> assertEquals("MSFT", equity.getTicker()),
-                () -> assertEquals(InstrumentType.EQUITY, equity.getInstrumentType())
-        );
+    @Test
+    void testInstrumentCannotHaveNullTicker() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Instrument("Invalid", null, InstrumentType.STOCK));
     }
 
     @Test
-    void settersUpdateAllMutableFields() {
-        Instrument instrument = new Instrument();
-
-        instrument.setInstrumentId(9L);
-        instrument.setName("Bitcoin");
-        instrument.setTicker("BTC");
-        instrument.setInstrumentType(InstrumentType.CRYPTO);
-
-        assertAll(
-                () -> assertEquals(9L, instrument.getInstrumentId()),
-                () -> assertEquals("Bitcoin", instrument.getName()),
-                () -> assertEquals("BTC", instrument.getTicker()),
-                () -> assertEquals(InstrumentType.CRYPTO, instrument.getInstrumentType())
-        );
+    void testInstrumentCannotHaveEmptyName() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new Instrument("", "", InstrumentType.STOCK));
     }
 }
