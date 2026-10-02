@@ -11,6 +11,7 @@ import java.math.BigDecimal;
  * @param side BUY or SELL
  * @param quantity quantity traded
  * @param price unit execution price, or null if the trade was rejected
+ * @param reason why the trade was rejected, or null if it was fulfilled
  */
 public record TradeFinishedDTO(
         Long tradeId,
@@ -18,6 +19,7 @@ public record TradeFinishedDTO(
         Long instrumentId,
         String side,
         BigDecimal quantity,
-        BigDecimal price
+        BigDecimal price,
+        String reason
 ) {
 }

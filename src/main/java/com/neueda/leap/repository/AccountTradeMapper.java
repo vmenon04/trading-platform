@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Delete;
+import org.apache.ibatis.annotations.Update;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -60,5 +61,26 @@ public interface AccountTradeMapper {
             + "FROM account_trades WHERE trade_id = #{tradeId} "
             + "ORDER BY trade_time DESC LIMIT 1")
     void insertStatus(@Param("tradeId") int tradeId, @Param("status") String status);
+
+    // Vasu's additions for the Kafka execution stage, written against the split trade tables
+    // TODO: repository owner to review (and fold into the rewrite of the methods above)
+
+    // current status of a trade, or null if the trade has no status yet
+    @Select("SELECT status FROM account_trade_status WHERE trade_id = #{tradeId} ORDER BY trade_time DESC LIMIT 1")
+    String findCurrentStatus(@Param("tradeId") Long tradeId);
+
+    // unit execution price, or null if the trade was never executed
+    @Select("SELECT price FROM account_trades WHERE trade_id = #{tradeId}")
+    BigDecimal findPrice(@Param("tradeId") Long tradeId);
+
+    @Insert("INSERT INTO account_trade_status (trade_id, status, trade_time) "
+            + "VALUES (#{tradeId}, #{status}, clock_timestamp())")
+    void recordStatus(@Param("tradeId") Long tradeId, @Param("status") String status);
+
+    @Update("UPDATE account_trades SET price = #{price} WHERE trade_id = #{tradeId}")
+    void updatePrice(@Param("tradeId") Long tradeId, @Param("price") BigDecimal price);
+
+    @Insert("INSERT INTO trade_total_price (trade_id, total_price) VALUES (#{tradeId}, #{totalPrice})")
+    void insertTotalPrice(@Param("tradeId") Long tradeId, @Param("totalPrice") BigDecimal totalPrice);
 }
 
