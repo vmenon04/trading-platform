@@ -25,8 +25,7 @@ public class RecipientService {
 
         OrderSubmittedDTO response = new OrderSubmittedDTO(
                 jobId,
-                "SUBMITTED",
-                "Order accepted for processing."
+                "SUBMITTED"
         );
 
         return ResponseEntity

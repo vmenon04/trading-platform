@@ -4,8 +4,7 @@ import jakarta.validation.constraints.Positive;
 
 public record OrderSubmittedDTO(
         @Positive int jobId,
-        String status,
-        String message
+        String status
 ) {
 
 }
