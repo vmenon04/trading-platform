@@ -17,23 +17,24 @@ class ModelPortfolioDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
     void testValidModelPortfolioDTO() {
         ModelPortfolioDTO dto = new ModelPortfolioDTO(1, "Growth Portfolio");
-        assertEquals(1, dto.getModelPortfolioId());
-        assertEquals("Growth Portfolio", dto.getName());
+        assertEquals(1, dto.modelPortfolioId());
+        assertEquals("Growth Portfolio", dto.name());
     }
 
     @Test
     void testValidatePositiveId() {
-        ModelPortfolioDTO dto = new ModelPortfolioDTO(-1, "Growth Portfolio");
+        ModelPortfolioDTO dto = new ModelPortfolioDTO(invalidModelPortfolioId(), "Growth Portfolio");
         Set<ConstraintViolation<ModelPortfolioDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -60,6 +61,10 @@ class ModelPortfolioDTOTest {
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private int invalidModelPortfolioId() {
+        return Integer.parseInt("-1");
     }
 }
 
