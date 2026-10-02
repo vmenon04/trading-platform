@@ -14,11 +14,17 @@ import java.net.URI;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicLong;
 
 @Service
 public class RecipientService {
 
+    private static final AtomicLong JOB_ID_GENERATOR = new AtomicLong(1);
     public ResponseEntity<Void> publishOrder(@Valid OrderRequestDTO dto) throws ExecutionException, InterruptedException {
+
+        long taskId = JOB_ID_GENERATOR.getAndIncrement();
+
+        TradeSubmittedDTO tradeSubmitted = new TradeSubmittedDTO(dto.getInstrumentId(), dto.getAccountId(), dto.getSide(), dto.getQuantity(), dto.getQuote(), taskId);
 
         Properties props = new Properties();
 
@@ -27,9 +33,9 @@ public class RecipientService {
         props.put("key.serializer", "org.apache.kafka.common.serialization.IntegerSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.JsonSerializer");
 
-        try (KafkaProducer<Integer, OrderRequestDTO> producer = new KafkaProducer<>(props)) {
-            ProducerRecord<Integer, OrderRequestDTO> record = new ProducerRecord<>("trades.submitted", dto.accountId(), dto);
-           producer.send(record).get();
+        try (KafkaProducer<Integer, TradeSubmittedDTO> producer = new KafkaProducer<>(props)) {
+            ProducerRecord<Integer, TradeSubmittedDTO> record = new ProducerRecord<>("trades.submitted", tradeSubmitted.accountId(), tradeSubmitted);
+            producer.send(record).get();
 
         }
         catch (InterruptedException e) {
@@ -39,18 +45,11 @@ public class RecipientService {
             throw new IllegalStateException("Kafka publish failed", e);
         }
 
-        int jobId = UUID.randomUUID().hashCode();
-        
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
                 .path("/job/{jobId}")
-                .buildAndExpand(jobId)
+                .buildAndExpand(taskId)
                 .toUri();
-
-        OrderSubmittedDTO response = new OrderSubmittedDTO(
-                jobId,
-                "SUBMITTED"
-        );
 
         return ResponseEntity
                 .accepted()
