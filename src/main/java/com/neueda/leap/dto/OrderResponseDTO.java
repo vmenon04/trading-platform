@@ -12,5 +12,4 @@ public record OrderResponseDTO(
         @Positive BigDecimal executedPrice,
         @Positive BigDecimal executedQuantity,
         @NotBlank String reason
-) {
-}
+) {}
