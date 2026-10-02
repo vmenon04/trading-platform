@@ -1,7 +1,6 @@
 package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.OrderRequestDTO;
-import com.neueda.leap.dto.OrderSubmittedDTO;
 import com.neueda.leap.service.RecipientService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;

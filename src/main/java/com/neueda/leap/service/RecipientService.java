@@ -1,7 +1,6 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.dto.OrderRequestDTO;
-import com.neueda.leap.dto.OrderSubmittedDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -12,7 +11,6 @@ import org.apache.kafka.clients.producer.ProducerRecord;
 
 import java.net.URI;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -47,7 +45,7 @@ public class RecipientService {
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
-                .path("/job/{jobId}")
+                .path("/tasks/{taskId}")
                 .buildAndExpand(taskId)
                 .toUri();
 
