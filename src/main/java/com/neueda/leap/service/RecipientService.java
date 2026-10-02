@@ -3,7 +3,6 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.OrderRequestDTO;
 import com.neueda.leap.dto.OrderSubmittedDTO;
 import jakarta.validation.Valid;
-import org.apache.kafka.clients.producer.RecordMetadata;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
@@ -19,7 +18,7 @@ import java.util.concurrent.ExecutionException;
 @Service
 public class RecipientService {
 
-    public ResponseEntity<OrderSubmittedDTO> publishOrder(@Valid OrderRequestDTO dto) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Void> publishOrder(@Valid OrderRequestDTO dto) throws ExecutionException, InterruptedException {
 
         Properties props = new Properties();
 
@@ -30,7 +29,7 @@ public class RecipientService {
 
         try (KafkaProducer<Integer, OrderRequestDTO> producer = new KafkaProducer<>(props)) {
             ProducerRecord<Integer, OrderRequestDTO> record = new ProducerRecord<>("trades.submitted", dto.accountId(), dto);
-            RecordMetadata metadata = producer.send(record).get();
+           producer.send(record).get();
 
         }
         catch (InterruptedException e) {
@@ -55,7 +54,6 @@ public class RecipientService {
 
         return ResponseEntity
                 .accepted()
-                .location(location)
-                .body(response);
+                .location(location).build();
     }
 }

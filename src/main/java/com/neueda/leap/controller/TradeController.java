@@ -21,7 +21,7 @@ public class TradeController {
     }
 
     @PostMapping
-    public ResponseEntity<OrderSubmittedDTO> submitOrder(
+    public ResponseEntity<Void> submitOrder(
             @PathVariable int accountId,
             @Valid @RequestBody OrderRequestDTO dto) throws ExecutionException, InterruptedException {
         
