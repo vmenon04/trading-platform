@@ -7,6 +7,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.concurrent.ExecutionException;
+
 
 @RestController
 @RequestMapping("/accounts/{accountId}/trades")
@@ -21,7 +23,7 @@ public class TradeController {
     @PostMapping
     public ResponseEntity<OrderSubmittedDTO> submitOrder(
             @PathVariable int accountId,
-            @Valid @RequestBody OrderRequestDTO dto) {
+            @Valid @RequestBody OrderRequestDTO dto) throws ExecutionException, InterruptedException {
         
         
         return recipientService.publishOrder(dto);
