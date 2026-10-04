@@ -28,18 +28,19 @@ class OrderRequestDTOTest {
     @Test
     void testValidOrderRequestDTO() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1, 2, "BUY", new BigDecimal("10"), new BigDecimal("150.50"));
         
         assertEquals(1, dto.getAccountId());
         assertEquals(2, dto.getInstrumentId());
         assertEquals("BUY", dto.getSide());
-        assertEquals(new BigDecimal("150.50"), dto.getQuantity());
+        assertEquals(new BigDecimal("10"), dto.getQuantity());
+        assertEquals(new BigDecimal("150.50"), dto.getQuote());
     }
 
     @Test
     void testValidatePositiveAccountId() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            -1, 2, "BUY", new BigDecimal("150.50"));
+            -1, 2, "BUY", new BigDecimal("10"), new BigDecimal("150.50"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -47,7 +48,7 @@ class OrderRequestDTOTest {
     @Test
     void testValidatePositiveInstrumentId() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 0, "BUY", new BigDecimal("150.50"));
+            1, 0, "BUY", new BigDecimal("10"), new BigDecimal("150.50"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -55,7 +56,7 @@ class OrderRequestDTOTest {
     @Test
     void testValidateNonBlankSide() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, "   ", new BigDecimal("150.50"));
+            1, 2, "   ", new BigDecimal("10"), new BigDecimal("150.50"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -63,7 +64,7 @@ class OrderRequestDTOTest {
     @Test
     void testValidateNullSide() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, null, new BigDecimal("150.50"));
+            1, 2, null, new BigDecimal("10"), new BigDecimal("150.50"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -71,7 +72,7 @@ class OrderRequestDTOTest {
     @Test
     void testValidatePositiveQuantity() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, "BUY", new BigDecimal("-150.50"));
+            1, 2, "BUY", new BigDecimal("-10"), new BigDecimal("150.50"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -79,7 +80,7 @@ class OrderRequestDTOTest {
     @Test
     void testValidateNonNullQuantity() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, "BUY", null);
+            1, 2, "BUY", null, new BigDecimal("10"));
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -87,7 +88,31 @@ class OrderRequestDTOTest {
     @Test
     void testValidateZeroQuantity() {
         OrderRequestDTO dto = new OrderRequestDTO(
-            1, 2, "BUY", BigDecimal.ZERO);
+            1, 2, "BUY", BigDecimal.ZERO, new BigDecimal("10"));
+        Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void testValidatePositiveQuote() {
+        OrderRequestDTO dto = new OrderRequestDTO(
+                1, 2, "BUY", new BigDecimal("10"), new BigDecimal("-150.50"));
+        Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void testValidateNonNullQuote() {
+        OrderRequestDTO dto = new OrderRequestDTO(
+                1, 2, "BUY", new BigDecimal("10"), null);
+        Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
+        assertFalse(violations.isEmpty());
+    }
+
+    @Test
+    void testValidateZeroQuote() {
+        OrderRequestDTO dto = new OrderRequestDTO(
+                1, 2, "BUY", new BigDecimal("10"), BigDecimal.ZERO);
         Set<ConstraintViolation<OrderRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -95,11 +120,11 @@ class OrderRequestDTOTest {
     @Test
     void testRecordEquality() {
         OrderRequestDTO dto1 = new OrderRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1, 2, "BUY",  new BigDecimal("10"), new BigDecimal("150.50"));
         OrderRequestDTO dto2 = new OrderRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1, 2, "BUY", new BigDecimal("10"), new BigDecimal("150.50"));
         OrderRequestDTO dto3 = new OrderRequestDTO(
-            1, 2, "SELL", new BigDecimal("150.50"));
+            1, 2, "SELL",new BigDecimal("10"), new BigDecimal("150.50"));
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
@@ -108,9 +133,9 @@ class OrderRequestDTOTest {
     @Test
     void testSupportsBuyAndSellSides() {
         OrderRequestDTO buyOrder = new OrderRequestDTO(
-            1, 2, "BUY", new BigDecimal("100"));
+            1, 2, "BUY", new BigDecimal("10"), new BigDecimal("100"));
         OrderRequestDTO sellOrder = new OrderRequestDTO(
-            1, 2, "SELL", new BigDecimal("100"));
+            1, 2, "SELL", new BigDecimal("10"), new BigDecimal("100"));
         
         assertEquals("BUY", buyOrder.getSide());
         assertEquals("SELL", sellOrder.getSide());
