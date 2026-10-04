@@ -29,7 +29,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/TradeRequest'
+              $ref: '#/components/schemas/OrderRequest'
             example:
               account_id: 123
               instrument_id: 1
@@ -37,24 +37,16 @@ paths:
               quantity: 10
               quote: 150.00
       responses:
-        '201':
-          description: Trade accepted and executed successfully
+        '202':
+          description: Order accepted for processing
           headers:
             Location:
-              description: URL of the newly created trade resource
+              description: URL of the newly created task resource for the order request
               schema:
                 type: string
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TradeResponse'
-              example:
-                tradeId: 123
-                status: "SUBMITTED"
-                executedPrice: 150.00
-                executedQuantity: 10
+                format: uri
         '400':
-          description: Invalid trade request
+          description: Invalid order request
           content:
             application/json:
               schema:
@@ -65,26 +57,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
-        '404':
-          description: Resource not found
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '422':
-            description: Unprocessable entity, trade request could not be processed because of a business rule violation
-            content:
-                application/json:
-                  schema:
-                      $ref: '#/components/schemas/TradeResponse'
-                  example:
-                    tradeId: 123
-                    status: "REJECTED"
-                    reason: "Insufficient funds for the requested trade"
+
+
 
 components:
   schemas:
-    TradeRequest:
+    OrderRequest:
       type: object
       required: ["account_id", "instrument_id", "side", "quantity", "quote"]
       properties:
@@ -103,23 +81,6 @@ components:
             type: number
             format: double
             exclusiveMinimum: 0
-    TradeResponse:
-        type: object
-        required: ["tradeId", "status"]
-        properties:
-            tradeId:
-                type: integer
-            status:
-                type: string
-                enum: ["SUBMITTED", "ACCEPTED", "FILLED", "REJECTED"]
-            executedPrice:
-                type: number
-                format: double
-            executedQuantity:
-                type: integer
-            reason:
-                type: string
-                description: Reason for rejection if the trade was rejected
     ErrorResponse:
         type: object
         required: ["error", "message"]
