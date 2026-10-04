@@ -9,7 +9,8 @@ public record OrderRequestDTO(
         @Positive int accountId,
         @Positive int instrumentId,
         @NotBlank String side,
-        @NotNull @Positive BigDecimal quantity
+        @NotNull @Positive BigDecimal quantity,
+        @NotNull @Positive BigDecimal quote
 ) {
 
     public int getAccountId() {
@@ -26,5 +27,9 @@ public record OrderRequestDTO(
 
     public BigDecimal getQuantity() {
         return quantity;
+    }
+
+    public BigDecimal getQuote() {
+        return quote;
     }
 }

@@ -22,7 +22,7 @@ public class TradeController {
     @PostMapping
     public ResponseEntity<Void> submitOrder(
             @PathVariable int accountId,
-            @Valid @RequestBody OrderRequestDTO dto) throws ExecutionException, InterruptedException {
+            @Valid @RequestBody OrderRequestDTO dto) {
         
         
         return recipientService.publishOrder(dto);

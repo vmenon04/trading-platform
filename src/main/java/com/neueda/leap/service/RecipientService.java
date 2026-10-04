@@ -1,6 +1,7 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeSubmittedDTO;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -18,7 +19,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class RecipientService {
 
     private static final AtomicLong JOB_ID_GENERATOR = new AtomicLong(1);
-    public ResponseEntity<Void> publishOrder(@Valid OrderRequestDTO dto) throws ExecutionException, InterruptedException {
+    public ResponseEntity<Void> publishOrder(@Valid OrderRequestDTO dto) {
 
         long taskId = JOB_ID_GENERATOR.getAndIncrement();
 
@@ -32,15 +33,15 @@ public class RecipientService {
         props.put("value.serializer", "org.apache.kafka.common.serialization.JsonSerializer");
 
         try (KafkaProducer<Integer, TradeSubmittedDTO> producer = new KafkaProducer<>(props)) {
-            ProducerRecord<Integer, TradeSubmittedDTO> record = new ProducerRecord<>("trades.submitted", tradeSubmitted.accountId(), tradeSubmitted);
+            ProducerRecord<Integer, TradeSubmittedDTO> record = new ProducerRecord<>("trades.submitted", tradeSubmitted.getAccountId(), tradeSubmitted);
             producer.send(record).get();
 
         }
         catch (InterruptedException e) {
             Thread.currentThread().interrupt();
-            throw new IllegalStateException("Kafka publish interrupted", e);
+            throw new IllegalStateException("Kafka publish interrupted");
         } catch (ExecutionException e) {
-            throw new IllegalStateException("Kafka publish failed", e);
+            throw new IllegalStateException("Kafka publish failed");
         }
 
         URI location = ServletUriComponentsBuilder
