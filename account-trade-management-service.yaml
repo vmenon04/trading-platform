@@ -31,9 +31,11 @@ paths:
             schema:
               $ref: '#/components/schemas/TradeRequest'
             example:
+              account_id: 123
               instrument_id: 1
-              tradeType: "BUY"
+              side: "BUY"
               quantity: 10
+              quote: 150.00
       responses:
         '201':
           description: Trade accepted and executed successfully
@@ -84,14 +86,20 @@ components:
   schemas:
     TradeRequest:
       type: object
-      required: ["instrument_id", "tradeType", "quantity"]
+      required: ["account_id", "instrument_id", "side", "quantity", "quote"]
       properties:
+        account_id:
+            type: integer
         instrument_id:
             type: integer
-        tradeType:
+        side:
             type: string
             enum: ["BUY", "SELL"]
         quantity:
+            type: number
+            format: double
+            exclusiveMinimum: 0
+        quote:
             type: number
             format: double
             exclusiveMinimum: 0
