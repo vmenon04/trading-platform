@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
-public record OrderRequestDTO(
+public record TradeRequestDTO(
         @Positive int accountId,
         @Positive int instrumentId,
         @NotBlank String side,

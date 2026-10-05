@@ -1,8 +1,5 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.SubmittedTradeDTO;
-import com.neueda.leap.dto.RecordedTradeDTO;
-import com.neueda.leap.dto.FinishedTradeDTO;
 import com.neueda.leap.events.OrderCreatedEvent;
 import com.neueda.leap.events.TradeValidatedEvent;
 import com.neueda.leap.kafka.KafkaTopics;

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
-public record ValidatedTradeDTO (
+public record TradeValidatedDTO(
 
         @Positive Long instrumentId,
         @Positive Long accountId,

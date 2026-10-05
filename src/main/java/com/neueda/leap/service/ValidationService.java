@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +36,7 @@ public class ValidationService {
      * @throws IllegalArgumentException if the order, side, or quantity is invalid
      * @throws IllegalStateException if the account lacks enough cash or holdings to satisfy the order
      */
-    public void validate(OrderRequestDTO order, BigDecimal price) {
+    public void validate(TradeRequestDTO order, BigDecimal price) {
         if (order == null) {
             throw new IllegalArgumentException("Order must not be null");
         }

@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.repository.AccountTradeMapper;
@@ -55,7 +55,7 @@ public class ExecutionService {
      * @throws RuntimeException if underlying balance or holding updates fail
      */
     @Transactional
-    public void execute(OrderRequestDTO order, BigDecimal price) {
+    public void execute(TradeRequestDTO order, BigDecimal price) {
         applyTrade(order.accountId(), order.instrumentId(), order.side(), order.quantity(),
                 price.multiply(order.quantity()));
     }
