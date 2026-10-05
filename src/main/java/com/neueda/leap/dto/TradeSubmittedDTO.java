@@ -5,18 +5,13 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
-public record TradeSubmittedDTO
-   (@Positive int accountId,
-    @Positive int instrumentId,
-    @NotBlank String side,
-    @NotNull @Positive BigDecimal quantity,
-    @NotNull @Positive BigDecimal quote,
-    @NotNull long task_id) {
-
-    public int getAccountId() {
-        return accountId;
-    }
-}
-
-
+public record TradeSubmittedDTO(
+        @Positive long instrumentId,
+        @Positive UUID accountId,
+        @NotBlank String side,
+        @NotNull @Positive BigDecimal quantity,
+        @NotNull @Positive BigDecimal quote,
+        @NotBlank long taskId
+) {}
