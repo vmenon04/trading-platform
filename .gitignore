@@ -4,6 +4,7 @@ target/
 # Environment / secrets
 .env
 .env.*
+application.properties
 
 # IDEs
 .vscode/

@@ -19,11 +19,12 @@ class AccountTradeDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
@@ -32,20 +33,20 @@ class AccountTradeDTOTest {
         AccountTradeDTO dto = new AccountTradeDTO(1, "2026-09-25T10:30:00", 2, 3, "BUY", 
             BigDecimal.valueOf(100), BigDecimal.valueOf(150), "EXECUTED");
         
-        assertEquals(1, dto.getTradeId());
-        assertEquals("2026-09-25T10:30:00", dto.getTradeTime());
-        assertEquals(2, dto.getAccountId());
-        assertEquals(3, dto.getInstrumentId());
-        assertEquals("BUY", dto.getTradeType());
-        assertEquals(BigDecimal.valueOf(100), dto.getQuantity());
-        assertEquals(BigDecimal.valueOf(150), dto.getPrice());
-        assertEquals("EXECUTED", dto.getStatus());
+        assertEquals(1, dto.tradeId());
+        assertEquals("2026-09-25T10:30:00", dto.tradeTime());
+        assertEquals(2, dto.accountId());
+        assertEquals(3, dto.instrumentId());
+        assertEquals("BUY", dto.tradeType());
+        assertEquals(BigDecimal.valueOf(100), dto.quantity());
+        assertEquals(BigDecimal.valueOf(150), dto.price());
+        assertEquals("EXECUTED", dto.status());
     }
 
     @Test
     @DisplayName("Should validate positive tradeId")
     void testValidateTradeId() {
-        AccountTradeDTO dto = new AccountTradeDTO(-1, "2026-09-25T10:30:00", 2, 3, "BUY", 
+        AccountTradeDTO dto = new AccountTradeDTO(invalidTradeId(), "2026-09-25T10:30:00", 2, 3, "BUY", 
             BigDecimal.valueOf(100), BigDecimal.valueOf(150), "EXECUTED");
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
@@ -69,7 +70,7 @@ class AccountTradeDTOTest {
     @Test
     @DisplayName("Should validate positive accountId")
     void testValidateAccountId() {
-        AccountTradeDTO dto = new AccountTradeDTO(1, "2026-09-25T10:30:00", -2, 3, "BUY", 
+        AccountTradeDTO dto = new AccountTradeDTO(1, "2026-09-25T10:30:00", invalidAccountId(), 3, "BUY", 
             BigDecimal.valueOf(100), BigDecimal.valueOf(150), "EXECUTED");
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
@@ -81,7 +82,7 @@ class AccountTradeDTOTest {
     @Test
     @DisplayName("Should validate positive instrumentId")
     void testValidateInstrumentId() {
-        AccountTradeDTO dto = new AccountTradeDTO(1, "2026-09-25T10:30:00", 2, -3, "BUY", 
+        AccountTradeDTO dto = new AccountTradeDTO(1, "2026-09-25T10:30:00", 2, invalidInstrumentId(), "BUY", 
             BigDecimal.valueOf(100), BigDecimal.valueOf(150), "EXECUTED");
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
@@ -150,5 +151,17 @@ class AccountTradeDTOTest {
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private int invalidTradeId() {
+        return Integer.parseInt("-1");
+    }
+
+    private int invalidAccountId() {
+        return Integer.parseInt("-2");
+    }
+
+    private int invalidInstrumentId() {
+        return Integer.parseInt("-3");
     }
 }

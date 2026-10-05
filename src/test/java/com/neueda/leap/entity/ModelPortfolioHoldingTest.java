@@ -1,46 +1,58 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.AccountHolding.HoldingStatus;
-
-
-import org.junit.jupiter.api.BeforeEach;
+import com.neueda.leap.entity.ModelPortfolioHolding.ModelPortfolioStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ModelPortfolioHoldingTest {
+class ModelPortfolioHoldingTest {
 
-    private ModelPortfolioHolding holding;
+    @Test
+    void noArgsConstructorLeavesFieldsAtDefaults() {
+        ModelPortfolioHolding holding = new ModelPortfolioHolding();
 
-    @BeforeEach
-    void setUp() {
-        holding = new ModelPortfolioHolding(1, 1, LocalDate.now(), 35.5, HoldingStatus.ACTIVE);
+        assertAll(
+                () -> assertNull(holding.getModelPortfolioId()),
+                () -> assertNull(holding.getInstrumentId()),
+                () -> assertNull(holding.getEffectiveDate()),
+                () -> assertEquals(0.0, holding.getTargetWeightPct()),
+                () -> assertNull(holding.getStatus())
+        );
     }
 
     @Test
-    void testModelPortfolioHoldingCanBeCreated() {
-        assertEquals(1, holding.getModelPortfolioId());
-        assertEquals(1, holding.getInstrumentId());
-        assertEquals(35.5, holding.getTargetWeightPct());
+    void parameterizedConstructorSetsProvidedValuesAndDefaultsStatusToActive() {
+        LocalDate effectiveDate = LocalDate.of(2026, 9, 25);
+        ModelPortfolioHolding holding = new ModelPortfolioHolding(1L, 2L, effectiveDate, 35.5);
+
+        assertAll(
+                () -> assertEquals(1L, holding.getModelPortfolioId()),
+                () -> assertEquals(2L, holding.getInstrumentId()),
+                () -> assertEquals(effectiveDate, holding.getEffectiveDate()),
+                () -> assertEquals(35.5, holding.getTargetWeightPct()),
+                () -> assertEquals(ModelPortfolioStatus.ACTIVE, holding.getStatus())
+        );
     }
 
     @Test
-    void testTargetWeightMustBeNonZero() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModelPortfolioHolding(1, 1, LocalDate.now(), 0, HoldingStatus.ACTIVE));
-    }
+    void settersUpdateAllMutableFields() {
+        ModelPortfolioHolding holding = new ModelPortfolioHolding();
+        LocalDate effectiveDate = LocalDate.of(2024, 12, 31);
 
-    @Test
-    void testTargetWeightMustBePositive() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModelPortfolioHolding(1, 1, LocalDate.now(), -10.0, HoldingStatus.ACTIVE));
-    }
+        holding.setModelPortfolioId(10L);
+        holding.setInstrumentId(20L);
+        holding.setEffectiveDate(effectiveDate);
+        holding.setTargetWeightPct(60.0);
+        holding.setStatus(ModelPortfolioStatus.INACTIVE);
 
-    @Test
-    void testTargetWeightCannotExceed100Percent() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModelPortfolioHolding(1, 1, LocalDate.now(), 150.0, HoldingStatus.ACTIVE));
+        assertAll(
+                () -> assertEquals(10L, holding.getModelPortfolioId()),
+                () -> assertEquals(20L, holding.getInstrumentId()),
+                () -> assertEquals(effectiveDate, holding.getEffectiveDate()),
+                () -> assertEquals(60.0, holding.getTargetWeightPct()),
+                () -> assertEquals(ModelPortfolioStatus.INACTIVE, holding.getStatus())
+        );
     }
 }

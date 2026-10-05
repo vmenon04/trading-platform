@@ -71,7 +71,7 @@ public class OrderManagementService {
     }
 
     private int recordTrade(OrderRequestDTO order, BigDecimal price, String status) {
-        return accountTradeMapper.insertTrade(order.accountId(), order.instrumentId(), order.side(),
-                order.quantity(), price, status);
+        //TODO: Remove: needs to be moved to kafka execution
+        throw new UnsupportedOperationException();
     }
 }
