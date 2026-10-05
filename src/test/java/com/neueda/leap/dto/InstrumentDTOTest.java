@@ -17,23 +17,24 @@ class InstrumentDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
     void testValidInstrumentDTO() {
         InstrumentDTO dto = new InstrumentDTO(1, "Apple", "AAPL");
-        assertEquals(1, dto.getInstrumentId());
-        assertEquals("Apple", dto.getName());
+        assertEquals(1, dto.instrumentId());
+        assertEquals("Apple", dto.name());
     }
 
     @Test
     void testValidateInstrumentId() {
-        InstrumentDTO dto = new InstrumentDTO(-1, "Apple", "AAPL");
+        InstrumentDTO dto = new InstrumentDTO(invalidInstrumentId(), "Apple", "AAPL");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -60,6 +61,10 @@ class InstrumentDTOTest {
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private int invalidInstrumentId() {
+        return Integer.parseInt("-1");
     }
 }
 

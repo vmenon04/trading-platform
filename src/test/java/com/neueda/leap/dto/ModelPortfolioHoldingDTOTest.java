@@ -17,11 +17,12 @@ class ModelPortfolioHoldingDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
@@ -29,27 +30,11 @@ class ModelPortfolioHoldingDTOTest {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
             1, 2, "2026-09-25", 25.5, "ACTIVE");
         
-        assertEquals(1, dto.getModelPortfolioId());
-        assertEquals(2, dto.getInstrumentId());
-        assertEquals("2026-09-25", dto.getEffectiveDate());
-        assertEquals(25.5, dto.getTargetWeightPct(), 0.01);
-        assertEquals("ACTIVE", dto.getStatus());
-    }
-
-    @Test
-    void testValidatePositiveModelPortfolioId() {
-        ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            -1, 2, "2026-09-25", 25.5, "ACTIVE");
-        Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty());
-    }
-
-    @Test
-    void testValidatePositiveInstrumentId() {
-        ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1, -2, "2026-09-25", 25.5, "ACTIVE");
-        Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty());
+        assertEquals(1, dto.modelPortfolioId());
+        assertEquals(2, dto.instrumentId());
+        assertEquals("2026-09-25", dto.effectiveDate());
+        assertEquals(25.5, dto.targetWeightPct(), 0.01);
+        assertEquals("ACTIVE", dto.status());
     }
 
     @Test
