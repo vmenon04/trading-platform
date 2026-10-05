@@ -14,37 +14,4 @@ public record AccountTradeDTO(
         @Positive BigDecimal quantity,
         @Positive BigDecimal price,
         @NotBlank String status
-) {
-
-    public int getTradeId() {
-        return tradeId;
-    }
-
-    public String getTradeTime() {
-        return tradeTime;
-    }
-
-    public int getAccountId() {
-        return accountId;
-    }
-
-    public int getInstrumentId() {
-        return instrumentId;
-    }
-
-    public String getTradeType() {
-        return tradeType;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-}
+) {}
