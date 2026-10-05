@@ -30,10 +30,10 @@ class OrderRequestDTOTest {
         OrderRequestDTO dto = new OrderRequestDTO(
             1, 2, "BUY", new BigDecimal("150.50"));
         
-        assertEquals(1, dto.getAccountId());
-        assertEquals(2, dto.getInstrumentId());
-        assertEquals("BUY", dto.getSide());
-        assertEquals(new BigDecimal("150.50"), dto.getQuantity());
+        assertEquals(1, dto.accountId());
+        assertEquals(2, dto.instrumentId());
+        assertEquals("BUY", dto.side());
+        assertEquals(new BigDecimal("150.50"), dto.quantity());
     }
 
     @Test
@@ -112,8 +112,8 @@ class OrderRequestDTOTest {
         OrderRequestDTO sellOrder = new OrderRequestDTO(
             1, 2, "SELL", new BigDecimal("100"));
         
-        assertEquals("BUY", buyOrder.getSide());
-        assertEquals("SELL", sellOrder.getSide());
+        assertEquals("BUY", buyOrder.side());
+        assertEquals("SELL", sellOrder.side());
         assertNotEquals(buyOrder, sellOrder);
     }
 }

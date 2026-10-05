@@ -10,21 +10,4 @@ public record OrderRequestDTO(
         @Positive int instrumentId,
         @NotBlank String side,
         @NotNull @Positive BigDecimal quantity
-) {
-
-    public int getAccountId() {
-        return accountId;
-    }
-
-    public int getInstrumentId() {
-        return instrumentId;
-    }
-
-    public String getSide() {
-        return side;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-}
+) {}
