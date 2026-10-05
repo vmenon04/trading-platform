@@ -1,5 +1,5 @@
 package com.neueda.leap.dto;
 
-public class FinishedTradeDTO {
+public class TradeDTO {
     //TODO: Add completed trade fields
 }
