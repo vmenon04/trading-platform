@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
@@ -46,7 +46,7 @@ public class OrderManagementService {
      * @throws IllegalArgumentException if the order request is invalid
      * @throws IllegalStateException if validation or execution fails due to business constraints
      */
-    public synchronized int placeOrder(OrderRequestDTO order) {
+    public synchronized int placeOrder(TradeRequestDTO order) {
         BigDecimal price = instrumentService.getCurrentPrice(order.instrumentId());
 
         try {
@@ -70,7 +70,7 @@ public class OrderManagementService {
         return tradeId;
     }
 
-    private int recordTrade(OrderRequestDTO order, BigDecimal price, String status) {
+    private int recordTrade(TradeRequestDTO order, BigDecimal price, String status) {
         //TODO: Remove: needs to be moved to kafka execution
         throw new UnsupportedOperationException();
     }

@@ -1,24 +1,19 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
+
 import java.math.BigDecimal;
 
 import java.time.OffsetDateTime;
 
 public class AccountTrade {
 
-    public enum TradeType {
-        BUY, SELL
-    }
-
-    public enum TradeStatus {
-        PENDING, ACCEPTED, REJECTED, FULFILLED
-    }
-
     private Long tradeId;
     private OffsetDateTime tradeTime;
     private int accountId;
     private int instrumentId;
-    private TradeType tradeType;
+    private TradeSide tradeType;
     private BigDecimal quantity;
     private BigDecimal price;
     private TradeStatus tradeStatus;
@@ -26,7 +21,7 @@ public class AccountTrade {
     public AccountTrade() {
     }
 
-    public AccountTrade(int accountId, OffsetDateTime tradeTime, int instrumentId, TradeType tradeType, BigDecimal quantity, BigDecimal price) {
+    public AccountTrade(int accountId, OffsetDateTime tradeTime, int instrumentId, TradeSide tradeType, BigDecimal quantity, BigDecimal price) {
         this.tradeId = null;
         this.accountId = accountId;
         this.tradeTime = tradeTime;
@@ -34,7 +29,7 @@ public class AccountTrade {
         this.tradeType = tradeType;
         this.quantity = quantity;
         this.price = price;
-        this.tradeStatus = TradeStatus.PENDING;
+        this.tradeStatus = TradeStatus.SUBMITTED;
     }
 
     public Long getTradeId() {
@@ -61,11 +56,11 @@ public class AccountTrade {
         this.instrumentId = instrumentId;
     }
 
-    public TradeType getTradeType() {
+    public TradeSide getTradeType() {
         return tradeType;
     }
 
-    public void setTradeType(TradeType tradeType) {
+    public void setTradeType(TradeSide tradeType) {
         this.tradeType = tradeType;
     }
 

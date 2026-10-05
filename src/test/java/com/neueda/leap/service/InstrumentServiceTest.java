@@ -1,6 +1,7 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
@@ -27,7 +28,7 @@ class InstrumentServiceTest {
     @InjectMocks
     private InstrumentService instrumentService;
 
-    private final Instrument instrument = new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK);
+    private final Instrument instrument = new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK);
 
     @Test
     void getInstrumentByIdReturnsInstrumentFromMapper() {

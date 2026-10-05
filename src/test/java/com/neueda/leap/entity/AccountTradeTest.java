@@ -1,10 +1,11 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.AccountTrade.TradeStatus;
-import com.neueda.leap.entity.AccountTrade.TradeType;
+import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.enums.TradeSide;
 import org.junit.jupiter.api.Test;
 
-import java.time.LocalDate;
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -20,41 +21,41 @@ class AccountTradeTest {
                 () -> assertNull(trade.getTradeTime()),
                 () -> assertEquals(0, trade.getInstrumentId()),
                 () -> assertNull(trade.getTradeType()),
-                () -> assertEquals(0.0, trade.getQuantity()),
-                () -> assertEquals(0.0, trade.getPrice()),
+                () -> assertNull(trade.getQuantity()),
+                () -> assertNull(trade.getPrice()),
                 () -> assertNull(trade.getStatus())
         );
     }
 
     @Test
     void parameterizedConstructorSetsProvidedValuesAndDefaultsStatusToPending() {
-        LocalDate tradeTime = LocalDate.of(2026, 9, 25);
-        AccountTrade trade = new AccountTrade(101, tradeTime, 7, TradeType.BUY, 10.5, 55.25);
+        OffsetDateTime tradeTime = OffsetDateTime.now();
+        AccountTrade trade = new AccountTrade(101, tradeTime, 7, TradeSide.BUY, new BigDecimal("10.5"), new BigDecimal("55.25"));
 
         assertAll(
                 () -> assertNull(trade.getTradeId()),
                 () -> assertEquals(101, trade.getAccountId()),
                 () -> assertEquals(tradeTime, trade.getTradeTime()),
                 () -> assertEquals(7, trade.getInstrumentId()),
-                () -> assertEquals(TradeType.BUY, trade.getTradeType()),
-                () -> assertEquals(10.5, trade.getQuantity()),
-                () -> assertEquals(55.25, trade.getPrice()),
-                () -> assertEquals(TradeStatus.PENDING, trade.getStatus())
+                () -> assertEquals(TradeSide.BUY, trade.getTradeType()),
+                () -> assertEquals(BigDecimal.valueOf(10.5), trade.getQuantity()),
+                () -> assertEquals(BigDecimal.valueOf(55.25), trade.getPrice()),
+                () -> assertEquals(TradeStatus.SUBMITTED, trade.getStatus())
         );
     }
 
     @Test
     void settersUpdateAllMutableFields() {
         AccountTrade trade = new AccountTrade();
-        LocalDate tradeTime = LocalDate.of(2025, 5, 10);
+        OffsetDateTime tradeTime = OffsetDateTime.now();
 
         trade.setTradeId(1L);
         trade.setAccountId(2);
         trade.setTradeTime(tradeTime);
         trade.setInstrumentId(3);
-        trade.setTradeType(TradeType.SELL);
-        trade.setQuantity(4.5);
-        trade.setPrice(6.75);
+        trade.setTradeType(TradeSide.SELL);
+        trade.setQuantity(BigDecimal.valueOf(4.5));
+        trade.setPrice(BigDecimal.valueOf(6.75));
         trade.setTradeStatus(TradeStatus.ACCEPTED);
 
         assertAll(
@@ -62,9 +63,9 @@ class AccountTradeTest {
                 () -> assertEquals(2, trade.getAccountId()),
                 () -> assertEquals(tradeTime, trade.getTradeTime()),
                 () -> assertEquals(3, trade.getInstrumentId()),
-                () -> assertEquals(TradeType.SELL, trade.getTradeType()),
-                () -> assertEquals(4.5, trade.getQuantity()),
-                () -> assertEquals(6.75, trade.getPrice()),
+                () -> assertEquals(TradeSide.SELL, trade.getTradeType()),
+                () -> assertEquals(BigDecimal.valueOf(4.5), trade.getQuantity()),
+                () -> assertEquals(BigDecimal.valueOf(6.75), trade.getPrice()),
                 () -> assertEquals(TradeStatus.ACCEPTED, trade.getStatus())
         );
     }
