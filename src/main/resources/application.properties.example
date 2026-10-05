@@ -24,6 +24,7 @@ spring.kafka.template.default-topic=${TRADE_RECORDED_TOPIC:trade.recorded}
 
 trade.validated=${TRADE_VALIDATED_TOPIC:trade.validated}
 trade.recorded=${TRADE_RECORDED_TOPIC:trade.recorded}
+trade.finished=${TRADE_FINISHED_TOPIC:trade.finished}
 
 management.endpoints.web.exposure.include=health,info
 management.health.kafka.enabled=false
