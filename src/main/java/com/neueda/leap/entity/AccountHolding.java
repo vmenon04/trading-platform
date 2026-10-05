@@ -1,25 +1,21 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.Status;
 import java.math.BigDecimal;
-
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 public class AccountHolding {
 
-    public enum HoldingStatus {
-        ACTIVE, INACTIVE
-    }
-
     private int accountId;
     private int instrumentId;
-    private LocalDateTime asOfDate;
+    private OffsetDateTime asOfDate;
     private BigDecimal quantity;
-    private HoldingStatus status;
+    private Status status;
 
     public AccountHolding() {
     }
 
-    public AccountHolding(int accountId, int instrumentId, LocalDateTime asOfDate, BigDecimal quantity, HoldingStatus status) {
+    public AccountHolding(int accountId, int instrumentId, OffsetDateTime asOfDate, BigDecimal quantity, Status status) {
         this.accountId = accountId;
         this.instrumentId = instrumentId;
         this.asOfDate = asOfDate;
@@ -43,11 +39,11 @@ public class AccountHolding {
         this.instrumentId = instrumentId;
     }
 
-    public LocalDateTime getAsOfDate() {
+    public OffsetDateTime getAsOfDate() {
         return asOfDate;
     }
 
-    public void setAsOfDate(LocalDateTime asOfDate) {
+    public void setAsOfDate(OffsetDateTime asOfDate) {
         this.asOfDate = asOfDate;
     }
 
@@ -59,11 +55,11 @@ public class AccountHolding {
         this.quantity = quantity;
     }
 
-    public HoldingStatus getStatus() {
+    public Status getStatus() {
         return status;
     }
 
-    public void setStatus(HoldingStatus status) {
+    public void setStatus(Status status) {
         this.status = status;
     }
 }
