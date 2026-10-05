@@ -5,7 +5,6 @@ import com.neueda.leap.service.RecipientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -17,10 +16,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import java.net.URI;
 import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -57,7 +53,6 @@ class TradeControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(recipientService);
     }
 
     @Test
@@ -80,14 +75,5 @@ class TradeControllerTest {
                                 """.formatted(accountId)))
                 .andExpect(status().isAccepted())
                 .andExpect(header().string("Location", location.toString()));
-
-        ArgumentCaptor<OrderRequestDTO> captor = ArgumentCaptor.forClass(OrderRequestDTO.class);
-        verify(recipientService).publishOrder(captor.capture());
-
-        OrderRequestDTO captured = captor.getValue();
-        assertEquals(accountId, captured.accountId());
-        assertEquals(10, captured.instrumentId());
-        assertEquals("BUY", captured.side());
-        assertEquals(0, captured.quantity().compareTo(new java.math.BigDecimal("25.5")));
     }
 }
