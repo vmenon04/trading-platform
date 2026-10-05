@@ -1,5 +1,5 @@
 package com.neueda.leap.dto;
 
-public class RecordedTradeDTO {
+public class TradeRecordedDTO {
     //TODO: Add internal SubmittedTradeDTO and tradeID
 }
