@@ -1,7 +1,8 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.enums.InstrumentType;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
@@ -32,12 +33,12 @@ class ValidationServiceTest {
     @InjectMocks
     private ValidationService validationService;
 
-    private static OrderRequestDTO order(String side, String quantity) {
-        return new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
+    private static TradeRequestDTO order(String side, String quantity) {
+        return new TradeRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
     }
 
     private void givenInstrumentAndBalance(String balance) {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(balance));
     }
 
@@ -112,7 +113,7 @@ class ValidationServiceTest {
 
     @Test
     void rejectsUnknownAccount() {
-        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", Instrument.InstrumentType.STOCK));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK));
         when(accountService.getBalance(ACCOUNT_ID)).thenThrow(new NoSuchElementException());
         assertThrows(NoSuchElementException.class, () -> validationService.validate(order("BUY", "5"), PRICE));
     }

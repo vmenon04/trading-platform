@@ -7,7 +7,7 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 import java.util.UUID;
 
-public record SubmittedTradeDTO (
+public record TradeSubmittedDTO(
         @Positive long instrumentId,
         @Positive UUID accountId,
         @NotBlank String side,
