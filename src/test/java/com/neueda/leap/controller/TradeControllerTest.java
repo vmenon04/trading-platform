@@ -1,6 +1,6 @@
 package com.neueda.leap.controller;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.service.RecipientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -59,7 +59,7 @@ class TradeControllerTest {
     void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() throws Exception {
         UUID accountId = UUID.randomUUID();
         URI location = URI.create("/api/accounts/123/trades/tasks/42");
-        when(recipientService.publishOrder(any(OrderRequestDTO.class)))
+        when(recipientService.publishOrder(any(TradeRequestDTO.class)))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
         mockMvc.perform(post("/api/accounts/{account_id}/trades", 123)

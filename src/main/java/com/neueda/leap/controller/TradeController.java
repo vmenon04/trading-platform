@@ -1,12 +1,10 @@
 package com.neueda.leap.controller;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.service.RecipientService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.concurrent.ExecutionException;
 
 
 @RestController
@@ -22,7 +20,7 @@ public class TradeController {
     @PostMapping
     public ResponseEntity<Void> submitOrder(
             @PathVariable int accountId,
-            @Valid @RequestBody OrderRequestDTO dto) {
+            @Valid @RequestBody TradeRequestDTO dto) {
         
         
         return recipientService.publishOrder(dto);
