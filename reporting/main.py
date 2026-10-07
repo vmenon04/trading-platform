@@ -20,7 +20,7 @@ import pandas as pd
 
 import charts
 import transform as tf
-from config import REPORTS_DIR, get_engine
+from config import REPORTS_DIR, get_analytics_engine
 
 
 def parse_args() -> argparse.Namespace:
@@ -50,7 +50,7 @@ def guard(df: pd.DataFrame, label: str) -> pd.DataFrame:
 
 def main() -> None:
     args = parse_args()
-    engine = get_engine()
+    engine = get_analytics_engine()
     start, end = tf.reporting_window(engine, months_back=None if args.all_time else args.months)
 
     out_dir = args.out / f"{start:%Y%m%d}_{end:%Y%m%d}_{args.grain}"

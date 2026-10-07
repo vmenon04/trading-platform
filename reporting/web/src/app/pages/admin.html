@@ -1,0 +1,124 @@
+<h2>Order history</h2>
+<p class="lead">Every order on the platform, in every status. Filters combine; leave one empty to include everything.</p>
+
+<form class="filters" (submit)="$event.preventDefault()">
+  <label>Order #
+    <input class="narrow" type="number" min="1" placeholder="Any" [value]="tradeId()" (change)="tradeId.set(value($event))">
+  </label>
+  <app-search-box label="Client" placeholder="Any client — name, email or ID" url="/api/clients"
+                  [describe]="describeClient" [(selected)]="clientId" />
+  <label>Asset class
+    <select (change)="pickClass(value($event))">
+      <option value="" [selected]="!assetClass()">Any</option>
+      @for (name of classes.hasValue() ? classes.value() : []; track name) {
+        <option [value]="name" [selected]="name === assetClass()">{{ name }}</option>
+      }
+    </select>
+  </label>
+  <app-search-box label="Instrument" placeholder="Any instrument — ticker or name" url="/api/instruments"
+                  [params]="instrumentParams()" [describe]="describeInstrument" [(selected)]="instrumentId" />
+</form>
+
+<form class="filters" (submit)="$event.preventDefault()">
+  <fieldset class="field statuses">
+    <legend>Status</legend>
+    <span>
+      @for (option of statuses; track option) {
+        <label class="check">
+          <input type="checkbox" [checked]="status().includes(option)" (change)="toggleStatus(option)"> {{ option }}
+        </label>
+      }
+    </span>
+  </fieldset>
+  <label>Side
+    <select [value]="side() ?? ''" (change)="side.set($any(value($event)) || null)">
+      <option value="">Any</option>
+      <option value="BUY">Buy</option>
+      <option value="SELL">Sell</option>
+    </select>
+  </label>
+  <app-date-range [(start)]="start" [(end)]="end" [showGrain]="false" />
+  <label>Min value ($)
+    <input class="narrow" type="number" min="0" placeholder="Any" [value]="minValue()" (change)="minValue.set(value($event))">
+  </label>
+  <label>Max value ($)
+    <input class="narrow" type="number" min="0" placeholder="Any" [value]="maxValue()" (change)="maxValue.set(value($event))">
+  </label>
+  <button type="button" (click)="reset()">Reset filters</button>
+</form>
+
+@if (problem(); as message) {
+  <p class="problem">{{ message }}</p>
+}
+
+<section class="card wide">
+  <div class="table-head">
+    <strong>{{ shown() }}</strong>
+    @if (loading()) { <small>Loading…</small> }
+  </div>
+
+  <div class="table-scroll">
+    <table>
+      <thead>
+        <tr>
+          <th [attr.aria-sort]="ariaSort('id')"><button class="sort" (click)="sortBy('id')">Order #{{ sortMark('id') }}</button></th>
+          <th [attr.aria-sort]="ariaSort('time')"><button class="sort" (click)="sortBy('time')">Placed{{ sortMark('time') }}</button></th>
+          <th [attr.aria-sort]="ariaSort('status')"><button class="sort" (click)="sortBy('status')">Status{{ sortMark('status') }}</button></th>
+          <th>Side</th>
+          <th>Client</th>
+          <th>Account</th>
+          <th [attr.aria-sort]="ariaSort('ticker')"><button class="sort" (click)="sortBy('ticker')">Instrument{{ sortMark('ticker') }}</button></th>
+          <th class="num" [attr.aria-sort]="ariaSort('quantity')"><button class="sort" (click)="sortBy('quantity')">Quantity{{ sortMark('quantity') }}</button></th>
+          <th class="num" [attr.aria-sort]="ariaSort('price')"><button class="sort" (click)="sortBy('price')">Price{{ sortMark('price') }}</button></th>
+          <th class="num" [attr.aria-sort]="ariaSort('value')"><button class="sort" (click)="sortBy('value')">Value{{ sortMark('value') }}</button></th>
+          <th>Last update</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (row of result()?.rows ?? []; track row.trade_id) {
+          <tr class="order" [class.open]="expanded() === row.trade_id" (click)="toggleRow(row)">
+            <td>{{ row.trade_id }}</td>
+            <td>{{ dateTime(row.trade_time) }}</td>
+            <td><span class="status" [attr.data-status]="row.status">{{ row.status }}</span></td>
+            <td>{{ row.trade_type }}</td>
+            <td>{{ row.clients ?? '–' }}</td>
+            <td>{{ row.account_id }}</td>
+            <td>{{ row.ticker }} <small>{{ row.asset_class }}</small></td>
+            <td class="num">{{ count.format(row.quantity) }}</td>
+            <td class="num">{{ row.price === null ? '–' : moneyExact.format(row.price) }}</td>
+            <td class="num">{{ row.notional === null ? '–' : moneyExact.format(row.notional) }}</td>
+            <td>{{ dateTime(row.status_time) }}</td>
+          </tr>
+          @if (expanded() === row.trade_id) {
+            <tr class="timeline">
+              <td colspan="11">
+                <strong>Order #{{ row.trade_id }} · {{ row.instrument }}</strong>
+                <ol>
+                  @for (step of history.hasValue() ? history.value() : []; track step.status) {
+                    <li><span class="status" [attr.data-status]="step.status">{{ step.status }}</span> {{ dateTime(step.status_time) }}</li>
+                  } @empty {
+                    <li>{{ history.isLoading() ? 'Loading…' : 'No status history.' }}</li>
+                  }
+                </ol>
+              </td>
+            </tr>
+          }
+        } @empty {
+          <tr><td colspan="11" class="empty">{{ loading() ? 'Loading…' : 'No orders match these filters.' }}</td></tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <nav class="pager" aria-label="Pages">
+    <label>Rows per page
+      <select (change)="pageSize.set(+value($event))">
+        @for (size of pageSizes; track size) { <option [value]="size" [selected]="size === pageSize()">{{ size }}</option> }
+      </select>
+    </label>
+    <span class="spacer"></span>
+    <button type="button" [disabled]="page() <= 1" (click)="page.set(page() - 1)">‹ Previous</button>
+    <span>Page {{ page() }} of {{ result()?.pages ?? 1 }}</span>
+    <button type="button" [disabled]="page() >= (result()?.pages ?? 1)" (click)="page.set(page() + 1)">Next ›</button>
+  </nav>
+</section>

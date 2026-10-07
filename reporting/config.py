@@ -1,24 +1,23 @@
-"""Database connection. Nothing else lives here."""
-from __future__ import annotations
-
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
-from sqlalchemy.engine import Engine
 
-PACKAGE_DIR = Path(__file__).resolve().parent      # reporting/
-REPO_ROOT = PACKAGE_DIR.parents[0]
-REPORTS_DIR = PACKAGE_DIR / "reports"              # where each run's pack lands
+PACKAGE_DIR = Path(__file__).resolve().parent
+REPO_ROOT = PACKAGE_DIR.parent
+REPORTS_DIR = PACKAGE_DIR / "reports"
 
-# .env may sit beside the package or one level up; try both.
-for candidate in (PACKAGE_DIR / ".env", REPO_ROOT / ".env", REPO_ROOT.parent / ".env"):
-    if candidate.exists():
-        load_dotenv(candidate)
+for env_file in (PACKAGE_DIR / ".env", REPO_ROOT / ".env", REPO_ROOT.parent / ".env"):
+    if env_file.exists():
+        load_dotenv(env_file)
         break
 
 
-def get_engine() -> Engine:
-    """SQLAlchemy engine for the trading platform database."""
-    return create_engine(os.environ["MISSION_DB_URL"], pool_pre_ping=True)
+def get_source_engine():
+    read_only = "-c default_transaction_read_only=on -c statement_timeout=30000"
+    return create_engine(os.environ["MISSION_DB_URL"], pool_pre_ping=True, connect_args={"options": read_only})
+
+
+def get_analytics_engine():
+    return create_engine(os.environ["ANALYTICS_DB_URL"], pool_pre_ping=True)

@@ -22,3 +22,8 @@ Thumbs.db
 *.log
 .venv
 reports/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd

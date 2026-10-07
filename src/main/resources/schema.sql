@@ -10,6 +10,7 @@ DROP TABLE IF EXISTS accounts CASCADE;
 DROP TABLE IF EXISTS instruments CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
 
 -- Old client-level tables, replaced by the account-level ones above
 DROP TABLE IF EXISTS client_subscriptions CASCADE;
@@ -31,17 +32,21 @@ CREATE TABLE users (
     user_id SERIAL PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('ADMIN', 'CLIENT')),
     client_id INT REFERENCES clients(client_id),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CHECK ((user_type = 'CLIENT') = (client_id IS NOT NULL))
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE roles (
+    user_id INT REFERENCES users(user_id),
+    role TEXT NOT NULL,
+    CHECK (role IN ('ADMIN', 'CLIENT', 'ANALYST')),
+    PRIMARY KEY (user_id, role)
 );
 
 CREATE TABLE accounts (
     account_id SERIAL PRIMARY KEY,
-    account_type TEXT NOT NULL,
     balance NUMERIC(14, 4) NOT NULL
-        -- CHECK (account_type IN ('cash', 'margin', 'retirement')),
+        
 );
 
 CREATE TABLE client_accounts (
@@ -78,15 +83,12 @@ CREATE TABLE account_trades (
     PRIMARY KEY (trade_id),
     account_id INT REFERENCES accounts(account_id) NOT NULL,
     instrument_id INT REFERENCES instruments(instrument_id) NOT NULL,
-    trade_type TEXT NOT NULL
-        CHECK (trade_type IN ('BUY', 'SELL')),
+    trade_side TEXT NOT NULL
+        CHECK (trade_side IN ('BUY', 'SELL')),
     -- make this the precision as account_holdings.quantity
-    quantity NUMERIC(18, 8) NOT NULL
-        CHECK (quantity > 0),
-    -- unit price per instrument; same precision as quantity
-    price NUMERIC(18, 8) -- can be null initially for pending trades
-        CHECK (price > 0),
-    trade_time TIMESTAMPTZ NOT NULL
+    quantity NUMERIC(18, 8) NOT NULL,
+        CHECK (quantity > 0)
+    
 );
 
 CREATE TABLE account_trade_status (
@@ -96,8 +98,10 @@ CREATE TABLE account_trade_status (
     trade_time TIMESTAMPTZ NOT NULL
 );
 
-CREATE TABLE trade_total_price (
+CREATE TABLE account_trade_price (
     trade_id INT PRIMARY KEY REFERENCES account_trades(trade_id),
+    price_per_unit NUMERIC(18, 8) NOT NULL
+        CHECK (price_per_unit >= 0),
     total_price NUMERIC(18, 8) NOT NULL
         CHECK (total_price >= 0)
 );
