@@ -3,7 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
-import com.neueda.leap.events.OrderCreatedEvent;
+import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
@@ -81,7 +81,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesOrderCreatedEventWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
@@ -97,10 +97,10 @@ class RecipientServiceTest {
 
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<OrderCreatedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCreatedEvent.class);
-        verify(tradeEventProducer).publishOrderCreated(eventCaptor.capture());
+        ArgumentCaptor<TradeSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedEvent.class);
+        verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
 
-        OrderCreatedEvent event = eventCaptor.getValue();
+        TradeSubmittedEvent event = eventCaptor.getValue();
         assertEquals(accountId, event.accountId());
         assertNotNull(event.eventId());
         assertNotNull(event.timestamp());
