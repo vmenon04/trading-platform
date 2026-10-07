@@ -10,7 +10,6 @@ public class Account {
     private Long accountId;
     private UUID externalAccountId;
     private String accountType;
-    private Long clientId;
     private BigDecimal balance;
     HashMap<Instrument, AccountHolding> holdings;
 
@@ -24,7 +23,6 @@ public class Account {
         this.accountId = null;
         this.externalAccountId = UUID.randomUUID();
         this.accountType = accountType;
-        this.clientId = clientId;
         this.holdings = new HashMap<>();
         balance = BigDecimal.ZERO;
     }
@@ -51,14 +49,6 @@ public class Account {
 
     public void setAccountType(String accountType) {
         this.accountType = accountType;
-    }
-
-    public Long getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(Long clientId) {
-        this.clientId = clientId;
     }
 
     public HashMap<Instrument, AccountHolding> getHoldings() {
