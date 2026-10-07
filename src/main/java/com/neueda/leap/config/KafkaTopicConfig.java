@@ -22,7 +22,7 @@ public class KafkaTopicConfig {
     }
 
     @Bean
-    public NewTopic tradeFinishedtopic() {
-
+    public NewTopic tradeFinishedTopic() {
+        return new NewTopic("trade.finished", 1, (short) 1);
     }
 }
