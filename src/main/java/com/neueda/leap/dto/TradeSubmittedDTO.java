@@ -10,8 +10,8 @@ import java.util.UUID;
 
 public record TradeSubmittedDTO(
         @Positive long instrumentId,
-        @Positive UUID accountId,
-        @NotBlank TradeSide side,
+        @NotNull UUID accountId,
+        @NotNull TradeSide side,
         @NotNull @Positive BigDecimal quantity,
         @NotNull @Positive BigDecimal quote,
         @NotBlank long taskId
