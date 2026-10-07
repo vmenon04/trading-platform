@@ -6,13 +6,15 @@ import com.neueda.leap.enums.TradeStatus;
 import java.math.BigDecimal;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public class AccountTrade {
 
     private Long tradeId;
+    private UUID externalTradeId;
     private OffsetDateTime tradeTime;
-    private int accountId;
-    private int instrumentId;
+    private Long accountId;
+    private Long instrumentId;
     private TradeSide tradeType;
     private BigDecimal quantity;
     private BigDecimal price;
@@ -21,7 +23,7 @@ public class AccountTrade {
     public AccountTrade() {
     }
 
-    public AccountTrade(int accountId, OffsetDateTime tradeTime, int instrumentId, TradeSide tradeType, BigDecimal quantity, BigDecimal price) {
+    public AccountTrade(Long accountId, OffsetDateTime tradeTime, Long instrumentId, TradeSide tradeType, BigDecimal quantity, BigDecimal price) {
         this.tradeId = null;
         this.accountId = accountId;
         this.tradeTime = tradeTime;
@@ -40,19 +42,27 @@ public class AccountTrade {
         this.tradeId = tradeId;
     }
 
-    public int getAccountId() {
+    public UUID getExternalTradeId() {
+        return externalTradeId;
+    }
+
+    public void setExternalTradeId(UUID externalTradeId) {
+        this.externalTradeId = externalTradeId;
+    }
+
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(int accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public int getInstrumentId() {
+    public Long getInstrumentId() {
         return instrumentId;
     }
 
-    public void setInstrumentId(int instrumentId) {
+    public void setInstrumentId(Long instrumentId) {
         this.instrumentId = instrumentId;
     }
 

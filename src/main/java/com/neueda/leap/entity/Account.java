@@ -3,12 +3,14 @@ package com.neueda.leap.entity;
 import java.math.BigDecimal;
 
 import java.util.HashMap;
+import java.util.UUID;
 
 public class Account {
 
     private Long accountId;
+    private UUID externalAccountId;
     private String accountType;
-    private int clientId;
+    private Long clientId;
     private BigDecimal balance;
     HashMap<Instrument, AccountHolding> holdings;
 
@@ -18,8 +20,9 @@ public class Account {
         this.balance = BigDecimal.ZERO;
     }
 
-    public Account(String accountType, int clientId) {
+    public Account(String accountType, Long clientId) {
         this.accountId = null;
+        this.externalAccountId = UUID.randomUUID();
         this.accountType = accountType;
         this.clientId = clientId;
         this.holdings = new HashMap<>();
@@ -34,6 +37,14 @@ public class Account {
         this.accountId = accountId;
     }
 
+    public UUID getExternalAccountId() {
+        return externalAccountId;
+    }
+
+    public void setExternalAccountId(UUID externalAccountId) {
+        this.externalAccountId = externalAccountId;
+    }
+
     public String getAccountType() {
         return accountType;
     }
@@ -42,11 +53,11 @@ public class Account {
         this.accountType = accountType;
     }
 
-    public int getClientId() {
+    public Long getClientId() {
         return clientId;
     }
 
-    public void setClientId(int clientId) {
+    public void setClientId(Long clientId) {
         this.clientId = clientId;
     }
 
