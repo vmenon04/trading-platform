@@ -25,7 +25,7 @@ class AccountTest {
 
     @Test
     void parameterizedConstructorSetsProvidedValues() {
-        Account account = new Account("Trading", 42);
+        Account account = new Account("Trading", 42L);
 
         assertAll(
                 () -> assertNull(account.getAccountId()),
@@ -44,7 +44,7 @@ class AccountTest {
 
         account.setAccountId(10L);
         account.setAccountType("Cash");
-        account.setClientId(7);
+        account.setClientId(7L);
         account.setBalance(BigDecimal.valueOf(99.5));
         account.setHoldings(holdings);
 
