@@ -9,7 +9,7 @@ import java.util.UUID;
 
 public record TradeRequestDTO(
         @Positive UUID accountId,
-        @Positive int instrumentId,
+        @Positive Long instrumentId,
         @NotBlank TradeSide side,
         @NotNull @Positive BigDecimal quantity
 ) {}
