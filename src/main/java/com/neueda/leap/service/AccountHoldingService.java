@@ -32,7 +32,7 @@ public class AccountHoldingService {
      * @param instrumentId instrument identifier
      * @return active quantity, or {@link BigDecimal#ZERO} when no active holding exists
      */
-    public BigDecimal getQuantity(int accountId, Long instrumentId) {
+    public BigDecimal getQuantity(Long accountId, Long instrumentId) {
         BigDecimal quantity = accountHoldingMapper.findActiveQuantity(accountId, instrumentId);
         return quantity == null ? BigDecimal.ZERO : quantity;
     }
@@ -45,7 +45,7 @@ public class AccountHoldingService {
      * @param quantity positive quantity to add
      * @throws IllegalArgumentException if the quantity is null or not positive
      */
-    public void addQuantity(int accountId, Long instrumentId, BigDecimal quantity) {
+    public void addQuantity(Long accountId, Long instrumentId, BigDecimal quantity) {
         requirePositive(quantity);
         BigDecimal newQuantity = getQuantity(accountId, instrumentId).add(quantity);
         accountHoldingMapper.deactivateHolding(accountId, instrumentId);
@@ -61,7 +61,7 @@ public class AccountHoldingService {
      * @throws IllegalArgumentException if the quantity is null or not positive
      * @throws IllegalStateException if the account holds less than the requested quantity
      */
-    public void removeQuantity(int accountId, Long instrumentId, BigDecimal quantity) {
+    public void removeQuantity(Long accountId, Long instrumentId, BigDecimal quantity) {
         requirePositive(quantity);
         BigDecimal current = getQuantity(accountId, instrumentId);
         if (current.compareTo(quantity) < 0) {

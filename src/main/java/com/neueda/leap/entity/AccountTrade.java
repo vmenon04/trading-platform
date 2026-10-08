@@ -10,36 +10,28 @@ import java.util.UUID;
 
 public class AccountTrade {
 
-    private Long tradeId;
     private UUID externalTradeId;
-    private OffsetDateTime tradeTime;
+    private Long tradeId;
+    private AccountTradeStatus accountTradeStatus;
     private Long accountId;
     private Long instrumentId;
-    private TradeSide tradeType;
+    private TradeSide tradeSide;
     private BigDecimal quantity;
     private BigDecimal price;
-    private TradeStatus tradeStatus;
 
     public AccountTrade() {
+        this.accountTradeStatus = new AccountTradeStatus();
     }
 
-    public AccountTrade(Long accountId, OffsetDateTime tradeTime, Long instrumentId, TradeSide tradeType, BigDecimal quantity, BigDecimal price) {
+    public AccountTrade(Long accountId, Long instrumentId, TradeSide tradeSide, BigDecimal quantity, BigDecimal price) {
         this.tradeId = null;
         this.accountId = accountId;
-        this.tradeTime = tradeTime;
         this.instrumentId = instrumentId;
-        this.tradeType = tradeType;
+        this.tradeSide = tradeSide;
         this.quantity = quantity;
         this.price = price;
-        this.tradeStatus = TradeStatus.SUBMITTED;
-    }
-
-    public Long getTradeId() {
-        return tradeId;
-    }
-
-    public void setTradeId(Long tradeId) {
-        this.tradeId = tradeId;
+        this.accountTradeStatus = new AccountTradeStatus();
+        accountTradeStatus.setTradeStatus(TradeStatus.SUBMITTED);
     }
 
     public UUID getExternalTradeId() {
@@ -48,6 +40,14 @@ public class AccountTrade {
 
     public void setExternalTradeId(UUID externalTradeId) {
         this.externalTradeId = externalTradeId;
+    }
+
+    public Long getTradeId() {
+        return tradeId;
+    }
+
+    public void setTradeId(Long tradeId) {
+        this.tradeId = tradeId;
     }
 
     public Long getAccountId() {
@@ -66,12 +66,12 @@ public class AccountTrade {
         this.instrumentId = instrumentId;
     }
 
-    public TradeSide getTradeType() {
-        return tradeType;
+    public TradeSide getTradeSide() {
+        return tradeSide;
     }
 
-    public void setTradeType(TradeSide tradeType) {
-        this.tradeType = tradeType;
+    public void setTradeSide(TradeSide tradeSide) {
+        this.tradeSide = tradeSide;
     }
 
     public BigDecimal getQuantity() {
@@ -90,19 +90,17 @@ public class AccountTrade {
         this.price = price;
     }
 
-    public TradeStatus getStatus() {
-        return tradeStatus;
-    }
+    public TradeStatus getStatus() { return accountTradeStatus.getTradeStatus();}
 
     public void setTradeStatus(TradeStatus tradeStatus) {
-        this.tradeStatus = tradeStatus;
+        accountTradeStatus.setTradeStatus(tradeStatus);
     }
 
     public OffsetDateTime getTradeTime() {
-        return tradeTime;
+        return accountTradeStatus.getTradeTime();
     }
 
     public void setTradeTime(OffsetDateTime tradeTime) {
-        this.tradeTime = tradeTime;
+        accountTradeStatus.setTradeTime(tradeTime);
     }
 }

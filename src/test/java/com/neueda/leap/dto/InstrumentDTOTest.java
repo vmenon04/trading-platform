@@ -28,7 +28,7 @@ class InstrumentDTOTest {
     @Test
     void testValidInstrumentDTO() {
         InstrumentDTO dto = new InstrumentDTO(1L, "Apple", "AAPL");
-        assertEquals(1, dto.instrumentId());
+        assertEquals(1L, dto.instrumentId());
         assertEquals("Apple", dto.name());
     }
 

@@ -29,109 +29,109 @@ class AccountServiceTest {
 
     @Test
     void getBalanceReturnsBalanceFromMapper() {
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
-        assertEquals(new BigDecimal("1000.00"), accountService.getBalance(1));
+        when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
+        assertEquals(new BigDecimal("1000.00"), accountService.getBalance(1L));
     }
 
     @Test
     void getBalanceThrowsWhenAccountNotFound() {
-        when(accountMapper.findBalance(99)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> accountService.getBalance(99));
+        when(accountMapper.findBalance(99L)).thenReturn(null);
+        assertThrows(NoSuchElementException.class, () -> accountService.getBalance(99L));
     }
 
     @Test
     void depositPassesAmountToMapper() {
-        when(accountMapper.increaseBalance(eq(1), amountEqualTo("250.50"))).thenReturn(1);
-        accountService.deposit(1, new BigDecimal("250.50"));
-        verify(accountMapper).increaseBalance(eq(1), amountEqualTo("250.50"));
+        when(accountMapper.increaseBalance(eq(1L), amountEqualTo("250.50"))).thenReturn(1);
+        accountService.deposit(1L, new BigDecimal("250.50"));
+        verify(accountMapper).increaseBalance(eq(1L), amountEqualTo("250.50"));
     }
 
     @Test
     void depositRejectsNonPositiveAmount() {
-        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, new BigDecimal("-5")));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void depositThrowsWhenAccountNotFound() {
-        when(accountMapper.increaseBalance(eq(99), any())).thenReturn(0);
-        assertThrows(NoSuchElementException.class, () -> accountService.deposit(99, new BigDecimal("100")));
+        when(accountMapper.increaseBalance(eq(99L), any())).thenReturn(0);
+        assertThrows(NoSuchElementException.class, () -> accountService.deposit(99L, new BigDecimal("100")));
     }
 
     @Test
     void withdrawPassesAmountToMapper() {
-        when(accountMapper.reduceBalance(eq(1), amountEqualTo("250.50"))).thenReturn(1);
-        accountService.withdraw(1, new BigDecimal("250.50"));
-        verify(accountMapper).reduceBalance(eq(1), amountEqualTo("250.50"));
+        when(accountMapper.reduceBalance(eq(1L), amountEqualTo("250.50"))).thenReturn(1);
+        accountService.withdraw(1L, new BigDecimal("250.50"));
+        verify(accountMapper).reduceBalance(eq(1L), amountEqualTo("250.50"));
     }
 
     @Test
     void withdrawRejectsNonPositiveAmount() {
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, new BigDecimal("-5")));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void withdrawThrowsWhenInsufficientFunds() {
-        when(accountMapper.reduceBalance(eq(1), any())).thenReturn(0);
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
-        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1, new BigDecimal("1000.01")));
+        when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
+        when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
+        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1L, new BigDecimal("1000.01")));
     }
 
     @Test
     void withdrawThrowsWhenAccountNotFound() {
-        when(accountMapper.reduceBalance(eq(99), any())).thenReturn(0);
-        when(accountMapper.findBalance(99)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> accountService.withdraw(99, new BigDecimal("100")));
+        when(accountMapper.reduceBalance(eq(99L), any())).thenReturn(0);
+        when(accountMapper.findBalance(99L)).thenReturn(null);
+        assertThrows(NoSuchElementException.class, () -> accountService.withdraw(99L, new BigDecimal("100")));
     }
 
     @Test
     void purchasePassesAmountToMapper() {
-        when(accountMapper.reduceBalance(eq(1), amountEqualTo("250.50"))).thenReturn(1);
-        accountService.purchase(1, new BigDecimal("250.50"));
-        verify(accountMapper).reduceBalance(eq(1), amountEqualTo("250.50"));
+        when(accountMapper.reduceBalance(eq(1L), amountEqualTo("250.50"))).thenReturn(1);
+        accountService.purchase(1L, new BigDecimal("250.50"));
+        verify(accountMapper).reduceBalance(eq(1L), amountEqualTo("250.50"));
     }
 
     @Test
     void purchaseRejectsNonPositiveAmount() {
-        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1L, BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1L, new BigDecimal("-5")));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void purchaseThrowsWhenInsufficientFunds() {
-        when(accountMapper.reduceBalance(eq(1), any())).thenReturn(0);
-        when(accountMapper.findBalance(1)).thenReturn(new BigDecimal("1000.00"));
-        assertThrows(IllegalStateException.class, () -> accountService.purchase(1, new BigDecimal("1000.01")));
+        when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
+        when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
+        assertThrows(IllegalStateException.class, () -> accountService.purchase(1L, new BigDecimal("1000.01")));
     }
 
     @Test
     void purchaseThrowsWhenAccountNotFound() {
-        when(accountMapper.reduceBalance(eq(99), any())).thenReturn(0);
-        when(accountMapper.findBalance(99)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> accountService.purchase(99, new BigDecimal("100")));
+        when(accountMapper.reduceBalance(eq(99L), any())).thenReturn(0);
+        when(accountMapper.findBalance(99L)).thenReturn(null);
+        assertThrows(NoSuchElementException.class, () -> accountService.purchase(99L, new BigDecimal("100")));
     }
 
     @Test
     void sellPassesAmountToMapper() {
-        when(accountMapper.increaseBalance(eq(1), amountEqualTo("250.50"))).thenReturn(1);
-        accountService.sell(1, new BigDecimal("250.50"));
-        verify(accountMapper).increaseBalance(eq(1), amountEqualTo("250.50"));
+        when(accountMapper.increaseBalance(eq(1L), amountEqualTo("250.50"))).thenReturn(1);
+        accountService.sell(1L, new BigDecimal("250.50"));
+        verify(accountMapper).increaseBalance(eq(1L), amountEqualTo("250.50"));
     }
 
     @Test
     void sellRejectsNonPositiveAmount() {
-        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1L, BigDecimal.ZERO));
+        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1L, new BigDecimal("-5")));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void sellThrowsWhenAccountNotFound() {
-        when(accountMapper.increaseBalance(eq(99), any())).thenReturn(0);
-        assertThrows(NoSuchElementException.class, () -> accountService.sell(99, new BigDecimal("100")));
+        when(accountMapper.increaseBalance(eq(99L), any())).thenReturn(0);
+        assertThrows(NoSuchElementException.class, () -> accountService.sell(99L, new BigDecimal("100")));
     }
 }

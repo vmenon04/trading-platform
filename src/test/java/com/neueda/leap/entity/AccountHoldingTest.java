@@ -15,8 +15,8 @@ class AccountHoldingTest {
         AccountHolding holding = new AccountHolding();
 
         assertAll(
-                () -> assertEquals(0L, holding.getAccountId()),
-                () -> assertEquals(0L, holding.getInstrumentId()),
+                () -> assertNull(holding.getAccountId()),
+                () -> assertNull(holding.getInstrumentId()),
                 () -> assertNull(holding.getAsOfDate()),
                 () -> assertNull(holding.getQuantity()),
                 () -> assertNull(holding.getStatus())

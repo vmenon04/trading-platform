@@ -18,9 +18,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderManagementServiceTest {
 
-    private static final int ACCOUNT_ID = 1;
+    private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
-    private static final int TRADE_ID = 42;
+    private static final Long TRADE_ID = 42L;
     private static final BigDecimal QUANTITY = new BigDecimal("5");
     private static final BigDecimal PRICE = new BigDecimal("100");
     private static final TradeRequestDTO ORDER = new TradeRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
@@ -45,7 +45,7 @@ class OrderManagementServiceTest {
     }
 
     private void givenPendingTradeRecorded(BigDecimal price) {
-        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, price, "PENDING"))
+        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY))
                 .thenReturn(TRADE_ID);
     }
 
@@ -58,7 +58,7 @@ class OrderManagementServiceTest {
 
         InOrder inOrder = inOrder(validationService, accountTradeMapper, executionService);
         inOrder.verify(validationService).validate(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "PENDING");
+        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
         inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "ACCEPTED");
         inOrder.verify(executionService).execute(ORDER, PRICE);
         inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "FULFILLED");
@@ -71,8 +71,8 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY, PRICE, "REJECTED");
-        verify(accountTradeMapper, never()).insertStatus(anyInt(), any());
+        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
+        verify(accountTradeMapper, never()).insertStatus(anyLong(), any());
         verifyNoInteractions(executionService);
     }
 

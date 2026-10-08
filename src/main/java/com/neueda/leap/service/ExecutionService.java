@@ -35,8 +35,8 @@ public class ExecutionService {
      */
     @Transactional
     public void execute(TradeRequestDTO order, BigDecimal price) {
-        int accountId = order.accountId();
-        int instrumentId = order.instrumentId();
+        Long accountId = order.accountId();
+        Long instrumentId = order.instrumentId();
         BigDecimal quantity = order.quantity();
         BigDecimal total = price.multiply(quantity);
 

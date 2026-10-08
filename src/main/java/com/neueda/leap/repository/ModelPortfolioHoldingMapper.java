@@ -18,8 +18,8 @@ public interface ModelPortfolioHoldingMapper {
             + "target_weight_pct AS targetWeightPct, status";
 
     @Select("SELECT " + COLUMNS + " FROM model_portfolio_holdings WHERE model_portfolio_id = #{model_Portfolio_Id} AND instrument_id = #{instrument_Id} AND effective_date = #{effective_Date}")
-    ModelPortfolioHolding findByIdAndInstrumentAndEffectiveDate(@Param("model_Portfolio_Id") Integer model_Portfolio_Id,
-                                                                @Param("instrument_Id") Integer instrument_Id,
+    ModelPortfolioHolding findByIdAndInstrumentAndEffectiveDate(@Param("model_Portfolio_Id") Long model_Portfolio_Id,
+                                                                @Param("instrument_Id") Long instrument_Id,
                                                                 @Param("effective_Date") LocalDate effective_Date);
 
     @Select("SELECT " + COLUMNS + " FROM model_portfolio_holdings")
@@ -33,6 +33,6 @@ public interface ModelPortfolioHoldingMapper {
     void update(ModelPortfolioHolding modelPortfolioHolding);
 
     @Delete("DELETE FROM model_portfolio_holdings WHERE model_portfolio_id = #{model_Portfolio_Id} AND instrument_id = #{instrument_Id} AND effective_date = #{effective_Date}")
-    void delete(@Param("model_Portfolio_Id") Integer model_Portfolio_Id, @Param("instrument_Id") Integer instrument_Id,
+    void delete(@Param("model_Portfolio_Id") Long model_Portfolio_Id, @Param("instrument_Id") Long instrument_Id,
                 @Param("effective_Date") LocalDate effective_Date);
 }

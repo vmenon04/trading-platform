@@ -30,10 +30,10 @@ class TradeRequestDTOTest {
     @Test
     void testValidOrderRequestDTO() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1L, 2L, "BUY", new BigDecimal("150.50"));
         
-        assertEquals(1, dto.accountId());
-        assertEquals(2, dto.instrumentId());
+        assertEquals(1L, dto.accountId());
+        assertEquals(2L, dto.instrumentId());
         assertEquals("BUY", dto.side());
         assertEquals(new BigDecimal("150.50"), dto.quantity());
     }
@@ -41,7 +41,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidatePositiveAccountId() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            invalidAccountId(), 2, "BUY", new BigDecimal("150.50"));
+            invalidAccountId(), 2L, "BUY", new BigDecimal("150.50"));
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -49,7 +49,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidatePositiveInstrumentId() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, invalidInstrumentId(), "BUY", new BigDecimal("150.50"));
+            1L, invalidInstrumentId(), "BUY", new BigDecimal("150.50"));
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -57,7 +57,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidateNonBlankSide() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, "   ", new BigDecimal("150.50"));
+            1L, 2L, "   ", new BigDecimal("150.50"));
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -65,7 +65,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidateNullSide() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, null, new BigDecimal("150.50"));
+            1L, 2L, null, new BigDecimal("150.50"));
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -73,7 +73,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidatePositiveQuantity() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, "BUY", new BigDecimal("-150.50"));
+            1L, 2L, "BUY", new BigDecimal("-150.50"));
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -81,7 +81,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidateNonNullQuantity() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, "BUY", null);
+            1L, 2L, "BUY", null);
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -89,7 +89,7 @@ class TradeRequestDTOTest {
     @Test
     void testValidateZeroQuantity() {
         TradeRequestDTO dto = new TradeRequestDTO(
-            1, 2, "BUY", BigDecimal.ZERO);
+            1L, 2L, "BUY", BigDecimal.ZERO);
         Set<ConstraintViolation<TradeRequestDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -97,11 +97,11 @@ class TradeRequestDTOTest {
     @Test
     void testRecordEquality() {
         TradeRequestDTO dto1 = new TradeRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1L, 2L, "BUY", new BigDecimal("150.50"));
         TradeRequestDTO dto2 = new TradeRequestDTO(
-            1, 2, "BUY", new BigDecimal("150.50"));
+            1L, 2L, "BUY", new BigDecimal("150.50"));
         TradeRequestDTO dto3 = new TradeRequestDTO(
-            1, 2, "SELL", new BigDecimal("150.50"));
+            1L, 2L, "SELL", new BigDecimal("150.50"));
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
@@ -110,21 +110,21 @@ class TradeRequestDTOTest {
     @Test
     void testSupportsBuyAndSellSides() {
         TradeRequestDTO buyOrder = new TradeRequestDTO(
-            1, 2, "BUY", new BigDecimal("100"));
+            1L, 2L, "BUY", new BigDecimal("100"));
         TradeRequestDTO sellOrder = new TradeRequestDTO(
-            1, 2, "SELL", new BigDecimal("100"));
+            1L, 2L, "SELL", new BigDecimal("100"));
         
         assertEquals("BUY", buyOrder.side());
         assertEquals("SELL", sellOrder.side());
         assertNotEquals(buyOrder, sellOrder);
     }
 
-    private int invalidAccountId() {
-        return Integer.parseInt("-1");
+    private Long invalidAccountId() {
+        return Long.parseLong("-1");
     }
 
-    private int invalidInstrumentId() {
-        return Integer.parseInt("-1");
+    private Long invalidInstrumentId() {
+        return Long.parseLong("-1");
     }
 }
 

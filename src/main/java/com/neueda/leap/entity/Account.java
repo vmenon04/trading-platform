@@ -53,8 +53,6 @@ public class Account {
         return balance;
     }
 
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
-    }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
 
 }

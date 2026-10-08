@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ValidationServiceTest {
 
-    private static final int ACCOUNT_ID = 1;
+    private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100");
 

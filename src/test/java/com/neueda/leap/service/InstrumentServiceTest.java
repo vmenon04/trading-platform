@@ -32,7 +32,7 @@ class InstrumentServiceTest {
 
     @Test
     void getInstrumentByIdReturnsInstrumentFromMapper() {
-        when(instrumentMapper.findById(1)).thenReturn(instrument);
+        when(instrumentMapper.findById(1L)).thenReturn(instrument);
         assertSame(instrument, instrumentService.getInstrumentById(1L));
     }
 
