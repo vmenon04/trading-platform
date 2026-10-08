@@ -4,10 +4,10 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradeMapper;
-import com.neueda.leap.repository.AccountTradePriceMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -22,9 +22,11 @@ public class TradeRecordingService {
     private final KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate;
     private final String tradeRecordedTopic;
 
+    @Autowired
     private AccountTradeMapper accountTradeMapper;
+
+    @Autowired
     private AccountTradeStatusMapper accountTradeStatusMapper;
-    private AccountTradePriceMapper accountTradePriceMapper;
 
     public TradeRecordingService(KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate,
                                  @Value("${trade.recorded}") String tradeRecordedTopic) {
