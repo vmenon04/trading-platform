@@ -9,10 +9,10 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record TradeSubmittedDTO(
-        @Positive long instrumentId,
+        @Positive Long instrumentId,
         @Positive UUID accountId,
         @NotBlank TradeSide side,
         @NotNull @Positive BigDecimal quantity,
         @NotNull @Positive BigDecimal quote,
-        @NotBlank long taskId
+        @NotBlank Long taskId
 ) {}

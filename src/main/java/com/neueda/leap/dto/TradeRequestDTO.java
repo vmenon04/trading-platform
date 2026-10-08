@@ -8,8 +8,8 @@ import java.math.BigDecimal;
 import java.util.UUID;
 
 public record TradeRequestDTO(
-        @Positive UUID accountId,
+        @NotNull UUID accountId,
         @Positive Long instrumentId,
-        @NotBlank TradeSide side,
+        @NotNull TradeSide side,
         @NotNull @Positive BigDecimal quantity
 ) {}
