@@ -27,8 +27,8 @@ class InstrumentDTOTest {
 
     @Test
     void testValidInstrumentDTO() {
-        InstrumentDTO dto = new InstrumentDTO(1, "Apple", "AAPL");
-        assertEquals(1, dto.instrumentId());
+        InstrumentDTO dto = new InstrumentDTO(1L, "Apple", "AAPL");
+        assertEquals(1L, dto.instrumentId());
         assertEquals("Apple", dto.name());
     }
 
@@ -41,30 +41,30 @@ class InstrumentDTOTest {
 
     @Test
     void testValidateBlankName() {
-        InstrumentDTO dto = new InstrumentDTO(1, "   ", "AAPL");
+        InstrumentDTO dto = new InstrumentDTO(1L, "   ", "AAPL");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testValidateBlankTicker() {
-        InstrumentDTO dto = new InstrumentDTO(1, "Apple", "");
+        InstrumentDTO dto = new InstrumentDTO(1L, "Apple", "");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testRecordEquality() {
-        InstrumentDTO dto1 = new InstrumentDTO(1, "Apple", "AAPL");
-        InstrumentDTO dto2 = new InstrumentDTO(1, "Apple", "AAPL");
-        InstrumentDTO dto3 = new InstrumentDTO(2, "Microsoft", "MSFT");
+        InstrumentDTO dto1 = new InstrumentDTO(1L, "Apple", "AAPL");
+        InstrumentDTO dto2 = new InstrumentDTO(1L, "Apple", "AAPL");
+        InstrumentDTO dto3 = new InstrumentDTO(2L, "Microsoft", "MSFT");
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
     }
 
-    private int invalidInstrumentId() {
-        return Integer.parseInt("-1");
+    private Long invalidInstrumentId() {
+        return Long.parseLong("-1");
     }
 }
 

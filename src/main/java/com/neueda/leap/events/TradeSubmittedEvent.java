@@ -1,12 +1,11 @@
 package com.neueda.leap.events;
 
 import com.neueda.leap.dto.TradeSubmittedDTO;
-import jakarta.validation.constraints.Positive;
 
 import java.time.Instant;
 import java.util.UUID;
 
-public record OrderCreatedEvent(
+public record TradeSubmittedEvent(
         UUID accountId,
         UUID eventId,
         Instant timestamp,

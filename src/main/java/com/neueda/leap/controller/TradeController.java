@@ -6,6 +6,8 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.UUID;
+
 
 @RestController
 @RequestMapping("/accounts/{accountId}/trades")
@@ -19,7 +21,7 @@ public class TradeController {
 
     @PostMapping
     public ResponseEntity<Void> submitOrder(
-            @PathVariable int accountId,
+            @PathVariable UUID accountId,
             @Valid @RequestBody TradeRequestDTO dto) {
         
         

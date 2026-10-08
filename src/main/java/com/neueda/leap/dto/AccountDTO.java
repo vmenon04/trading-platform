@@ -1,6 +1,5 @@
 package com.neueda.leap.dto;
 
-import com.neueda.leap.enums.AccountType;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 

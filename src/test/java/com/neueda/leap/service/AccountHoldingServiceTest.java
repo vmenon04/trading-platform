@@ -16,8 +16,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AccountHoldingServiceTest {
 
-    private static final int ACCOUNT_ID = 1;
-    private static final int INSTRUMENT_ID = 10;
+    private static final Long ACCOUNT_ID = 1L;
+    private static final Long INSTRUMENT_ID = 10L;
 
     @Mock
     private AccountHoldingMapper accountHoldingMapper;
@@ -44,8 +44,8 @@ class AccountHoldingServiceTest {
     }
 
     private void verifyNothingChanged() {
-        verify(accountHoldingMapper, never()).deactivateHolding(anyInt(), anyInt());
-        verify(accountHoldingMapper, never()).insertSnapshot(anyInt(), anyInt(), any(), any());
+        verify(accountHoldingMapper, never()).deactivateHolding(anyLong(), anyLong());
+        verify(accountHoldingMapper, never()).insertSnapshot(anyLong(), anyLong(), any(), any());
     }
 
     @Test

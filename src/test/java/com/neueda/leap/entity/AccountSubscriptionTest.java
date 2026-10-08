@@ -14,8 +14,8 @@ class AccountSubscriptionTest {
         AccountSubscription subscription = new AccountSubscription();
 
         assertAll(
-                () -> assertEquals(0, subscription.getAccountId()),
-                () -> assertEquals(0, subscription.getModelPortfolioId()),
+                () -> assertNull(subscription.getAccountId()),
+                () -> assertNull(subscription.getModelPortfolioId()),
                 () -> assertNull(subscription.getSubscriptionDate()),
                 () -> assertNull(subscription.getStatus())
         );
@@ -24,7 +24,7 @@ class AccountSubscriptionTest {
     @Test
     void parameterizedConstructorSetsIdsAndDateAndDefaultsStatusToActive() {
         LocalDate date = LocalDate.of(2026, 9, 25);
-        AccountSubscription subscription = new AccountSubscription(101, 7, date);
+        AccountSubscription subscription = new AccountSubscription(101L, 7L, date);
 
         assertAll(
                 () -> assertEquals(101, subscription.getAccountId()),
@@ -39,8 +39,8 @@ class AccountSubscriptionTest {
         AccountSubscription subscription = new AccountSubscription();
         LocalDate date = LocalDate.of(2025, 6, 30);
 
-        subscription.setAccountId(11);
-        subscription.setModelPortfolioId(22);
+        subscription.setAccountId(11L);
+        subscription.setModelPortfolioId(22L);
         subscription.setSubscriptionDate(date);
         subscription.setStatus(Status.INACTIVE);
 

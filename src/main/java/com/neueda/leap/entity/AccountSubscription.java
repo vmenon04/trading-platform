@@ -6,34 +6,34 @@ import java.time.LocalDate;
 
 public class AccountSubscription {
 
-    private int accountId;
-    private int modelPortfolioId;
+    private Long accountId;
+    private Long modelPortfolioId;
     private LocalDate subscriptionDate;
     private Status status;
 
     public AccountSubscription() {
     }
 
-    public AccountSubscription(int accountId, int modelPortfolioId, LocalDate subscriptionDate) {
+    public AccountSubscription(Long accountId, Long modelPortfolioId, LocalDate subscriptionDate) {
         this.accountId = accountId;
         this.modelPortfolioId = modelPortfolioId;
         this.subscriptionDate = subscriptionDate;
         this.status = Status.ACTIVE;
     }
 
-    public int getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(int accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public int getModelPortfolioId() {
+    public Long getModelPortfolioId() {
         return modelPortfolioId;
     }
 
-    public void setModelPortfolioId(int modelPortfolioId) {
+    public void setModelPortfolioId(Long modelPortfolioId) {
         this.modelPortfolioId = modelPortfolioId;
     }
 

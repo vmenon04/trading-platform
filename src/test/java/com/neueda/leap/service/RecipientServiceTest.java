@@ -3,7 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
-import com.neueda.leap.events.OrderCreatedEvent;
+import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
@@ -63,14 +63,14 @@ class RecipientServiceTest {
     void publishOrder_returnsAcceptedWithTaskLocation() {
         TradeRequestDTO dto = new TradeRequestDTO(
                 UUID.randomUUID(),
-                10,
+                10L,
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
 
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
-        when(instrumentService.getInstrumentById(10)).thenReturn(instrument);
+        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
         when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
 
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
@@ -81,26 +81,26 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesOrderCreatedEventWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
-                44,
+                44L,
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
 
         Instrument instrument = new Instrument();
         instrument.setTicker("MSFT");
-        when(instrumentService.getInstrumentById(44)).thenReturn(instrument);
+        when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
         when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
 
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<OrderCreatedEvent> eventCaptor = ArgumentCaptor.forClass(OrderCreatedEvent.class);
-        verify(tradeEventProducer).publishOrderCreated(eventCaptor.capture());
+        ArgumentCaptor<TradeSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedEvent.class);
+        verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
 
-        OrderCreatedEvent event = eventCaptor.getValue();
+        TradeSubmittedEvent event = eventCaptor.getValue();
         assertEquals(accountId, event.accountId());
         assertNotNull(event.eventId());
         assertNotNull(event.timestamp());

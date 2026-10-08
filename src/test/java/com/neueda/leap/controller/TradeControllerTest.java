@@ -40,7 +40,9 @@ class TradeControllerTest {
 
     @Test
     void submitOrder_malformedJson_returns400_andDoesNotCallService() throws Exception {
-        mockMvc.perform(post("/api/accounts/{account_id}/trades", 123)
+        UUID accountId = UUID.randomUUID();
+
+        mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
@@ -58,11 +60,11 @@ class TradeControllerTest {
     @Test
     void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() throws Exception {
         UUID accountId = UUID.randomUUID();
-        URI location = URI.create("/api/accounts/123/trades/tasks/42");
+        URI location = URI.create("/api/accounts/%s/trades/tasks/42".formatted(accountId));
         when(recipientService.publishOrder(any(TradeRequestDTO.class)))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
-        mockMvc.perform(post("/api/accounts/{account_id}/trades", 123)
+        mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
