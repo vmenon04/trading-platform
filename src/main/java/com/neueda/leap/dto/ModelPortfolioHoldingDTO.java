@@ -5,8 +5,8 @@ import jakarta.validation.constraints.Positive;
 import jakarta.validation.constraints.PositiveOrZero;
 
 public record ModelPortfolioHoldingDTO(
-        @Positive int modelPortfolioId,
-        @Positive int instrumentId,
+        @Positive Long modelPortfolioId,
+        @Positive Long instrumentId,
         @NotBlank String effectiveDate,
         @PositiveOrZero double targetWeightPct,
         @NotBlank String status

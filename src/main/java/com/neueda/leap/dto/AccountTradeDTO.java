@@ -6,10 +6,10 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record AccountTradeDTO(
-        @Positive int tradeId,
+        @Positive Long tradeId,
         @NotBlank String tradeTime,
-        @Positive int accountId,
-        @Positive int instrumentId,
+        @Positive Long accountId,
+        @Positive Long instrumentId,
         @NotBlank String tradeType,
         @Positive BigDecimal quantity,
         @Positive BigDecimal price,

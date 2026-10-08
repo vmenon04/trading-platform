@@ -52,8 +52,8 @@ public class ValidationService {
             throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
         }
 
-        int accountId = order.accountId();
-        int instrumentId = order.instrumentId();
+        Long accountId = order.accountId();
+        Long instrumentId = order.instrumentId();
         instrumentService.getInstrumentById(instrumentId);
         BigDecimal balance = accountService.getBalance(accountId);
 

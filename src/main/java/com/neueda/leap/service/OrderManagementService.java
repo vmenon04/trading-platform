@@ -46,7 +46,7 @@ public class OrderManagementService {
      * @throws IllegalArgumentException if the order request is invalid
      * @throws IllegalStateException if validation or execution fails due to business constraints
      */
-    public synchronized int placeOrder(TradeRequestDTO order) {
+    public synchronized Long placeOrder(TradeRequestDTO order) {
         BigDecimal price = instrumentService.getCurrentPrice(order.instrumentId());
 
         try {
@@ -56,7 +56,7 @@ public class OrderManagementService {
             throw e;
         }
 
-        int tradeId = recordTrade(order, price, PENDING);
+        Long tradeId = recordTrade(order, price, PENDING);
         accountTradeMapper.insertStatus(tradeId, ACCEPTED);
 
         try {
@@ -70,7 +70,7 @@ public class OrderManagementService {
         return tradeId;
     }
 
-    private int recordTrade(TradeRequestDTO order, BigDecimal price, String status) {
+    private Long recordTrade(TradeRequestDTO order, BigDecimal price, String status) {
         //TODO: Remove: needs to be moved to kafka execution
         throw new UnsupportedOperationException();
     }

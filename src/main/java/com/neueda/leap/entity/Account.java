@@ -8,7 +8,6 @@ public class Account {
 
     private Long accountId;
     private String accountType;
-    private int clientId;
     private BigDecimal balance;
     HashMap<Instrument, AccountHolding> holdings;
 
@@ -18,10 +17,9 @@ public class Account {
         this.balance = BigDecimal.ZERO;
     }
 
-    public Account(String accountType, int clientId) {
+    public Account(String accountType, Long clientId) {
         this.accountId = null;
         this.accountType = accountType;
-        this.clientId = clientId;
         this.holdings = new HashMap<>();
         balance = BigDecimal.ZERO;
     }
@@ -42,14 +40,6 @@ public class Account {
         this.accountType = accountType;
     }
 
-    public int getClientId() {
-        return clientId;
-    }
-
-    public void setClientId(int clientId) {
-        this.clientId = clientId;
-    }
-
     public HashMap<Instrument, AccountHolding> getHoldings() {
         return holdings;
     }
@@ -62,8 +52,6 @@ public class Account {
         return balance;
     }
 
-    public void setBalance(BigDecimal balance) {
-        this.balance = balance;
-    }
+    public void setBalance(BigDecimal balance) { this.balance = balance; }
 
 }

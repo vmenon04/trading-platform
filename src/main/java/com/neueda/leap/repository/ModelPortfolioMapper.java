@@ -16,7 +16,7 @@ public interface ModelPortfolioMapper {
     String COLUMNS = "model_portfolio_id AS modelPortfolioId, name";
 
     @Select ("SELECT " + COLUMNS + " FROM model_portfolios WHERE model_portfolio_id = #{model_Portfolio_Id}")
-    ModelPortfolio findById(Integer model_Portfolio_Id);
+    ModelPortfolio findById(Long model_Portfolio_Id);
 
 
     @Select("SELECT " + COLUMNS + " FROM model_portfolios")
@@ -34,5 +34,5 @@ public interface ModelPortfolioMapper {
     void update(ModelPortfolio modelPortfolio);
 
     @Delete("DELETE FROM model_portfolios WHERE model_portfolio_id = #{model_Portfolio_Id}")
-    void delete(Integer model_Portfolio_Id);
+    void delete(Long model_Portfolio_Id);
 }

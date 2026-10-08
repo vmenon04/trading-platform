@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record TradeRequestDTO(
-        @Positive int accountId,
-        @Positive int instrumentId,
+        @Positive Long accountId,
+        @Positive Long instrumentId,
         @NotBlank String side,
         @NotNull @Positive BigDecimal quantity
 ) {}
