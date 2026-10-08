@@ -1,0 +1,19 @@
+# Files never sent into a Docker build (both Dockerfile and reporting/tests.Dockerfile).
+
+# secrets
+.env
+.env.*
+
+# local environments and build output
+.venv
+target
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+reporting/reports
+
+# editor and git folders
+.git
+.idea
+.vscode

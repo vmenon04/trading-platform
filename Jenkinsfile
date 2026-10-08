@@ -17,6 +17,22 @@ def StaticAnalysis() {
     sh 'mvn site'
 }
 
+def ReportingTests() {
+    // the reporting tests are Python, so they run inside a Python container (see reporting/tests.Dockerfile)
+    def safeTag = getSafeTag()
+    def image = "fintech-five-reporting-tests:${safeTag}"
+    def container = "reporting-tests-${safeTag}-${env.BUILD_NUMBER}"
+    sh "docker build -f reporting/tests.Dockerfile -t ${image} ."
+    try {
+        sh "docker run --name ${container} ${image}"
+    } finally {
+        // copy the results out and publish them even when tests fail, so Jenkins shows which ones
+        sh "docker cp ${container}:/app/reporting/pytest-results.xml pytest-results.xml || true"
+        sh "docker rm -f ${container} || true"
+        junit allowEmptyResults: true, testResults: 'pytest-results.xml'
+    }
+}
+
 pipeline {
     agent any
     tools {
@@ -69,6 +85,15 @@ pipeline {
                         echo "Starting Library Static Analysis"
                         script {
                             StaticAnalysis()
+                        }
+                    }
+                }
+
+                stage('Reporting-Tests') {
+                    steps {
+                        echo "Starting Reporting (Python) Tests"
+                        script {
+                            ReportingTests()
                         }
                     }
                 }
