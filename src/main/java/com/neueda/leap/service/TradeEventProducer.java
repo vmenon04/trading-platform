@@ -1,25 +1,14 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
-import com.neueda.leap.events.TradeSubmittedEvent;
-import com.neueda.leap.events.TradeValidatedEvent;
+import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.dto.TradeSubmittedDTO;
+import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.kafka.KafkaTopics;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.support.SendResult;
 import org.springframework.stereotype.Service;
-
-// questions:
-// 1.   KafkaProducerConfig imports Jackson's com.fasterxml.jackson.databind.JsonSerializer 
-//      should we switch to org.springframework.kafka.support.serializer.JsonSerializer?
-// 2.   Right now, the callers of the publish methods kafkaTemplate.send() 
-//      have no way to know if the message was successfully sent to the broker.
-//      AI suggestion is that the publish methods should ideally return the 
-//      CompletableFuture from kafkaTemplate.send() so that the caller can handle success or failure.
-// 3.   trade.validated and trade.recorded are keyed by tradeId, shouldn't we consider keying by accountId?
-// 4.   Shouldn't we use the topic's DTO (TradeSubmittedDTO, TradeValidatedDTO, TradeRecordedDTO) 
-//      instead of separate key and Object so we can let each method pick its own key and stop the
-//      wrong thing from going into a topic.
 
 @Service
 public class TradeEventProducer {
@@ -30,16 +19,21 @@ public class TradeEventProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publishTradeSubmitted(TradeSubmittedEvent event) {
-        kafkaTemplate.send(KafkaTopics.TRADE_SUBMITTED, event.accountId().toString(), event);
+    // Each method returns the send so the caller can wait for the broker to acknowledge the message
+    // (before committing its offset, or before replying to the client) instead of losing it on a failed send.
+    // trade.submitted, trade.validated and trade.recorded are keyed by accountId so each account's trades
+    // stay on one partition and are processed in order.
+
+    public CompletableFuture<SendResult<String, Object>> publishTradeSubmitted(TradeSubmittedDTO event) {
+        return kafkaTemplate.send(KafkaTopics.TRADE_SUBMITTED, event.accountId().toString(), event);
     }
 
-    public void publishTradeValidated(TradeValidatedEvent event) {
-        kafkaTemplate.send(KafkaTopics.TRADE_VALIDATED, event.tradeId().toString(), event);
+    public CompletableFuture<SendResult<String, Object>> publishTradeValidated(TradeValidatedDTO event) {
+        return kafkaTemplate.send(KafkaTopics.TRADE_VALIDATED, event.accountId().toString(), event);
     }
 
-    public void publishTradeRecorded(String tradeId, Object event) {
-        kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, tradeId, event);
+    public CompletableFuture<SendResult<String, Object>> publishTradeRecorded(TradeRecordedDTO event) {
+        return kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, event.accountId().toString(), event);
     }
 
     public CompletableFuture<SendResult<String, Object>> publishTradeFinished(TradeFinishedDTO event) {
