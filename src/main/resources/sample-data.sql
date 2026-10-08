@@ -1,7 +1,7 @@
--- Sample data loader for mission-model-hardened.sql
+-- Sample data loader for schema.sql
 -- Populates clients, accounts, client_accounts, instruments, model_portfolios (dimension tables) plus
 -- account_holdings, account_trades (with account_trade_status and account_trade_price),
--- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run mission-model-hardened.sql first to create the schema.
+-- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run schema.sql first to create the schema.
 
 TRUNCATE TABLE
     account_subscriptions,
@@ -262,3 +262,11 @@ SELECT user_id,
             ELSE 'ANALYST'
        END
 FROM users;
+
+-- External ids: the random UUIDs the API uses to refer to clients, users, accounts and trades
+-- (e.g. POST /accounts/{external_account_id}/trades). The Java code makes one with
+-- UUID.randomUUID() for every new row; gen_random_uuid() is the Postgres equivalent.
+UPDATE clients        SET external_client_id  = gen_random_uuid();
+UPDATE users          SET external_user_id    = gen_random_uuid();
+UPDATE accounts       SET external_account_id = gen_random_uuid();
+UPDATE account_trades SET external_trade_id   = gen_random_uuid();
