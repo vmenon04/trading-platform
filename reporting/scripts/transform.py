@@ -183,13 +183,13 @@ def volume_by_trade_type(engine, filters, grain):
 def status_by_period(engine, filters, grain):
     """How many orders were placed in each period, split by status, plus fill and reject rates.
 
-    Unlike the other charts this counts every status, including PENDING and REJECTED.
+    Unlike the other charts this counts every status, including SUBMITTED and REJECTED.
     """
     where_sql, params = build_where(filters)
     params["grain"] = grain
     sql = f"""
         SELECT date_trunc(%(grain)s, t.trade_time)::date AS period,
-               COUNT(*) FILTER (WHERE t.status = 'PENDING')   AS "PENDING",
+               COUNT(*) FILTER (WHERE t.status = 'SUBMITTED') AS "SUBMITTED",
                COUNT(*) FILTER (WHERE t.status = 'ACCEPTED')  AS "ACCEPTED",
                COUNT(*) FILTER (WHERE t.status = 'FULFILLED') AS "FULFILLED",
                COUNT(*) FILTER (WHERE t.status = 'REJECTED')  AS "REJECTED",
@@ -373,7 +373,7 @@ def order_history(engine, filters, sort="time", descending=True, page=1, page_si
 
 
 def order_status_history(engine, trade_id):
-    """Every status one order went through, oldest first (e.g. PENDING -> ACCEPTED -> FULFILLED)."""
+    """Every status one order went through, oldest first (e.g. SUBMITTED -> ACCEPTED -> FULFILLED)."""
     sql = """
         SELECT status, status_time
         FROM trade_status_history

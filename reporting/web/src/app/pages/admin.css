@@ -23,7 +23,7 @@ tr.timeline ol { margin: 6px 0 2px; padding-left: 20px; display: flex; flex-wrap
 .status[data-status="FULFILLED"]::before { content: "✓"; color: var(--good); }
 .status[data-status="REJECTED"]::before { content: "✕"; color: var(--critical); }
 .status[data-status="ACCEPTED"]::before { content: "●"; color: var(--series-1); }
-.status[data-status="PENDING"]::before { content: "○"; color: var(--muted); }
+.status[data-status="SUBMITTED"]::before { content: "○"; color: var(--muted); }
 
 .pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
 .pager label { display: flex; flex-direction: column; gap: 4px; color: var(--text-secondary); font-size: 12px; }

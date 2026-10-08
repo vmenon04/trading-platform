@@ -52,18 +52,22 @@ function options({ horizontal = false, legend = false, stacked = false, format =
   };
 }
 
-function bars(label: string, data: (number | null)[], color: string): ChartDataset<'bar'> {
+// Typed as 'line' | 'bar' (not just 'bar') so it fits Config, which can hold either kind.
+function bars(label: string, data: (number | null)[], color: string, stacked = false): ChartDataset<'line' | 'bar'> {
   return {
     label,
     data,
     backgroundColor: color,
-    borderRadius: 4,
+    borderRadius: stacked ? 0 : 4,
     borderSkipped: 'start', // square at the baseline, rounded at the value end
     maxBarThickness: 24,
+    // stacked segments get a 2px gap in the background colour between them
+    borderColor: stacked ? css('--surface') : undefined,
+    borderWidth: stacked ? { top: 2 } : undefined,
   };
 }
 
-function line(label: string, data: (number | null)[], color: string, partial: boolean[]): ChartDataset<'line'> {
+function line(label: string, data: (number | null)[], color: string, partial: boolean[]): ChartDataset<'line' | 'bar'> {
   return {
     label,
     data,
@@ -135,18 +139,13 @@ export function outcomes(rows: StatusMixRow[], range: Range): Config {
     ['FULFILLED', 'Fulfilled', '--series-1'],
     ['REJECTED', 'Rejected', '--series-2'],
     ['ACCEPTED', 'Accepted', '--series-3'],
-    ['PENDING', 'Pending', '--series-4'],
+    ['SUBMITTED', 'Submitted', '--series-4'],
   ];
   return {
     type: 'bar',
     data: {
       labels: periodLabels(rows, range),
-      datasets: series.map(([status, label, color]) => ({
-        ...bars(label, rows.map((row) => row[status]), css(color)),
-        borderRadius: 0,
-        borderColor: css('--surface'),
-        borderWidth: { top: 2 }, // the 2px surface gap between stacked segments
-      })),
+      datasets: series.map(([status, label, color]) => bars(label, rows.map((row) => row[status]), css(color), true)),
     },
     options: options({ legend: true, stacked: true, format: count }),
   };

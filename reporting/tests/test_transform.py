@@ -83,7 +83,7 @@ def test_weeks_start_on_monday_like_postgres():
 # --- months with no trades ----------------------------------------------------
 
 def test_month_with_no_orders_has_no_fill_rate(db):
-    db.result = periods("2026-01-01", PENDING=[0], ACCEPTED=[1], FULFILLED=[2], REJECTED=[1], orders=[4])
+    db.result = periods("2026-01-01", SUBMITTED=[0], ACCEPTED=[1], FULFILLED=[2], REJECTED=[1], orders=[4])
     out = tf.status_by_period(None, JAN_TO_FEB, "month")
     assert out["fill_rate"].tolist()[0] == 50.0
     assert pd.isna(out["fill_rate"].tolist()[1])

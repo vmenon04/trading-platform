@@ -22,6 +22,7 @@ DATES = "start=2026-01-01&end=2026-02-01"   # given in full so the API doesn't a
     "/api/admin/orders?sort=bad",
     "/api/admin/orders?sort=t.trade_id;DROP TABLE trades",
     "/api/admin/orders?status=NOPE",
+    "/api/admin/orders?status=PENDING",         # renamed to SUBMITTED to match the Java TradeStatus enum
     "/api/admin/orders?side=sell",              # must be upper case
     "/api/admin/orders?order=up",
     "/api/admin/orders?trade_id=abc",

@@ -37,7 +37,7 @@ WEB_BUILD = REPORTING_DIR / "web" / "dist" / "web" / "browser"   # made by `npm 
 
 # The only values these parameters may have.
 Period = Literal["day", "week", "month", "quarter", "year"]
-Status = Literal["PENDING", "ACCEPTED", "FULFILLED", "REJECTED"]
+Status = Literal["SUBMITTED", "ACCEPTED", "FULFILLED", "REJECTED"]
 Side = Literal["BUY", "SELL"]
 SortKey = Literal["id", "time", "status", "ticker", "quantity", "price", "value"]
 
@@ -194,7 +194,7 @@ def orders(
     client_id: int | None = None,
     asset_class: str | None = None,
     instrument_id: int | None = None,
-    status: list[Status] = Query(default=[]),   # can be given more than once: ?status=PENDING&status=REJECTED
+    status: list[Status] = Query(default=[]),   # can be given more than once: ?status=SUBMITTED&status=REJECTED
     side: Side | None = None,
     start: date | None = None,
     end: date | None = None,

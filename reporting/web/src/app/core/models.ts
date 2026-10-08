@@ -1,7 +1,7 @@
 // The shapes the reporting API (reporting/api.py) sends back. Dates arrive as ISO strings.
 
 export type Grain = 'day' | 'week' | 'month' | 'quarter' | 'year';
-export type OrderStatus = 'PENDING' | 'ACCEPTED' | 'FULFILLED' | 'REJECTED';
+export type OrderStatus = 'SUBMITTED' | 'ACCEPTED' | 'FULFILLED' | 'REJECTED';
 export type Side = 'BUY' | 'SELL';
 
 export interface SyncStatus {

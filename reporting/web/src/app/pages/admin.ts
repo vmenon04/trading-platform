@@ -17,7 +17,7 @@ type SortKey = 'id' | 'time' | 'status' | 'ticker' | 'quantity' | 'price' | 'val
   styleUrl: './admin.css',
 })
 export class AdminPage {
-  protected readonly statuses: OrderStatus[] = ['PENDING', 'ACCEPTED', 'FULFILLED', 'REJECTED'];
+  protected readonly statuses: OrderStatus[] = ['SUBMITTED', 'ACCEPTED', 'FULFILLED', 'REJECTED'];
   protected readonly pageSizes = [10, 25, 50];
 
   // ---------- filters (empty = not applied) ----------

@@ -14,7 +14,7 @@
   --series-1: #2a78d6;   /* blue: single series, BUY, FULFILLED */
   --series-2: #eb6834;   /* orange: SELL, REJECTED */
   --series-3: #1baf7a;   /* aqua: ACCEPTED */
-  --series-4: #eda100;   /* yellow: PENDING */
+  --series-4: #eda100;   /* yellow: SUBMITTED */
   --good: #0ca30c;
   --warning: #fab219;
   --critical: #d03b3b;
