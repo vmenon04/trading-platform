@@ -51,14 +51,14 @@ CHANGED_TRADES = """
            t.instrument_id,
            t.trade_side AS trade_type,
            t.quantity,
-           p.total_price / t.quantity AS price,
+           p.price_per_unit AS price,
            p.total_price AS notional,
            (SELECT MIN(s.trade_time) FROM account_trade_status s WHERE s.trade_id = t.trade_id) AS trade_time,
            (SELECT s.status FROM account_trade_status s WHERE s.trade_id = t.trade_id
             ORDER BY s.trade_time DESC LIMIT 1) AS status,
            (SELECT MAX(s.trade_time) FROM account_trade_status s WHERE s.trade_id = t.trade_id) AS status_time
     FROM account_trades t
-    LEFT JOIN trade_total_price p ON p.trade_id = t.trade_id
+    LEFT JOIN account_trade_price p ON p.trade_id = t.trade_id
     WHERE t.trade_id IN (SELECT trade_id FROM account_trade_status WHERE trade_time > %(since)s)
 """
 
