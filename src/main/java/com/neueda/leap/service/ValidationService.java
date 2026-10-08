@@ -2,6 +2,9 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
+import java.util.UUID;
+
+import com.neueda.leap.enums.TradeSide;
 import org.springframework.stereotype.Service;
 
 /**
@@ -40,8 +43,8 @@ public class ValidationService {
         if (order == null) {
             throw new IllegalArgumentException("Order must not be null");
         }
-        String side = order.side();
-        if (!"BUY".equals(side) && !"SELL".equals(side)) {
+        TradeSide side = order.side();
+        if (!TradeSide.BUY.equals(side) && !TradeSide.SELL.equals(side)) {
             throw new IllegalArgumentException("Side must be BUY or SELL, got " + side);
         }
         BigDecimal quantity = order.quantity();
@@ -52,8 +55,8 @@ public class ValidationService {
             throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
         }
 
-        int accountId = order.accountId();
-        int instrumentId = order.instrumentId();
+        UUID accountId = order.accountId();
+        Long instrumentId = order.instrumentId();
         instrumentService.getInstrumentById(instrumentId);
         BigDecimal balance = accountService.getBalance(accountId);
 

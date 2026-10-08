@@ -70,7 +70,7 @@ class RecipientServiceTest {
 
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
-        when(instrumentService.getInstrumentById(10)).thenReturn(instrument);
+        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
         when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
 
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
@@ -92,7 +92,7 @@ class RecipientServiceTest {
 
         Instrument instrument = new Instrument();
         instrument.setTicker("MSFT");
-        when(instrumentService.getInstrumentById(44)).thenReturn(instrument);
+        when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
         when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
 
         recipientService.publishOrder(dto);

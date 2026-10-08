@@ -33,13 +33,13 @@ class InstrumentServiceTest {
     @Test
     void getInstrumentByIdReturnsInstrumentFromMapper() {
         when(instrumentMapper.findById(1)).thenReturn(instrument);
-        assertSame(instrument, instrumentService.getInstrumentById(1));
+        assertSame(instrument, instrumentService.getInstrumentById(1L));
     }
 
     @Test
     void getInstrumentByIdThrowsWhenNotFound() {
-        when(instrumentMapper.findById(99)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> instrumentService.getInstrumentById(99));
+        when(instrumentMapper.findById(99L)).thenReturn(null);
+        assertThrows(NoSuchElementException.class, () -> instrumentService.getInstrumentById(99L));
     }
 
     @Test
@@ -111,9 +111,9 @@ class InstrumentServiceTest {
     void getCurrentPriceByIdLooksUpTickerAndReturnsPrice() {
         Instrument apple = mock(Instrument.class);
         when(apple.getTicker()).thenReturn("AAPL");
-        when(instrumentMapper.findById(1)).thenReturn(apple);
+        when(instrumentMapper.findById(1L)).thenReturn(apple);
         when(instrumentMapper.findByTicker("AAPL")).thenReturn(apple);
         when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("189.25"));
-        assertEquals(new BigDecimal("189.25"), instrumentService.getCurrentPrice(1));
+        assertEquals(new BigDecimal("189.25"), instrumentService.getCurrentPrice(1L));
     }
 }

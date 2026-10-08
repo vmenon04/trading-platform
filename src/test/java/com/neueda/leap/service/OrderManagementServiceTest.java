@@ -19,7 +19,7 @@ import static org.mockito.Mockito.*;
 class OrderManagementServiceTest {
 
     private static final int ACCOUNT_ID = 1;
-    private static final int INSTRUMENT_ID = 10;
+    private static final Long INSTRUMENT_ID = 10L;
     private static final int TRADE_ID = 42;
     private static final BigDecimal QUANTITY = new BigDecimal("5");
     private static final BigDecimal PRICE = new BigDecimal("100");

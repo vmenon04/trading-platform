@@ -35,7 +35,7 @@ public interface AccountHoldingMapper {
     void update(AccountHolding accountHolding);
 
     @Delete("DELETE FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
-    void delete(@Param("account_Id") Integer account_Id, @Param("instrument_Id") Integer instrument_Id,
+    void delete(@Param("account_Id") Integer account_Id, @Param("instrument_Id") Long instrument_Id,
                 @Param("as_Of_Date") LocalDateTime as_Of_Date);
 
     //vasus additions for accountholdingmapper
@@ -44,15 +44,15 @@ public interface AccountHoldingMapper {
     // get quantity of the current (active) holding; null if there is none
     @Select("SELECT quantity FROM account_holdings "
             + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'ACTIVE'")
-    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") Long instrumentId);
 
     // marks the current holding as inactive before we replace it
     @Update("UPDATE account_holdings SET status = 'INACTIVE' "
             + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'ACTIVE'")
-    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") Long instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
             + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
-    void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
+    void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") Long instrumentId,
                         @Param("quantity") BigDecimal quantity, @Param("status") String status);
 }

@@ -17,7 +17,7 @@ import static org.mockito.Mockito.*;
 class AccountHoldingServiceTest {
 
     private static final int ACCOUNT_ID = 1;
-    private static final int INSTRUMENT_ID = 10;
+    private static final Long INSTRUMENT_ID = 10L;
 
     @Mock
     private AccountHoldingMapper accountHoldingMapper;
