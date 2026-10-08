@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
                 .map(fe -> new ErrorResponseDTO.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
         ErrorResponseDTO body = ErrorResponseDTO.withFieldErrors(
-                400, "Bad Request", "request failed validation", fieldErrors);
+                HttpStatus.BAD_REQUEST, "Bad Request", "request failed validation", fieldErrors);
         return ResponseEntity.badRequest().body(body);
     }
 
@@ -36,7 +36,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(Exception.class)
     public ResponseEntity<ErrorResponseDTO> handleUnexpected(Exception ex, HttpServletRequest request) {
         ErrorResponseDTO body = ErrorResponseDTO.of(
-                500, "Internal Server Error", "an unexpected error occurred");
+                HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "an unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
 }
