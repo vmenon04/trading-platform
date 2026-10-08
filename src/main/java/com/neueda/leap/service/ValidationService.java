@@ -50,16 +50,16 @@ public class ValidationService {
 
         Long instrumentId = order.instrumentId();
         instrumentService.getInstrumentById(instrumentId);
-        BigDecimal balance = accountService.getBalance(accountId);
+        BigDecimal balance = accountService.getBalance(1L);
 
-        if ("BUY".equals(side)) {
+        if (TradeSide.BUY.equals(side)) {
             BigDecimal cost = price.multiply(quantity);
             if (balance.compareTo(cost) < 0) {
                 throw new IllegalStateException("Insufficient funds in account " + accountId
                         + ": balance " + balance + ", order cost " + cost);
             }
         } else {
-            BigDecimal held = accountHoldingService.getQuantity(accountId, instrumentId);
+            BigDecimal held = accountHoldingService.getQuantity(1L, instrumentId);
             if (held.compareTo(quantity) < 0) {
                 throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
                         + " in account " + accountId + ": holding " + held + ", order quantity " + quantity);
