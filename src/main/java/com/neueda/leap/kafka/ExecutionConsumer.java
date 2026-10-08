@@ -3,10 +3,9 @@ package com.neueda.leap.kafka;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.service.ExecutionService;
+import com.neueda.leap.service.TradeEventProducer;
 import java.util.concurrent.ExecutionException;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
 /**
@@ -16,19 +15,16 @@ import org.springframework.stereotype.Component;
 public class ExecutionConsumer {
 
     private final ExecutionService executionService;
-    private final KafkaTemplate<String, Object> kafkaTemplate;
-    private final String tradeFinishedTopic;
+    private final TradeEventProducer tradeEventProducer;
 
-    public ExecutionConsumer(ExecutionService executionService, KafkaTemplate<String, Object> kafkaTemplate,
-                             @Value("${trade.finished}") String tradeFinishedTopic) {
+    public ExecutionConsumer(ExecutionService executionService, TradeEventProducer tradeEventProducer) {
         this.executionService = executionService;
-        this.kafkaTemplate = kafkaTemplate;
-        this.tradeFinishedTopic = tradeFinishedTopic;
+        this.tradeEventProducer = tradeEventProducer;
     }
     
     @KafkaListener(topics = "${trade.recorded}", groupId = "execution-service")
     public void onTradeRecorded(TradeRecordedDTO trade) throws InterruptedException, ExecutionException {
         TradeFinishedDTO outcome = executionService.execute(trade);
-        kafkaTemplate.send(tradeFinishedTopic, String.valueOf(trade.tradeId()), outcome).get();
+        tradeEventProducer.publishTradeFinished(outcome).get();
     }
 }
