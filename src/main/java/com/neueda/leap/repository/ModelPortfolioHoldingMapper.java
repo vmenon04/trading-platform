@@ -26,10 +26,10 @@ public interface ModelPortfolioHoldingMapper {
     List<ModelPortfolioHolding> findAll();
 
     // #{...} are ModelPortfolioHolding field names
-    @Insert("INSERT INTO model_portfolio_holdings(model_portfolio_id, instrument_id, effective_date, target_weight_pct, status) VALUES(#{modelPortfolioId}, #{instrumentId}, #{effectiveDate}, #{targetWeightPct}, #{status})")
+    @Insert("INSERT INTO model_portfolio_holdings(model_portfolio_id, instrument_id, effective_date, target_weight_pct, status) VALUES(#{modelPortfolioId}, #{instrumentId}, #{effectiveDate}, #{targetWeightPct}, #{status}::status)")
     void insert(ModelPortfolioHolding modelPortfolioHolding);
 
-    @Update("UPDATE model_portfolio_holdings SET target_weight_pct = #{targetWeightPct}, status = #{status} WHERE model_portfolio_id = #{modelPortfolioId} AND instrument_id = #{instrumentId} AND effective_date = #{effectiveDate}")
+    @Update("UPDATE model_portfolio_holdings SET target_weight_pct = #{targetWeightPct}, status = #{status}::status WHERE model_portfolio_id = #{modelPortfolioId} AND instrument_id = #{instrumentId} AND effective_date = #{effectiveDate}")
     void update(ModelPortfolioHolding modelPortfolioHolding);
 
     @Delete("DELETE FROM model_portfolio_holdings WHERE model_portfolio_id = #{model_Portfolio_Id} AND instrument_id = #{instrument_Id} AND effective_date = #{effective_Date}")

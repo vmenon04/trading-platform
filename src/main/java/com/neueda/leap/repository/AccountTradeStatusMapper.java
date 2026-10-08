@@ -18,7 +18,7 @@ public interface AccountTradeStatusMapper {
     @Select("SELECT " + COLUMNS + " FROM account_trade_status WHERE trade_id = #{tradeId} ORDER BY trade_time")
     List<AccountTradeStatus> getTradeStatusHistoryByTradeId(Long tradeId);
 
-    @Insert("INSERT INTO account_trade_status (trade_id, status, trade_time) VALUES (#{tradeId}, #{status}, clock_timestamp())")
+    @Insert("INSERT INTO account_trade_status (trade_id, status, trade_time) VALUES (#{tradeId}, #{status}::trade_status, clock_timestamp())")
     void insertTradeStatus(Long tradeId, TradeStatus status);
 
 }

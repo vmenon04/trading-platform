@@ -22,10 +22,10 @@ public interface AccountSubscriptionMapper {
     List<AccountSubscription> findByAccountId(Long account_Id);
 
     // #{...} are AccountSubscription field names
-    @Insert("INSERT INTO account_subscriptions(account_id, model_portfolio_id, subscription_date, status) VALUES(#{accountId}, #{modelPortfolioId}, #{subscriptionDate}, #{status})")
+    @Insert("INSERT INTO account_subscriptions(account_id, model_portfolio_id, subscription_date, status) VALUES(#{accountId}, #{modelPortfolioId}, #{subscriptionDate}, #{status}::status)")
     void insert(AccountSubscription accountSubscription);
 
-    @Update("UPDATE account_subscriptions SET status = #{status} WHERE account_id = #{accountId} AND model_portfolio_id = #{modelPortfolioId}")
+    @Update("UPDATE account_subscriptions SET status = #{status}::status WHERE account_id = #{accountId} AND model_portfolio_id = #{modelPortfolioId}")
     void update(AccountSubscription accountSubscription);
 
     @Delete("DELETE FROM account_subscriptions WHERE account_id = #{account_Id} AND model_portfolio_id = #{model_Portfolio_Id}")

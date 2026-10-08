@@ -31,7 +31,7 @@ public interface AccountHoldingMapper {
 //     void insert(AccountHolding accountHolding);
 
     // #{...} are AccountHolding field names
-    @Update("UPDATE account_holdings SET quantity = #{quantity}, status = #{status} WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND as_of_date = #{asOfDate}")
+    @Update("UPDATE account_holdings SET quantity = #{quantity}, status = #{status}::status WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND as_of_date = #{asOfDate}")
     void update(AccountHolding accountHolding);
 
     @Delete("DELETE FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
@@ -52,7 +52,7 @@ public interface AccountHoldingMapper {
     void deactivateHolding(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
-            + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
+            + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status}::status)")
     void insertSnapshot(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
                         @Param("quantity") BigDecimal quantity, @Param("status") String status);
 }

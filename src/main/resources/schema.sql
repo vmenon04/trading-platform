@@ -18,6 +18,15 @@ DROP TABLE IF EXISTS client_subscriptions CASCADE;
 DROP TABLE IF EXISTS client_holdings CASCADE;
 DROP TABLE IF EXISTS client_trades CASCADE;
 
+-- Enum types: each one is an exact copy of the Java enum with the same name in
+-- com.neueda.leap.enums, so the database itself rejects any other value.
+-- Keep the two in sync: when a Java enum changes, change its type here too.
+DROP TYPE IF EXISTS trade_side, trade_status, status, instrument_type CASCADE;
+CREATE TYPE trade_side      AS ENUM ('BUY', 'SELL');                                        -- TradeSide
+CREATE TYPE trade_status    AS ENUM ('SUBMITTED', 'ACCEPTED', 'REJECTED', 'FULFILLED');     -- TradeStatus
+CREATE TYPE status          AS ENUM ('ACTIVE', 'INACTIVE');                                 -- Status
+CREATE TYPE instrument_type AS ENUM ('STOCK', 'ETF', 'BOND', 'FOREX', 'CRYPTO');            -- InstrumentType
+
 -- clients
 CREATE TABLE clients (
     client_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
@@ -64,7 +73,7 @@ CREATE TABLE instruments (
     name TEXT NOT NULL,
     ticker TEXT NOT NULL
         CHECK (UPPER(ticker) = ticker),
-    asset_class TEXT NOT NULL
+    asset_class instrument_type NOT NULL
 );
 
 CREATE TABLE account_holdings (
@@ -74,7 +83,7 @@ CREATE TABLE account_holdings (
     PRIMARY KEY (account_id, instrument_id, as_of_date),
     quantity NUMERIC(18, 8) NOT NULL    
         CHECK (quantity >= 0),
-    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
+    status status NOT NULL
     
 );
 
@@ -86,8 +95,7 @@ CREATE TABLE account_trades (
     external_trade_id uuid,
     account_id BIGINT REFERENCES accounts(account_id) NOT NULL,
     instrument_id BIGINT REFERENCES instruments(instrument_id) NOT NULL,
-    trade_side TEXT NOT NULL
-        CHECK (trade_side IN ('BUY', 'SELL')),
+    trade_side trade_side NOT NULL,
     -- make this the precision as account_holdings.quantity
     quantity NUMERIC(18, 8) NOT NULL
         CHECK (quantity > 0)
@@ -95,7 +103,7 @@ CREATE TABLE account_trades (
 
 CREATE TABLE account_trade_status (
     trade_id BIGINT REFERENCES account_trades(trade_id),
-    status TEXT CHECK (status IN ('PENDING', 'ACCEPTED', 'REJECTED', 'FULFILLED')) NOT NULL,
+    status trade_status NOT NULL,
     PRIMARY KEY (trade_id, status),
     trade_time TIMESTAMPTZ NOT NULL
 );
@@ -125,7 +133,7 @@ CREATE TABLE model_portfolio_holdings (
     PRIMARY KEY (model_portfolio_id, instrument_id, effective_date),
     target_weight_pct NUMERIC(5,2) NOT NULL
         CHECK (target_weight_pct >= 0 AND target_weight_pct <= 100),
-    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
+    status status NOT NULL
 );
 
 CREATE INDEX idx_model_portfolio_holdings_model_portfolio_id ON model_portfolio_holdings(model_portfolio_id);
@@ -139,7 +147,7 @@ CREATE TABLE account_subscriptions (
     subscription_date DATE NOT NULL,
     unsubscribe_date DATE,
     PRIMARY KEY (account_id, model_portfolio_id, subscription_date),
-    status TEXT CHECK (status IN ('ACTIVE', 'INACTIVE')) NOT NULL
+    status status NOT NULL
 );
 
 CREATE INDEX idx_account_subscriptions_account_id ON account_subscriptions(account_id);

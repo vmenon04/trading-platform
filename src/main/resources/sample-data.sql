@@ -165,7 +165,7 @@ WITH real_instruments AS (
     ('US Dollar / Singapore Dollar', 'USDSGD', 'FOREX'), ('US Dollar / Hong Kong Dollar', 'USDHKD', 'FOREX')
   ) AS t(instrument_name, ticker_symbol, asset_class)
 )
-SELECT instrument_name, ticker_symbol, asset_class
+SELECT instrument_name, ticker_symbol, asset_class::instrument_type
 FROM real_instruments
 LIMIT 291;
 
@@ -183,7 +183,7 @@ SELECT
     (i % 291) + 1,
     NOW() - INTERVAL '1 day' * (10000 - i),
     (random() * 100000)::INT,
-    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
+    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
 FROM generate_series(0, 9999) AS i;
 
 -- account_trades (10,000 rows): who traded what, which side, how much.
@@ -192,20 +192,20 @@ INSERT INTO account_trades (account_id, instrument_id, trade_side, quantity)
 SELECT
     ((i % 2500) % 5000) + 1,
     (i % 291) + 1,
-    CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END,
+    (CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END)::trade_side,
     round((1 + random() * 9999)::NUMERIC, 4)
 FROM generate_series(0, 9999) AS i;
 
 -- account_trade_status: each trade's status history, a second apart, starting
--- on a random day in the last year (the PENDING row is when the order was placed).
+-- on a random day in the last year (the SUBMITTED row is when the order was placed).
 -- trade_id % 4 picks where the trade ended up:
---   0 = PENDING, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
+--   0 = SUBMITTED, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
 INSERT INTO account_trade_status (trade_id, status, trade_time)
 WITH placed AS (
     SELECT trade_id, NOW() - INTERVAL '1 day' * (random() * 365)::INT AS placed_at
     FROM account_trades
 )
-SELECT trade_id, 'PENDING', placed_at FROM placed
+SELECT trade_id, 'SUBMITTED'::trade_status, placed_at FROM placed
 UNION ALL
 SELECT trade_id, 'ACCEPTED', placed_at + INTERVAL '1 second' FROM placed WHERE trade_id % 4 IN (1, 2, 3)
 UNION ALL
@@ -230,7 +230,7 @@ SELECT
     (i % 291) + 1,
     DATE '2024-01-01' + (i / 1000),
     round((random() * 100)::NUMERIC, 2),
-    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
+    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
 FROM generate_series(0, 9999) AS i;
 
 -- account_subscriptions (10,000 rows)
@@ -241,7 +241,7 @@ SELECT
     (i % 5000) + 1,
     (i % 200) + 1,
     DATE '2024-01-01' + (i / 5000),
-    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
+    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
 FROM generate_series(0, 9999) AS i;
 
 -- users: one CLIENT login per client (e.g. james.smith1), plus one ADMIN and one ANALYST.

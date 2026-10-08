@@ -51,13 +51,13 @@ public interface AccountTradeMapper {
     List<AccountTrade> findHistoryById(Long trade_Id);
 
     // #{...} are AccountTrade field names
-    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{tradeSide}, #{quantity})")
+    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{tradeSide}::trade_side, #{quantity})")
     @Options(useGeneratedKeys = true, keyProperty = "tradeId", keyColumn = "trade_id")
     Long insert(TradeValidatedDTO tradeValidatedDTO);
 
     // Postgres INSERT and the RETURNING goes through @Select so MyBatis returns the generated trade_id
     @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}) "
+            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}::trade_side, #{quantity}) "
             + "RETURNING trade_id")
     Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
                      @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);
@@ -65,7 +65,7 @@ public interface AccountTradeMapper {
     // record the status change: copies the trade's latest row with the new status and the current time
     @Insert("INSERT INTO account_trade_status "
             + "(trade_id, trade_time, status) "
-            + "SELECT trade_id, clock_timestamp(), #{status} "
+            + "SELECT trade_id, clock_timestamp(), #{status}::trade_status "
             + "FROM account_trades WHERE trade_id = #{tradeId} "
             + "ORDER BY trade_time DESC LIMIT 1")
     void insertStatus(@Param("tradeId") Long tradeId, @Param("status") TradeStatus status);
