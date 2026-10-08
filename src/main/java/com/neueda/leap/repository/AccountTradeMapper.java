@@ -1,6 +1,8 @@
 package com.neueda.leap.repository;
 
 import com.neueda.leap.dto.TradeValidatedDTO;
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
@@ -58,7 +60,7 @@ public interface AccountTradeMapper {
             + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}) "
             + "RETURNING trade_id")
     Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
-                    @Param("tradeType") String tradeType, @Param("quantity") BigDecimal quantity);
+                     @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);
 
     // record the status change: copies the trade's latest row with the new status and the current time
     @Insert("INSERT INTO account_trade_status "
@@ -66,6 +68,6 @@ public interface AccountTradeMapper {
             + "SELECT trade_id, clock_timestamp(), #{status} "
             + "FROM account_trades WHERE trade_id = #{tradeId} "
             + "ORDER BY trade_time DESC LIMIT 1")
-    void insertStatus(@Param("tradeId") Long tradeId, @Param("status") String status);
+    void insertStatus(@Param("tradeId") Long tradeId, @Param("status") TradeStatus status);
 }
 
