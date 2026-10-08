@@ -20,13 +20,13 @@ public class ExecutionConsumer {
     private final String tradeFinishedTopic;
 
     public ExecutionConsumer(ExecutionService executionService, KafkaTemplate<String, Object> kafkaTemplate,
-                             @Value("${trade.finished:trade.finished}") String tradeFinishedTopic) {
+                             @Value("${trade.finished}") String tradeFinishedTopic) {
         this.executionService = executionService;
         this.kafkaTemplate = kafkaTemplate;
         this.tradeFinishedTopic = tradeFinishedTopic;
     }
     
-    @KafkaListener(topics = "${trade.recorded:trade.recorded}", groupId = "execution-service")
+    @KafkaListener(topics = "${trade.recorded}", groupId = "execution-service")
     public void onTradeRecorded(TradeRecordedDTO trade) throws InterruptedException, ExecutionException {
         TradeFinishedDTO outcome = executionService.execute(trade);
         kafkaTemplate.send(tradeFinishedTopic, String.valueOf(trade.tradeId()), outcome).get();
