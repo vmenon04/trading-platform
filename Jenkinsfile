@@ -18,7 +18,9 @@ def StaticAnalysis() {
 }
 
 def ReportingTests() {
-    // the reporting tests are Python: install requirements.txt into a virtual environment, then run pytest
+    // the reporting tests are Python: install requirements.txt into a virtual environment, then run pytest.
+    // runs inside the python:3.14 container (see the Reporting-Tests stage); the venv lives in the workspace
+    // because the container runs as the Jenkins user, which can't install packages system-wide.
     sh 'python3 -m venv .venv-reporting'
     sh '.venv-reporting/bin/pip install -q -r requirements.txt'
     try {
@@ -86,6 +88,14 @@ pipeline {
                 }
 
                 stage('Reporting-Tests') {
+                    // run this stage inside the official Python image, so the agent doesn't need Python installed.
+                    // reuseNode keeps it on the same machine and workspace as the other stages.
+                    agent {
+                        docker {
+                            image 'python:3.14'
+                            reuseNode true
+                        }
+                    }
                     steps {
                         echo "Starting Reporting (Python) Tests"
                         script {
