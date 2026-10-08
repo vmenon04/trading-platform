@@ -1,9 +1,13 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
+
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -18,12 +22,13 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class OrderManagementServiceTest {
 
+    private static final UUID EXTERNAL_ACCOUNT_ID = UUID.randomUUID();
     private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
     private static final Long TRADE_ID = 42L;
     private static final BigDecimal QUANTITY = new BigDecimal("5");
     private static final BigDecimal PRICE = new BigDecimal("100");
-    private static final TradeRequestDTO ORDER = new TradeRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
+    private static final TradeRequestDTO ORDER = new TradeRequestDTO(EXTERNAL_ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY);
 
     @Mock
     private InstrumentService instrumentService;
@@ -45,7 +50,7 @@ class OrderManagementServiceTest {
     }
 
     private void givenPendingTradeRecorded(BigDecimal price) {
-        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY))
+        when(accountTradeMapper.insertTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY))
                 .thenReturn(TRADE_ID);
     }
 
@@ -58,10 +63,10 @@ class OrderManagementServiceTest {
 
         InOrder inOrder = inOrder(validationService, accountTradeMapper, executionService);
         inOrder.verify(validationService).validate(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
-        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "ACCEPTED");
+        inOrder.verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY);
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, TradeStatus.ACCEPTED);
         inOrder.verify(executionService).execute(ORDER, PRICE);
-        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, "FULFILLED");
+        inOrder.verify(accountTradeMapper).insertStatus(TRADE_ID, TradeStatus.FULFILLED);
     }
 
     @Test
@@ -71,7 +76,7 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, "BUY", QUANTITY);
+        verify(accountTradeMapper).insertTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY);
         verify(accountTradeMapper, never()).insertStatus(anyLong(), any());
         verifyNoInteractions(executionService);
     }
@@ -104,8 +109,8 @@ class OrderManagementServiceTest {
 
         assertThrows(IllegalStateException.class, () -> orderManagementService.placeOrder(ORDER));
 
-        verify(accountTradeMapper).insertStatus(TRADE_ID, "REJECTED");
-        verify(accountTradeMapper, never()).insertStatus(TRADE_ID, "FULFILLED");
+        verify(accountTradeMapper).insertStatus(TRADE_ID, TradeStatus.REJECTED);
+        verify(accountTradeMapper, never()).insertStatus(TRADE_ID, TradeStatus.FULFILLED);
     }
 
     @Test

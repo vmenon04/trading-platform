@@ -63,7 +63,7 @@ class RecipientServiceTest {
     void publishOrder_returnsAcceptedWithTaskLocation() {
         TradeRequestDTO dto = new TradeRequestDTO(
                 UUID.randomUUID(),
-                10,
+                10L,
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
@@ -85,7 +85,7 @@ class RecipientServiceTest {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
-                44,
+                44L,
                 TradeSide.SELL,
                 new BigDecimal("7")
         );

@@ -9,8 +9,6 @@ import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.test.context.TestPropertySource;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 @SpringBootTest
 @EmbeddedKafka(partitions = 1, topics = {"test-topic"})
 @TestPropertySource(properties = {
