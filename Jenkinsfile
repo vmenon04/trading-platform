@@ -18,13 +18,11 @@ def StaticAnalysis() {
 }
 
 def ReportingTests() {
-    // the reporting tests are Python, so they run inside a Python container (see reporting/tests.Dockerfile)
+    // runs the image built in the Build Image stage; how the tests run is defined in reporting/tests.Dockerfile
     def safeTag = getSafeTag()
-    def image = "fintech-five-reporting-tests:${safeTag}"
     def container = "reporting-tests-${safeTag}-${env.BUILD_NUMBER}"
-    sh "docker build -f reporting/tests.Dockerfile -t ${image} ."
     try {
-        sh "docker run --name ${container} ${image}"
+        sh "docker run --name ${container} fintech-five-reporting-tests:${safeTag}"
     } finally {
         // copy the results out and publish them even when tests fail, so Jenkins shows which ones
         sh "docker cp ${container}:/app/reporting/pytest-results.xml pytest-results.xml || true"
@@ -58,6 +56,8 @@ pipeline {
                     // github branch names can contain characters that are not valid in docker tags.
                     def safeTag = getSafeTag()
                     sh "docker build -t fintech-five:${safeTag} ."
+                    // the reporting (Python) tests image, run in the Reporting-Tests stage
+                    sh "docker build -f reporting/tests.Dockerfile -t fintech-five-reporting-tests:${safeTag} ."
                 }
             }
         }
