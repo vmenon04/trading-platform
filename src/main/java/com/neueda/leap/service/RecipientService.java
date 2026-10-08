@@ -2,7 +2,6 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
-import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.external.MarketDataClient;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -46,14 +45,7 @@ public class RecipientService {
                 quote,
                 taskId
         );
-
-        TradeSubmittedEvent tradeSubmittedEvent = new TradeSubmittedEvent(
-                dto.accountId(),
-                java.util.UUID.randomUUID(),
-                java.time.Instant.now(),
-                tradeSubmitted
-        );
-        tradeEventProducer.publishTradeSubmitted(tradeSubmittedEvent);
+        tradeEventProducer.publishTradeSubmitted(tradeSubmitted);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
