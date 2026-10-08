@@ -6,8 +6,8 @@ import java.time.OffsetDateTime;
 
 public class AccountHolding {
 
-    private int accountId;
-    private int instrumentId;
+    private Long accountId;
+    private Long instrumentId;
     private OffsetDateTime asOfDate;
     private BigDecimal quantity;
     private Status status;
@@ -15,7 +15,7 @@ public class AccountHolding {
     public AccountHolding() {
     }
 
-    public AccountHolding(int accountId, int instrumentId, OffsetDateTime asOfDate, BigDecimal quantity, Status status) {
+    public AccountHolding(Long accountId, Long instrumentId, OffsetDateTime asOfDate, BigDecimal quantity, Status status) {
         this.accountId = accountId;
         this.instrumentId = instrumentId;
         this.asOfDate = asOfDate;
@@ -23,19 +23,19 @@ public class AccountHolding {
         this.status = status;
     }
 
-    public int getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(int accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public int getInstrumentId() {
+    public Long getInstrumentId() {
         return instrumentId;
     }
 
-    public void setInstrumentId(int instrumentId) {
+    public void setInstrumentId(Long instrumentId) {
         this.instrumentId = instrumentId;
     }
 

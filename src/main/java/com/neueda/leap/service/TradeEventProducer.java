@@ -1,7 +1,7 @@
 package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
-import com.neueda.leap.events.OrderCreatedEvent;
+import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.events.TradeValidatedEvent;
 import com.neueda.leap.kafka.KafkaTopics;
 import java.util.concurrent.CompletableFuture;
@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 // 4.   Shouldn't we use the topic's DTO (TradeSubmittedDTO, TradeValidatedDTO, TradeRecordedDTO) 
 //      instead of separate key and Object so we can let each method pick its own key and stop the
 //      wrong thing from going into a topic.
-// 5.   publishOrderCreated publishes to order.created, but we replaced it with trade.submitted in the pipeline.
-//      (just a small naming difference)
 
 @Service
 public class TradeEventProducer {
@@ -32,8 +30,8 @@ public class TradeEventProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publishOrderCreated(OrderCreatedEvent event) {
-        kafkaTemplate.send(KafkaTopics.ORDER_CREATED, event.accountId().toString(), event);
+    public void publishTradeSubmitted(TradeSubmittedEvent event) {
+        kafkaTemplate.send(KafkaTopics.TRADE_SUBMITTED, event.accountId().toString(), event);
     }
 
     public void publishTradeValidated(TradeValidatedEvent event) {

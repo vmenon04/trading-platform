@@ -15,9 +15,9 @@ class ClientDTOTest {
     void testValidClientDTO() {
         List<AccountDTO> accounts = List.of(
             new AccountDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")));
-        ClientDTO dto = new ClientDTO(1, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
+        ClientDTO dto = new ClientDTO(1L, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
         
-        assertEquals(1, dto.clientId());
+        assertEquals(1L, dto.clientId());
         assertEquals("John", dto.firstName());
         assertEquals("Doe", dto.lastName());
         assertEquals(LocalDate.of(1990, 1, 15), dto.birthDate());
@@ -33,9 +33,9 @@ class ClientDTOTest {
             new AccountDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")));
         LocalDate birthDate = LocalDate.of(1990, 1, 15);
         
-        ClientDTO dto1 = new ClientDTO(1, "John", "Doe", birthDate, accounts1);
-        ClientDTO dto2 = new ClientDTO(1, "John", "Doe", birthDate, accounts2);
-        ClientDTO dto3 = new ClientDTO(1, "Jane", "Doe", birthDate, accounts1);
+        ClientDTO dto1 = new ClientDTO(1L, "John", "Doe", birthDate, accounts1);
+        ClientDTO dto2 = new ClientDTO(1L, "John", "Doe", birthDate, accounts2);
+        ClientDTO dto3 = new ClientDTO(1L, "Jane", "Doe", birthDate, accounts1);
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
@@ -46,7 +46,7 @@ class ClientDTOTest {
     void testRecordImmutability() {
         List<AccountDTO> accounts = List.of(
             new AccountDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")));
-        ClientDTO dto = new ClientDTO(1, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
+        ClientDTO dto = new ClientDTO(1L, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
         
         assertEquals("John", dto.firstName());
         // Records are immutable, no setters exist
@@ -59,7 +59,7 @@ class ClientDTOTest {
             new AccountDTO(UUID.fromString("123e4567-e89b-12d3-a456-426614174000")),
             new AccountDTO(UUID.fromString("223e4567-e89b-12d3-a456-426614174001"))
         );
-        ClientDTO dto = new ClientDTO(1, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
+        ClientDTO dto = new ClientDTO(1L, "John", "Doe", LocalDate.of(1990, 1, 15), accounts);
         
         assertEquals(2, dto.clientAccounts().size());
         assertEquals(UUID.fromString("123e4567-e89b-12d3-a456-426614174000"), dto.clientAccounts().get(0).accountId());

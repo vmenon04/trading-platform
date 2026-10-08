@@ -3,7 +3,10 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
-import com.neueda.leap.repository.AccountTradeMapper;
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.repository.AccountTradePriceMapper;
+import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
@@ -17,14 +20,11 @@ import org.springframework.web.client.RestClientException;
 @Service
 public class ExecutionService {
 
-    // must match the CHECK constraint on account_trade_status.status
-    private static final String REJECTED = "REJECTED";
-    private static final String FULFILLED = "FULFILLED";
-
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
     private final InstrumentService instrumentService;
-    private final AccountTradeMapper accountTradeMapper;
+    private final AccountTradeStatusMapper accountTradeStatusMapper;
+    private final AccountTradePriceMapper accountTradePriceMapper;
     private final TransactionTemplate transactionTemplate;
 
     /**
@@ -33,16 +33,18 @@ public class ExecutionService {
      * @param accountService service used to adjust account cash balances
      * @param accountHoldingService service used to adjust account holdings
      * @param instrumentService service used to get current instrument prices
-     * @param accountTradeMapper mapper used to record trade prices and statuses
+     * @param accountTradeStatusMapper mapper used to read and record trade statuses
+     * @param accountTradePriceMapper mapper used to read and record trade prices
      * @param transactionTemplate template used to apply a fulfilled trade's updates as a single transaction
      */
     public ExecutionService(AccountService accountService, AccountHoldingService accountHoldingService,
-                            InstrumentService instrumentService, AccountTradeMapper accountTradeMapper,
-                            TransactionTemplate transactionTemplate) {
+                            InstrumentService instrumentService, AccountTradeStatusMapper accountTradeStatusMapper,
+                            AccountTradePriceMapper accountTradePriceMapper, TransactionTemplate transactionTemplate) {
         this.accountService = accountService;
         this.accountHoldingService = accountHoldingService;
         this.instrumentService = instrumentService;
-        this.accountTradeMapper = accountTradeMapper;
+        this.accountTradeStatusMapper = accountTradeStatusMapper;
+        this.accountTradePriceMapper = accountTradePriceMapper;
         this.transactionTemplate = transactionTemplate;
     }
 
@@ -56,8 +58,9 @@ public class ExecutionService {
      */
     @Transactional
     public void execute(TradeRequestDTO order, BigDecimal price) {
-        applyTrade(order.accountId(), order.instrumentId(), order.side(), order.quantity(),
-                price.multiply(order.quantity()));
+//        Long accountId = order.accountId();
+        Long accountId = 1L;
+        applyTrade(accountId, order.instrumentId(), order.side(), order.quantity(), price.multiply(order.quantity()));
     }
 
     /**
@@ -74,38 +77,36 @@ public class ExecutionService {
         Long tradeId = trade.tradeId();
 
         // a redelivered message: report the outcome again rather than trading twice
-        String status = accountTradeMapper.findCurrentStatus(tradeId);
-        if (FULFILLED.equals(status) || REJECTED.equals(status)) {
-            return outcome(trade, accountTradeMapper.findPrice(tradeId), null);
+        TradeStatus status = accountTradeStatusMapper.getTradeStatusByTradeId(tradeId);
+        if (status == TradeStatus.FULFILLED || status == TradeStatus.REJECTED) {
+            Double storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
+            return outcome(trade, storedPrice == null ? null : BigDecimal.valueOf(storedPrice), null);
         }
 
         try {
-            // the account, holding and instrument services still take int ids
-            int accountId = Math.toIntExact(trade.accountId());
-            int instrumentId = Math.toIntExact(trade.instrumentId());
-            BigDecimal price = instrumentService.getCurrentPrice(instrumentId);
+            BigDecimal price = instrumentService.getCurrentPrice(trade.instrumentId());
             BigDecimal total = price.multiply(trade.quantity());
 
             transactionTemplate.executeWithoutResult(transaction -> {
-                applyTrade(accountId, instrumentId, trade.side(), trade.quantity(), total);
-                accountTradeMapper.updatePrice(tradeId, price);
-                accountTradeMapper.insertTotalPrice(tradeId, total);
-                accountTradeMapper.recordStatus(tradeId, FULFILLED);
+                applyTrade(trade.accountId(), trade.instrumentId(), trade.side(), trade.quantity(), total);
+                // the price mapper takes Doubles for now
+                accountTradePriceMapper.insertTradePrice(tradeId, price.doubleValue(), total.doubleValue());
+                accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.FULFILLED);
             });
             return outcome(trade, price, null);
         } catch (IllegalStateException | IllegalArgumentException | NoSuchElementException | RestClientException e) {
             // business failures (no price, Fauxnance down, insufficient funds or holdings, unknown instrument)
             // reject the trade; anything else propagates so the message is retried
-            accountTradeMapper.recordStatus(tradeId, REJECTED);
+            accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.REJECTED);
             return outcome(trade, null, e.getMessage());
         }
     }
 
-    private void applyTrade(int accountId, int instrumentId, String side, BigDecimal quantity, BigDecimal total) {
-        if ("BUY".equals(side)) {
+    private void applyTrade(Long accountId, Long instrumentId, TradeSide side, BigDecimal quantity, BigDecimal total) {
+        if (side == TradeSide.BUY) {
             accountService.purchase(accountId, total);
             accountHoldingService.addQuantity(accountId, instrumentId, quantity);
-        } else if ("SELL".equals(side)) {
+        } else if (side == TradeSide.SELL) {
             accountHoldingService.removeQuantity(accountId, instrumentId, quantity);
             accountService.sell(accountId, total);
         } else {

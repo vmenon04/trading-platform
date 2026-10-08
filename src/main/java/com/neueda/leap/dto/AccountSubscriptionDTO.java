@@ -6,8 +6,8 @@ import jakarta.validation.constraints.Positive;
 import java.util.UUID;
 
 public record AccountSubscriptionDTO(
-        @Positive UUID accountId,
-        @Positive int modelPortfolioId,
+        @Positive Long accountId,
+        @Positive Long modelPortfolioId,
         @NotBlank String subscriptionDate,
         @NotBlank String status
 ) {}

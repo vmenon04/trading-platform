@@ -21,7 +21,7 @@ public interface AccountMapper {
     String COLUMNS = "account_id AS accountId, account_type AS accountType, balance";
 
     @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{account_Id}")
-    Account findById(Integer account_Id);
+    Account findById(Long account_Id);
 
     @Select("SELECT " + COLUMNS + " FROM accounts")
     List<Account> findAll();
@@ -35,19 +35,19 @@ public interface AccountMapper {
     void update(Account account);
 
     @Delete("DELETE FROM accounts WHERE account_id = #{account_Id}")
-    void delete(Integer account_Id);
+    void delete(Long account_Id);
 
     // Vasu's additions for accountmapper
 
     @Select("SELECT balance FROM accounts WHERE account_id = #{accountId}")
-    BigDecimal findBalance(int accountId);
+    BigDecimal findBalance(Long accountId);
 
     //returns rows updated: 0 = no such account
     @Update("UPDATE accounts SET balance = balance + #{amount} WHERE account_id = #{accountId}")
-    int increaseBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int increaseBalance(@Param("accountId") Long accountId, @Param("amount") BigDecimal amount);
 
     // returns rows updated: 0 = no such account OR insufficient funds (we check and update in one statement)
     @Update("UPDATE accounts SET balance = balance - #{amount} "
             + "WHERE account_id = #{accountId} AND balance >= #{amount}")
-    int reduceBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int reduceBalance(@Param("accountId") Long accountId, @Param("amount") BigDecimal amount);
 }

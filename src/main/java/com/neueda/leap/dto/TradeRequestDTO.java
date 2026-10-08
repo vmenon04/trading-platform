@@ -1,13 +1,14 @@
 package com.neueda.leap.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.neueda.leap.enums.TradeSide;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record TradeRequestDTO(
-        @Positive int accountId,
-        @Positive int instrumentId,
-        @NotBlank String side,
+        @NotNull UUID accountId,
+        @Positive @NotNull Long instrumentId,
+        @NotNull TradeSide side,
         @NotNull @Positive BigDecimal quantity
 ) {}

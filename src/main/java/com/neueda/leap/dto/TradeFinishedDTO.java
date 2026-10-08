@@ -1,5 +1,6 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
 
 /**
@@ -17,7 +18,7 @@ public record TradeFinishedDTO(
         Long tradeId,
         Long accountId,
         Long instrumentId,
-        String side,
+        TradeSide side,
         BigDecimal quantity,
         BigDecimal price,
         String reason

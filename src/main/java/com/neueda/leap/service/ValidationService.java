@@ -2,6 +2,9 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
+import java.util.UUID;
+
+import com.neueda.leap.enums.TradeSide;
 import org.springframework.stereotype.Service;
 
 /**
@@ -37,38 +40,58 @@ public class ValidationService {
      * @throws IllegalStateException if the account lacks enough cash or holdings to satisfy the order
      */
     public void validate(TradeRequestDTO order, BigDecimal price) {
-        if (order == null) {
-            throw new IllegalArgumentException("Order must not be null");
-        }
-        String side = order.side();
-        if (!"BUY".equals(side) && !"SELL".equals(side)) {
-            throw new IllegalArgumentException("Side must be BUY or SELL, got " + side);
-        }
-        BigDecimal quantity = order.quantity();
-        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalArgumentException("Quantity must be positive");
-        }
-        if (quantity.stripTrailingZeros().scale() > 8) {
-            throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
-        }
+        checkOrderNotNull(order);
+        TradeSide side = checkSideValid(order);
+        BigDecimal quantity = checkQuantityPositive(order);
+        checkDecimalsValid(quantity);
 
-        int accountId = order.accountId();
-        int instrumentId = order.instrumentId();
+        UUID accountId = order.accountId();
+
+
+        Long instrumentId = order.instrumentId();
         instrumentService.getInstrumentById(instrumentId);
-        BigDecimal balance = accountService.getBalance(accountId);
+        BigDecimal balance = accountService.getBalance(1L);
 
-        if ("BUY".equals(side)) {
+        if (TradeSide.BUY.equals(side)) {
             BigDecimal cost = price.multiply(quantity);
             if (balance.compareTo(cost) < 0) {
                 throw new IllegalStateException("Insufficient funds in account " + accountId
                         + ": balance " + balance + ", order cost " + cost);
             }
         } else {
-            BigDecimal held = accountHoldingService.getQuantity(accountId, instrumentId);
+            BigDecimal held = accountHoldingService.getQuantity(1L, instrumentId);
             if (held.compareTo(quantity) < 0) {
                 throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
                         + " in account " + accountId + ": holding " + held + ", order quantity " + quantity);
             }
+        }
+    }
+
+    private static void checkDecimalsValid(BigDecimal quantity) {
+        if (quantity.stripTrailingZeros().scale() > 8) {
+            throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
+        }
+    }
+
+    private static BigDecimal checkQuantityPositive(TradeRequestDTO order) {
+        BigDecimal quantity = order.quantity();
+        if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Quantity must be positive");
+        }
+        return quantity;
+    }
+
+    private static TradeSide checkSideValid(TradeRequestDTO order) {
+        TradeSide side = order.side();
+        if (!TradeSide.BUY.equals(side) && !TradeSide.SELL.equals(side)) {
+            throw new IllegalArgumentException("Side must be BUY or SELL, got " + side);
+        }
+        return side;
+    }
+
+    private static void checkOrderNotNull(TradeRequestDTO order) {
+        if (order == null) {
+            throw new IllegalArgumentException("Order must not be null");
         }
     }
 }
