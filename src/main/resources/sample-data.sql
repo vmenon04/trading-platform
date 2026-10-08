@@ -1,6 +1,6 @@
 -- Sample data loader for mission-model-hardened.sql
 -- Populates clients, accounts, client_accounts, instruments, model_portfolios (dimension tables) plus
--- account_holdings, account_trades (with account_trade_status and trade_total_price),
+-- account_holdings, account_trades (with account_trade_status and account_trade_price),
 -- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run mission-model-hardened.sql first to create the schema.
 
 TRUNCATE TABLE
@@ -8,7 +8,7 @@ TRUNCATE TABLE
     model_portfolio_holdings,
     model_portfolios,
     account_holdings,
-    trade_total_price,
+    account_trade_price,
     account_trade_status,
     account_trades,
     client_accounts,
@@ -187,7 +187,7 @@ SELECT
 FROM generate_series(0, 9999) AS i;
 
 -- account_trades (10,000 rows): who traded what, which side, how much.
--- When it happened lives in account_trade_status, and the price in trade_total_price.
+-- When it happened lives in account_trade_status, and the price in account_trade_price.
 INSERT INTO account_trades (account_id, instrument_id, trade_side, quantity)
 SELECT
     ((i % 2500) % 5000) + 1,
@@ -213,10 +213,13 @@ SELECT trade_id, 'FULFILLED', placed_at + INTERVAL '2 seconds' FROM placed WHERE
 UNION ALL
 SELECT trade_id, 'REJECTED', placed_at + INTERVAL '2 seconds' FROM placed WHERE trade_id % 4 = 3;
 
--- trade_total_price: quantity * a random unit price between $1 and $1,000
-INSERT INTO trade_total_price (trade_id, total_price)
-SELECT trade_id, round(quantity * round((1 + random() * 999)::NUMERIC, 4), 8)
-FROM account_trades;
+-- account_trade_price: a random unit price between $1 and $1,000, and quantity * that price
+INSERT INTO account_trade_price (trade_id, price_per_unit, total_price)
+SELECT trade_id, unit_price, round(quantity * unit_price, 8)
+FROM (
+    SELECT trade_id, quantity, round((1 + random() * 999)::NUMERIC, 4) AS unit_price
+    FROM account_trades
+) AS priced;
 
 -- model_portfolio_holdings (10,000 rows)
 -- Composite key: (model_portfolio_id, instrument_id, effective_date)

@@ -1,109 +1,73 @@
 package com.neueda.leap.repository;
 
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Mapper;
-import org.apache.ibatis.annotations.Param;
+import com.neueda.leap.dto.TradeValidatedDTO;
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import org.apache.ibatis.annotations.Select;
+import org.apache.ibatis.annotations.Insert;
+import org.apache.ibatis.annotations.Options;
+import org.apache.ibatis.annotations.Param;
 
 import java.math.BigDecimal;
 import java.util.List;
+import org.apache.ibatis.annotations.Mapper;
 import com.neueda.leap.entity.*;
 
-// a trade lives in three tables:
-//   account_trades       - who, what, which side, how much
-//   account_trade_status - one row per status change, with its time; the first row is when
-//                          the trade was placed, the latest row is its current status
-//   trade_total_price    - what it cost in total; the unit price is total / quantity
+// to keep history we make each status change a new row with the same trade_id.
+// the row with the latest trade_time is the current status.
 // we use clock_timestamp() rather than NOW() since NOW() is fixed for a whole transaction
 @Mapper
 public interface AccountTradeMapper {
 
-    // each trade with its placed time, unit price and current status,
-    // aliased to the AccountTrade field names
-    String SELECT_TRADES = """
-            SELECT t.trade_id      AS tradeId,
-                   (SELECT MIN(s.trade_time) FROM account_trade_status s
-                    WHERE s.trade_id = t.trade_id) AS tradeTime,
-                   t.account_id    AS accountId,
-                   t.instrument_id AS instrumentId,
-                   t.trade_side    AS tradeType,
-                   t.quantity,
-                   p.total_price / t.quantity AS price,
-                   (SELECT s.status FROM account_trade_status s
-                    WHERE s.trade_id = t.trade_id
-                    ORDER BY s.trade_time DESC LIMIT 1) AS tradeStatus
-            FROM account_trades t
-            LEFT JOIN trade_total_price p ON p.trade_id = t.trade_id
-            """;
+    // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
+    // (the status column goes into the tradeStatus field)
+    String TRADE_COLUMNS = "trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
+            + "trade_side AS tradeSide, quantity";
 
-    @Select(SELECT_TRADES + "WHERE t.trade_id = #{trade_Id}")
-    AccountTrade findById(Integer trade_Id);
+    String STATUS_COLUMNS = "status, trade_time AS tradeTime";
 
-    @Select(SELECT_TRADES + "WHERE t.account_id = #{account_Id} ORDER BY t.trade_id")
-    List<AccountTrade> findByAccountId(Integer account_Id);
+    String PRICE_COLUMNS = "price";
 
-    // one row per status the trade went through, oldest first; tradeTime is when that status was recorded
-    @Select("""
-            SELECT t.trade_id      AS tradeId,
-                   s.trade_time    AS tradeTime,
-                   t.account_id    AS accountId,
-                   t.instrument_id AS instrumentId,
-                   t.trade_side    AS tradeType,
-                   t.quantity,
-                   p.total_price / t.quantity AS price,
-                   s.status        AS tradeStatus
-            FROM account_trades t
-            JOIN account_trade_status s ON s.trade_id = t.trade_id
-            LEFT JOIN trade_total_price p ON p.trade_id = t.trade_id
-            WHERE t.trade_id = #{trade_Id}
-            ORDER BY s.trade_time
-            """)
-    List<AccountTrade> findHistoryById(Integer trade_Id);
+    // current state of a trade (its latest row)
+    @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+            "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
+            "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
+            "WHERE trade_id = #{trade_Id} ORDER BY account_trade_status.trade_time DESC LIMIT 1")
+    AccountTrade findById(Long trade_Id);
 
-    // saves a new trade and returns its trade_id.
-    // goes through @Select so MyBatis hands back the RETURNING value
-    @Select("""
-            INSERT INTO account_trades (account_id, instrument_id, trade_side, quantity)
-            VALUES (#{accountId}, #{instrumentId}, #{tradeSide}, #{quantity})
-            RETURNING trade_id
-            """)
-    int insertTradeRow(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
-                       @Param("tradeSide") String tradeSide, @Param("quantity") BigDecimal quantity);
+    // current state of each of the account's trades (one row per trade)
+    @Select("SELECT DISTINCT ON (trade_id) " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+            "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
+            "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
+            "WHERE account_id = #{account_Id} " +
+            "ORDER BY trade_id, trade_time DESC")
+    List<AccountTrade> findByAccountId(Long account_Id);
 
-    @Insert("""
-            INSERT INTO account_trade_status (trade_id, status, trade_time)
-            VALUES (#{tradeId}, #{status}, clock_timestamp())
-            """)
-    void insertStatus(@Param("tradeId") int tradeId, @Param("status") String status);
+    // every status a trade went through, oldest first
+    @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+            "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
+            "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
+            "WHERE trade_id = #{trade_Id} ORDER BY trade_time")
+    List<AccountTrade> findHistoryById(Long trade_Id);
 
-    @Insert("INSERT INTO trade_total_price (trade_id, total_price) VALUES (#{tradeId}, #{total})")
-    void insertTotal(@Param("tradeId") int tradeId, @Param("total") BigDecimal total);
+    // #{...} are AccountTrade field names
+    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{tradeSide}, #{quantity})")
+    @Options(useGeneratedKeys = true, keyProperty = "tradeId", keyColumn = "trade_id")
+    Long insert(TradeValidatedDTO tradeValidatedDTO);
 
-    // saves the trade, its first status (which records when it was placed) and its total
-    default int insertTrade(int accountId, int instrumentId, String tradeSide,
-                            BigDecimal quantity, BigDecimal price, String status) {
-        int tradeId = insertTradeRow(accountId, instrumentId, tradeSide, quantity);
-        insertStatus(tradeId, status);
-        if (price != null) {
-            insertTotal(tradeId, price.multiply(quantity));
-        }
-        return tradeId;
-    }
+    // Postgres INSERT and the RETURNING goes through @Select so MyBatis returns the generated trade_id
+    @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_side, quantity) "
+            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}) "
+            + "RETURNING trade_id")
+    Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
+                     @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);
 
-    @Delete("DELETE FROM account_trade_status WHERE trade_id = #{trade_Id}")
-    void deleteStatuses(Integer trade_Id);
-
-    @Delete("DELETE FROM trade_total_price WHERE trade_id = #{trade_Id}")
-    void deleteTotal(Integer trade_Id);
-
-    @Delete("DELETE FROM account_trades WHERE trade_id = #{trade_Id}")
-    void deleteTradeRow(Integer trade_Id);
-
-    // status and total rows point at the trade, so they are deleted first
-    default void deleteById(Integer trade_Id) {
-        deleteStatuses(trade_Id);
-        deleteTotal(trade_Id);
-        deleteTradeRow(trade_Id);
-    }
+    // record the status change: copies the trade's latest row with the new status and the current time
+    @Insert("INSERT INTO account_trade_status "
+            + "(trade_id, trade_time, status) "
+            + "SELECT trade_id, clock_timestamp(), #{status} "
+            + "FROM account_trades WHERE trade_id = #{tradeId} "
+            + "ORDER BY trade_time DESC LIMIT 1")
+    void insertStatus(@Param("tradeId") Long tradeId, @Param("status") TradeStatus status);
 }
+

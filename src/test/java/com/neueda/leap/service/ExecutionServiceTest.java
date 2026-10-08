@@ -1,7 +1,10 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
+import java.util.UUID;
+
+import com.neueda.leap.enums.TradeSide;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InOrder;
@@ -16,8 +19,9 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class ExecutionServiceTest {
 
-    private static final int ACCOUNT_ID = 1;
-    private static final int INSTRUMENT_ID = 10;
+    private static final Long ACCOUNT_ID = 1L;
+    private static final UUID EXTERNAL_ACCOUNT_ID = UUID.randomUUID();
+    private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100");
 
     @Mock
@@ -34,13 +38,13 @@ class ExecutionServiceTest {
         return argThat(actual -> actual != null && actual.compareTo(new BigDecimal(expected)) == 0);
     }
 
-    private static OrderRequestDTO order(String side, String quantity) {
-        return new OrderRequestDTO(ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
+    private static TradeRequestDTO order(TradeSide side, String quantity) {
+        return new TradeRequestDTO(EXTERNAL_ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
     }
 
     @Test
     void buyPurchasesThenAddsHoldings() {
-        executionService.execute(order("BUY", "5"), PRICE);
+        executionService.execute(order(TradeSide.BUY, "5"), PRICE);
 
         InOrder inOrder = inOrder(accountService, accountHoldingService);
         inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
@@ -50,7 +54,7 @@ class ExecutionServiceTest {
 
     @Test
     void sellRemovesHoldingsThenSellsForProceeds() {
-        executionService.execute(order("SELL", "5"), PRICE);
+        executionService.execute(order(TradeSide.SELL, "5"), PRICE);
 
         InOrder inOrder = inOrder(accountHoldingService, accountService);
         inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
@@ -63,7 +67,7 @@ class ExecutionServiceTest {
         doThrow(new IllegalStateException("Insufficient funds"))
                 .when(accountService).purchase(eq(ACCOUNT_ID), any());
 
-        assertThrows(IllegalStateException.class, () -> executionService.execute(order("BUY", "5"), PRICE));
+        assertThrows(IllegalStateException.class, () -> executionService.execute(order(TradeSide.BUY, "5"), PRICE));
         verifyNoInteractions(accountHoldingService);
     }
 
@@ -72,13 +76,7 @@ class ExecutionServiceTest {
         doThrow(new IllegalStateException("Insufficient quantity"))
                 .when(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), any());
 
-        assertThrows(IllegalStateException.class, () -> executionService.execute(order("SELL", "5"), PRICE));
+        assertThrows(IllegalStateException.class, () -> executionService.execute(order(TradeSide.SELL, "5"), PRICE));
         verifyNoInteractions(accountService);
-    }
-
-    @Test
-    void rejectsUnknownSide() {
-        assertThrows(IllegalArgumentException.class, () -> executionService.execute(order("HOLD", "5"), PRICE));
-        verifyNoInteractions(accountService, accountHoldingService);
     }
 }

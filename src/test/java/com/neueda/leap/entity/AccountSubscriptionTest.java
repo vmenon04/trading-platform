@@ -1,6 +1,6 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.AccountSubscription.SubscriptionStatus;
+import com.neueda.leap.enums.Status;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -14,8 +14,8 @@ class AccountSubscriptionTest {
         AccountSubscription subscription = new AccountSubscription();
 
         assertAll(
-                () -> assertEquals(0, subscription.getAccountId()),
-                () -> assertEquals(0, subscription.getModelPortfolioId()),
+                () -> assertNull(subscription.getAccountId()),
+                () -> assertNull(subscription.getModelPortfolioId()),
                 () -> assertNull(subscription.getSubscriptionDate()),
                 () -> assertNull(subscription.getStatus())
         );
@@ -24,13 +24,13 @@ class AccountSubscriptionTest {
     @Test
     void parameterizedConstructorSetsIdsAndDateAndDefaultsStatusToActive() {
         LocalDate date = LocalDate.of(2026, 9, 25);
-        AccountSubscription subscription = new AccountSubscription(101, 7, date);
+        AccountSubscription subscription = new AccountSubscription(101L, 7L, date);
 
         assertAll(
                 () -> assertEquals(101, subscription.getAccountId()),
                 () -> assertEquals(7, subscription.getModelPortfolioId()),
                 () -> assertEquals(date, subscription.getSubscriptionDate()),
-                () -> assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus())
+                () -> assertEquals(Status.ACTIVE, subscription.getStatus())
         );
     }
 
@@ -39,16 +39,16 @@ class AccountSubscriptionTest {
         AccountSubscription subscription = new AccountSubscription();
         LocalDate date = LocalDate.of(2025, 6, 30);
 
-        subscription.setAccountId(11);
-        subscription.setModelPortfolioId(22);
+        subscription.setAccountId(11L);
+        subscription.setModelPortfolioId(22L);
         subscription.setSubscriptionDate(date);
-        subscription.setStatus(SubscriptionStatus.INACTIVE);
+        subscription.setStatus(Status.INACTIVE);
 
         assertAll(
                 () -> assertEquals(11, subscription.getAccountId()),
                 () -> assertEquals(22, subscription.getModelPortfolioId()),
                 () -> assertEquals(date, subscription.getSubscriptionDate()),
-                () -> assertEquals(SubscriptionStatus.INACTIVE, subscription.getStatus())
+                () -> assertEquals(Status.INACTIVE, subscription.getStatus())
         );
     }
 }

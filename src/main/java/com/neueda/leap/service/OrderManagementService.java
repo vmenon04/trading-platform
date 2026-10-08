@@ -1,6 +1,7 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
+import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
@@ -10,12 +11,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class OrderManagementService {
-
-    // must match the CHECK constraint on account_trades.status
-    private static final String PENDING = "PENDING";
-    private static final String ACCEPTED = "ACCEPTED";
-    private static final String REJECTED = "REJECTED";
-    private static final String FULFILLED = "FULFILLED";
 
     private final InstrumentService instrumentService;
     private final ValidationService validationService;
@@ -46,31 +41,31 @@ public class OrderManagementService {
      * @throws IllegalArgumentException if the order request is invalid
      * @throws IllegalStateException if validation or execution fails due to business constraints
      */
-    public synchronized int placeOrder(OrderRequestDTO order) {
+    public synchronized Long placeOrder(TradeRequestDTO order) {
         BigDecimal price = instrumentService.getCurrentPrice(order.instrumentId());
 
         try {
             validationService.validate(order, price);
         } catch (IllegalStateException e) {
-            recordTrade(order, price, REJECTED);
+            recordTrade(order, price, TradeStatus.REJECTED);
             throw e;
         }
 
-        int tradeId = recordTrade(order, price, PENDING);
-        accountTradeMapper.insertStatus(tradeId, ACCEPTED);
+        Long tradeId = recordTrade(order, price, TradeStatus.SUBMITTED);
+        accountTradeMapper.insertStatus(tradeId, TradeStatus.ACCEPTED);
 
         try {
             executionService.execute(order, price);
         } catch (RuntimeException e) {
-            accountTradeMapper.insertStatus(tradeId, REJECTED);
+            accountTradeMapper.insertStatus(tradeId, TradeStatus.REJECTED);
             throw e;
         }
 
-        accountTradeMapper.insertStatus(tradeId, FULFILLED);
+        accountTradeMapper.insertStatus(tradeId, TradeStatus.FULFILLED);
         return tradeId;
     }
 
-    private int recordTrade(OrderRequestDTO order, BigDecimal price, String status) {
+    private Long recordTrade(TradeRequestDTO order, BigDecimal price, TradeStatus status) {
         //TODO: Remove: needs to be moved to kafka execution
         throw new UnsupportedOperationException();
     }

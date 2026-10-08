@@ -1,40 +1,45 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
+
 import java.math.BigDecimal;
 
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 public class AccountTrade {
 
-    public enum TradeType {
-        BUY, SELL
-    }
-
-    public enum TradeStatus {
-        PENDING, ACCEPTED, REJECTED, FULFILLED
-    }
-
+    private UUID externalTradeId;
     private Long tradeId;
-    private OffsetDateTime tradeTime;
-    private int accountId;
-    private int instrumentId;
-    private TradeType tradeType;
+    private AccountTradeStatus accountTradeStatus;
+    private Long accountId;
+    private Long instrumentId;
+    private TradeSide tradeSide;
     private BigDecimal quantity;
     private BigDecimal price;
-    private TradeStatus tradeStatus;
 
     public AccountTrade() {
+        this.accountTradeStatus = new AccountTradeStatus();
     }
 
-    public AccountTrade(int accountId, OffsetDateTime tradeTime, int instrumentId, TradeType tradeType, BigDecimal quantity, BigDecimal price) {
+    public AccountTrade(Long accountId, Long instrumentId, TradeSide tradeSide, BigDecimal quantity, BigDecimal price) {
         this.tradeId = null;
         this.accountId = accountId;
-        this.tradeTime = tradeTime;
         this.instrumentId = instrumentId;
-        this.tradeType = tradeType;
+        this.tradeSide = tradeSide;
         this.quantity = quantity;
         this.price = price;
-        this.tradeStatus = TradeStatus.PENDING;
+        this.accountTradeStatus = new AccountTradeStatus();
+        accountTradeStatus.setTradeStatus(TradeStatus.SUBMITTED);
+    }
+
+    public UUID getExternalTradeId() {
+        return externalTradeId;
+    }
+
+    public void setExternalTradeId(UUID externalTradeId) {
+        this.externalTradeId = externalTradeId;
     }
 
     public Long getTradeId() {
@@ -45,28 +50,28 @@ public class AccountTrade {
         this.tradeId = tradeId;
     }
 
-    public int getAccountId() {
+    public Long getAccountId() {
         return accountId;
     }
 
-    public void setAccountId(int accountId) {
+    public void setAccountId(Long accountId) {
         this.accountId = accountId;
     }
 
-    public int getInstrumentId() {
+    public Long getInstrumentId() {
         return instrumentId;
     }
 
-    public void setInstrumentId(int instrumentId) {
+    public void setInstrumentId(Long instrumentId) {
         this.instrumentId = instrumentId;
     }
 
-    public TradeType getTradeType() {
-        return tradeType;
+    public TradeSide getTradeSide() {
+        return tradeSide;
     }
 
-    public void setTradeType(TradeType tradeType) {
-        this.tradeType = tradeType;
+    public void setTradeSide(TradeSide tradeSide) {
+        this.tradeSide = tradeSide;
     }
 
     public BigDecimal getQuantity() {
@@ -85,19 +90,17 @@ public class AccountTrade {
         this.price = price;
     }
 
-    public TradeStatus getStatus() {
-        return tradeStatus;
-    }
+    public TradeStatus getStatus() { return accountTradeStatus.getTradeStatus();}
 
     public void setTradeStatus(TradeStatus tradeStatus) {
-        this.tradeStatus = tradeStatus;
+        accountTradeStatus.setTradeStatus(tradeStatus);
     }
 
     public OffsetDateTime getTradeTime() {
-        return tradeTime;
+        return accountTradeStatus.getTradeTime();
     }
 
     public void setTradeTime(OffsetDateTime tradeTime) {
-        this.tradeTime = tradeTime;
+        accountTradeStatus.setTradeTime(tradeTime);
     }
 }

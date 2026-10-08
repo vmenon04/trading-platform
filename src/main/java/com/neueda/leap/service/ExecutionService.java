@@ -1,7 +1,9 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.OrderRequestDTO;
+import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
+
+import com.neueda.leap.enums.TradeSide;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,16 +36,17 @@ public class ExecutionService {
      * @throws RuntimeException if underlying balance or holding updates fail
      */
     @Transactional
-    public void execute(OrderRequestDTO order, BigDecimal price) {
-        int accountId = order.accountId();
-        int instrumentId = order.instrumentId();
+    public void execute(TradeRequestDTO order, BigDecimal price) {
+//        Long accountId = order.accountId();
+        Long accountId = 1L;
+        Long instrumentId = order.instrumentId();
         BigDecimal quantity = order.quantity();
         BigDecimal total = price.multiply(quantity);
 
-        if ("BUY".equals(order.side())) {
+        if (order.side().equals(TradeSide.BUY)) {
             accountService.purchase(accountId, total);
             accountHoldingService.addQuantity(accountId, instrumentId, quantity);
-        } else if ("SELL".equals(order.side())) {
+        } else if (order.side().equals(TradeSide.SELL)) {
             accountHoldingService.removeQuantity(accountId, instrumentId, quantity);
             accountService.sell(accountId, total);
         } else {

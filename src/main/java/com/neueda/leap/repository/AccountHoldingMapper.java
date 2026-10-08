@@ -19,13 +19,13 @@ public interface AccountHoldingMapper {
     String COLUMNS = "account_id AS accountId, instrument_id AS instrumentId, as_of_date AS asOfDate, quantity, status";
 
     @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
-    AccountHolding findByAccountInstrumentAndDate(@Param("account_Id") Integer account_Id,
-                                                  @Param("instrument_Id") Integer instrument_Id,
+    AccountHolding findByAccountInstrumentAndDate(@Param("account_Id") Long account_Id,
+                                                  @Param("instrument_Id") Long instrument_Id,
                                                   @Param("as_Of_Date") LocalDateTime as_Of_Date);
 
     // every snapshot for the account, including INACTIVE history rows
     @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{account_Id}")
-    List<AccountHolding> findByAccountId(Integer account_Id);
+    List<AccountHolding> findByAccountId(Long account_Id);
 
 //     @Insert("INSERT INTO account_holdings(account_id, instrument_id, quantity, as_of_date, status) VALUES(#{account_Id}, #{instrument_Id}, #{quantity}, #{as_Of_Date}, #{status})")
 //     void insert(AccountHolding accountHolding);
@@ -35,7 +35,7 @@ public interface AccountHoldingMapper {
     void update(AccountHolding accountHolding);
 
     @Delete("DELETE FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
-    void delete(@Param("account_Id") Integer account_Id, @Param("instrument_Id") Integer instrument_Id,
+    void delete(@Param("account_Id") Long account_Id, @Param("instrument_Id") Long instrument_Id,
                 @Param("as_Of_Date") LocalDateTime as_Of_Date);
 
     //vasus additions for accountholdingmapper
@@ -44,15 +44,15 @@ public interface AccountHoldingMapper {
     // get quantity of the current (active) holding; null if there is none
     @Select("SELECT quantity FROM account_holdings "
             + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'ACTIVE'")
-    BigDecimal findActiveQuantity(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    BigDecimal findActiveQuantity(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId);
 
     // marks the current holding as inactive before we replace it
     @Update("UPDATE account_holdings SET status = 'INACTIVE' "
             + "WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND status = 'ACTIVE'")
-    void deactivateHolding(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId);
+    void deactivateHolding(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId);
 
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
             + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
-    void insertSnapshot(@Param("accountId") int accountId, @Param("instrumentId") int instrumentId,
+    void insertSnapshot(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
                         @Param("quantity") BigDecimal quantity, @Param("status") String status);
 }
