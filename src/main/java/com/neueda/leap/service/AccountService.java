@@ -3,6 +3,8 @@ package com.neueda.leap.service;
 import com.neueda.leap.repository.AccountMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 /**
@@ -20,6 +22,15 @@ public class AccountService {
      */
     public AccountService(AccountMapper accountMapper) {
         this.accountMapper = accountMapper;
+    }
+
+
+    public Long getAccountIdByExternalAccountId(UUID externalAccountId) {
+        Long accountId = accountMapper.findAccountIdByExternalAccountId(externalAccountId);
+        if (accountId == null) {
+            throw new NoSuchElementException("No account with external account id " + externalAccountId);
+        }
+        return accountId;
     }
 
     /**
