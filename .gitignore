@@ -27,3 +27,6 @@ __pycache__/
 *.pyc
 *.pyo
 *.pyd
+# Reporting tests in Jenkins
+.venv-reporting/
+pytest-results.xml

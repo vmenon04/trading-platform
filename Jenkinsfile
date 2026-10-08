@@ -18,16 +18,14 @@ def StaticAnalysis() {
 }
 
 def ReportingTests() {
-    // runs the image built in the Build Image stage; how the tests run is defined in reporting/tests.Dockerfile
-    def safeTag = getSafeTag()
-    def container = "reporting-tests-${safeTag}-${env.BUILD_NUMBER}"
+    // the reporting tests are Python: install requirements.txt into a virtual environment, then run pytest
+    sh 'python3 -m venv .venv-reporting'
+    sh '.venv-reporting/bin/pip install -q -r requirements.txt'
     try {
-        sh "docker run --name ${container} fintech-five-reporting-tests:${safeTag}"
+        sh 'cd reporting && ../.venv-reporting/bin/python -m pytest -v --junitxml=pytest-results.xml'
     } finally {
-        // copy the results out and publish them even when tests fail, so Jenkins shows which ones
-        sh "docker cp ${container}:/app/reporting/pytest-results.xml pytest-results.xml || true"
-        sh "docker rm -f ${container} || true"
-        junit allowEmptyResults: true, testResults: 'pytest-results.xml'
+        // publish the results even when tests fail, so Jenkins shows which ones
+        junit allowEmptyResults: true, testResults: 'reporting/pytest-results.xml'
     }
 }
 
@@ -56,8 +54,6 @@ pipeline {
                     // github branch names can contain characters that are not valid in docker tags.
                     def safeTag = getSafeTag()
                     sh "docker build -t fintech-five:${safeTag} ."
-                    // the reporting (Python) tests image, run in the Reporting-Tests stage
-                    sh "docker build -f reporting/tests.Dockerfile -t fintech-five-reporting-tests:${safeTag} ."
                 }
             }
         }
