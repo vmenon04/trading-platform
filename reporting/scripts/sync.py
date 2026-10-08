@@ -1,19 +1,31 @@
 """Copies the trading database into the analytics database.
 
-    python reporting/sync.py          copy what changed since the last run
-    python reporting/sync.py --full   copy everything again (after reloading the trading database)
+    python reporting/scripts/sync.py          copy only what changed since the last run
+    python reporting/scripts/sync.py --full   copy everything again (e.g. after reloading the trading database)
+
+How "only what changed" works
+-----------------------------
+Every time a trade's status changes, the trading database adds a row to
+account_trade_status with the time it happened. Each sync remembers the newest of
+those times it has copied (the "watermark") in the sync_runs table. Next time, it
+only copies trades with a status change after that watermark.
+
+We go back 5 extra minutes (OVERLAP) in case a change was being saved at the exact
+moment the last sync ran. Copying a trade twice is harmless, because its old rows
+are deleted before the new ones are inserted.
 """
-import argparse
+import sys
 from datetime import datetime, timedelta, timezone
 
 import pandas as pd
 from sqlalchemy import text
 
-from config import PACKAGE_DIR, get_analytics_engine, get_source_engine
+from config import REPORTING_DIR, get_analytics_engine, get_source_engine
 
 OVERLAP = timedelta(minutes=5)
 BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
 
+# Small tables that are copied in full every run: {analytics table name: query on the trading database}
 REFERENCE_TABLES = {
     "clients": """
         SELECT c.client_id,
@@ -29,6 +41,10 @@ REFERENCE_TABLES = {
     "account_holdings": "SELECT account_id, instrument_id, as_of_date, quantity, status FROM account_holdings",
 }
 
+# Trades with a status change after %(since)s, reshaped to fit the analytics `trades` table:
+#   trade_time  = when the trade was first placed (its earliest status)
+#   status      = its latest status
+#   status_time = when that latest status happened
 CHANGED_TRADES = """
     SELECT t.trade_id,
            t.account_id,
@@ -46,6 +62,7 @@ CHANGED_TRADES = """
     WHERE t.trade_id IN (SELECT trade_id FROM account_trade_status WHERE trade_time > %(since)s)
 """
 
+# Every status step of those same trades.
 CHANGED_STATUS_HISTORY = """
     SELECT trade_id, status, trade_time AS status_time
     FROM account_trade_status
@@ -54,31 +71,33 @@ CHANGED_STATUS_HISTORY = """
 
 
 def copy_reference_tables(source, analytics):
+    """Empty each reference table in analytics and fill it again from the trading database."""
     for table, query in REFERENCE_TABLES.items():
         rows = pd.read_sql(query, source)
         analytics.execute(text(f"DELETE FROM {table}"))
-        rows.to_sql(table, analytics, if_exists="append", index=False, method="multi", chunksize=1000)
+        rows.to_sql(table, analytics, if_exists="append", index=False)
         print(f"  {table:<22} {len(rows):>7,} rows")
 
 
 def replace_trade_rows(analytics, table, rows):
+    """Delete these trades' old rows from `table`, then insert the new ones."""
     if rows.empty:
         return
     trade_ids = rows["trade_id"].unique().tolist()
     analytics.execute(text(f"DELETE FROM {table} WHERE trade_id = ANY(:trade_ids)"), {"trade_ids": trade_ids})
-    rows.to_sql(table, analytics, if_exists="append", index=False, method="multi", chunksize=1000)
+    rows.to_sql(table, analytics, if_exists="append", index=False)
 
 
 def main():
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--full", action="store_true")
-    full = parser.parse_args().full
-
+    full = "--full" in sys.argv
     started_at = datetime.now(timezone.utc)
-    source = get_source_engine().connect().execution_options(isolation_level="REPEATABLE READ")
 
-    with source, get_analytics_engine().begin() as analytics:
-        analytics.exec_driver_sql((PACKAGE_DIR / "analytics_schema.sql").read_text())
+    # engine.begin() opens a transaction: if anything fails, every change is undone,
+    # so the analytics database is never left half-copied.
+    with get_source_engine().connect() as source, get_analytics_engine().begin() as analytics:
+        # Create the analytics tables if this is the first run.
+        schema = (REPORTING_DIR / "analytics_schema.sql").read_text()
+        analytics.exec_driver_sql(schema)
 
         last_watermark = analytics.execute(text("SELECT MAX(watermark) FROM sync_runs")).scalar()
         if full or last_watermark is None:
@@ -95,19 +114,25 @@ def main():
         replace_trade_rows(analytics, "trade_status_history", history)
         print(f"  {'trades':<22} {len(trades):>7,} rows changed")
 
-        watermark = last_watermark
-        if not trades.empty and (watermark is None or trades["status_time"].max() > watermark):
-            watermark = trades["status_time"].max()
+        # The new watermark is the newest status change we've now copied.
+        new_watermark = last_watermark
+        if not trades.empty:
+            newest_change = trades["status_time"].max()
+            if new_watermark is None or newest_change > new_watermark:
+                new_watermark = newest_change
 
         analytics.execute(
             text("""
                 INSERT INTO sync_runs (started_at, finished_at, trades_copied, watermark)
                 VALUES (:started_at, clock_timestamp(), :trades_copied, :watermark)
             """),
-            {"started_at": started_at, "trades_copied": len(trades), "watermark": watermark},
+            {"started_at": started_at, "trades_copied": len(trades), "watermark": new_watermark},
         )
 
-    print(f"Done. Analytics data is current to {watermark:%Y-%m-%d %H:%M:%S}" if watermark else "Done. No trades yet.")
+    if new_watermark is None:
+        print("Done. No trades yet.")
+    else:
+        print(f"Done. Analytics data is current to {new_watermark:%Y-%m-%d %H:%M:%S}")
 
 
 if __name__ == "__main__":
