@@ -1,5 +1,7 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
@@ -10,8 +12,8 @@ public record AccountTradeDTO(
         @NotBlank String tradeTime,
         @Positive Long accountId,
         @Positive Long instrumentId,
-        @NotBlank String tradeType,
+        @NotBlank TradeSide tradeType,
         @Positive BigDecimal quantity,
         @Positive BigDecimal price,
-        @NotBlank String status
+        @NotBlank TradeStatus status
 ) {}
