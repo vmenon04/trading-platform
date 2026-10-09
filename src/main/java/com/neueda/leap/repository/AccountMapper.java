@@ -6,6 +6,8 @@ import com.neueda.leap.entity.Account;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
@@ -18,7 +20,7 @@ public interface AccountMapper {
 
     // columns aliased to the Account field names, so MyBatis fills the right fields
     // (accounts has no client_id column, so clientId is not filled here; the link is in client_accounts)
-    String COLUMNS = "account_id AS accountId, account_type AS accountType, balance";
+    String COLUMNS = "account_id AS accountId, balance";
 
     @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{account_Id}")
     Account findById(Long account_Id);
@@ -26,12 +28,15 @@ public interface AccountMapper {
     @Select("SELECT " + COLUMNS + " FROM accounts")
     List<Account> findAll();
 
+    @Select("SELECT account_id as accountId FROM accounts WHERE external_account_id = #{externalAccountId}")
+    Long findAccountIdByExternalAccountId(UUID externalAccountId);
+
     // #{...} are Account field names
-    @Insert("INSERT INTO accounts(account_type, balance) VALUES(#{accountType}, #{balance})")
+    @Insert("INSERT INTO accounts(balance) VALUES(#{balance})")
     @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")
     void insert(Account account);
 
-    @Update("UPDATE accounts SET account_type = #{accountType}, balance = #{balance} WHERE account_id = #{accountId}")
+    @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
     void update(Account account);
 
     @Delete("DELETE FROM accounts WHERE account_id = #{account_Id}")
