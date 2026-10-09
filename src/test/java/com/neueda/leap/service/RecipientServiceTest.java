@@ -3,6 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
@@ -67,10 +68,10 @@ class RecipientServiceTest {
                 new BigDecimal("25.5")
         );
 
-        Instrument instrument = new Instrument();
-        instrument.setTicker("AAPL");
-        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
+//        Instrument instrument = new Instrument();
+//        instrument.setTicker("AAPL");
+//        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
+//        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
 
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
 
@@ -80,7 +81,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesTradeSubmittedWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
@@ -88,11 +89,6 @@ class RecipientServiceTest {
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
-
-        Instrument instrument = new Instrument();
-        instrument.setTicker("MSFT");
-        when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
 
         recipientService.publishOrder(dto);
 
