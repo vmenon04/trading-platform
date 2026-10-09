@@ -68,10 +68,10 @@ class RecipientServiceTest {
                 new BigDecimal("25.5")
         );
 
-        Instrument instrument = new Instrument();
-        instrument.setTicker("AAPL");
-        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
+//        Instrument instrument = new Instrument();
+//        instrument.setTicker("AAPL");
+//        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
+//        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
 
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
 
@@ -90,28 +90,19 @@ class RecipientServiceTest {
                 new BigDecimal("7")
         );
 
-        Instrument instrument = new Instrument();
-        instrument.setTicker("MSFT");
-        when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
-
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<TradeSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedEvent.class);
+        ArgumentCaptor<TradeSubmittedDTO> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
         verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
 
-        TradeSubmittedEvent event = eventCaptor.getValue();
-        assertEquals(accountId, event.accountId());
-        assertNotNull(event.eventId());
-        assertNotNull(event.timestamp());
-        assertNotNull(event.dto());
-        assertEquals(TradeSubmittedDTO.class, event.dto().getClass());
-        assertEquals(44, event.dto().instrumentId());
-        assertEquals(accountId, event.dto().accountId());
-        assertEquals(TradeSide.SELL, event.dto().side());
-        assertEquals(0, event.dto().quantity().compareTo(new BigDecimal("7")));
-        assertEquals(0, event.dto().quote().compareTo(new BigDecimal("91.10")));
-        assertEquals(1L, event.dto().taskId());
+        TradeSubmittedDTO submittedDTO = eventCaptor.getValue();
+        assertEquals(accountId, submittedDTO.accountId());
+        assertEquals(TradeSubmittedDTO.class, submittedDTO.getClass());
+        assertEquals(44, submittedDTO.instrumentId());
+        assertEquals(accountId, submittedDTO.accountId());
+        assertEquals(TradeSide.SELL, submittedDTO.side());
+        assertEquals(0, submittedDTO.quantity().compareTo(new BigDecimal("7")));
+        assertEquals(1L, submittedDTO.taskId());
     }
 
     private static void resetJobIdGenerator() throws Exception {

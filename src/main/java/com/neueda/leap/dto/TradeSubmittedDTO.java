@@ -13,6 +13,5 @@ public record TradeSubmittedDTO(
         @NotNull UUID accountId,
         @NotNull TradeSide side,
         @NotNull @Positive BigDecimal quantity,
-        @NotNull @Positive BigDecimal quote,
         @NotNull Long taskId
 ) {}

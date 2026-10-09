@@ -18,42 +18,23 @@ public class RecipientService {
 
     private static final AtomicLong JOB_ID_GENERATOR = new AtomicLong(1);
     private final TradeEventProducer tradeEventProducer;
-    private final InstrumentService instrumentService;
-    private final MarketDataClient marketDataClient;
 
-    public RecipientService(TradeEventProducer tradeEventProducer,
-                            InstrumentService instrumentService,
-                            MarketDataClient marketDataClient) {
+    public RecipientService(TradeEventProducer tradeEventProducer) {
         this.tradeEventProducer = tradeEventProducer;
-        this.instrumentService = instrumentService;
-        this.marketDataClient = marketDataClient;
     }
 
     public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto) {
         long taskId = JOB_ID_GENERATOR.getAndIncrement();
-
-        String ticker = instrumentService.getInstrumentById(dto.instrumentId()).getTicker();
-        BigDecimal quote = marketDataClient.getPrice(ticker);
-        if (quote == null || quote.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("No valid market price for " + ticker);
-        }
 
         TradeSubmittedDTO tradeSubmitted = new TradeSubmittedDTO(
                 dto.instrumentId(),
                 dto.accountId(),
                 dto.side(),
                 dto.quantity(),
-                quote,
                 taskId
         );
 
-        TradeSubmittedEvent tradeSubmittedEvent = new TradeSubmittedEvent(
-                dto.accountId(),
-                java.util.UUID.randomUUID(),
-                java.time.Instant.now(),
-                tradeSubmitted
-        );
-        tradeEventProducer.publishTradeSubmitted(tradeSubmittedEvent);
+        tradeEventProducer.publishTradeSubmitted(tradeSubmitted);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()

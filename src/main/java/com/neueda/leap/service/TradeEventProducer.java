@@ -1,6 +1,6 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.events.TradeSubmittedEvent;
+import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.events.TradeValidatedEvent;
 import com.neueda.leap.kafka.KafkaTopics;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,8 +15,8 @@ public class TradeEventProducer {
         this.kafkaTemplate = kafkaTemplate;
     }
 
-    public void publishTradeSubmitted(TradeSubmittedEvent event) {
-        kafkaTemplate.send(KafkaTopics.TRADE_SUBMITTED, event.accountId().toString(), event);
+    public void publishTradeSubmitted(TradeSubmittedDTO dto) {
+        kafkaTemplate.send(KafkaTopics.TRADE_SUBMITTED, dto.accountId().toString(), dto);
     }
 
     public void publishTradeValidated(TradeValidatedEvent event) {
