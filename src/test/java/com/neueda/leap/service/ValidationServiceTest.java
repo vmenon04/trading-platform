@@ -44,12 +44,6 @@ class ValidationServiceTest {
     @Mock
     private AccountHoldingService accountHoldingService;
 
-    @Mock
-    private Consumer<TradeSubmittedDTO> tradeSubmittedConsumer;
-
-    @Mock
-    private Producer<String, TradeValidatedDTO> kafkaProducer;
-
     @InjectMocks
     private ValidationService validationService;
 
