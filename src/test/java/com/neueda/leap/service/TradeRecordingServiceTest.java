@@ -4,6 +4,7 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.kafka.KafkaTopics;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -45,8 +46,7 @@ class TradeRecordingServiceTest {
                 kafkaTemplate,
                 objectMapper,
                 accountTradeMapper,
-                accountTradeStatusMapper,
-                "test-topic");
+                accountTradeStatusMapper);
     }
 
     @Test
@@ -67,7 +67,7 @@ class TradeRecordingServiceTest {
         assertTrue(tradeRecordingService.getLatch().await(1, TimeUnit.SECONDS));
 
         ArgumentCaptor<String> payloadCaptor = ArgumentCaptor.forClass(String.class);
-        verify(kafkaTemplate).send(eq("test-topic"), payloadCaptor.capture());
+        verify(kafkaTemplate).send(eq(KafkaTopics.TRADE_RECORDED), payloadCaptor.capture());
 
         TradeRecordedDTO tradeRecordedDTO = objectMapper.readValue(payloadCaptor.getValue(), TradeRecordedDTO.class);
         assertEquals(1L, tradeRecordedDTO.instrumentId());
