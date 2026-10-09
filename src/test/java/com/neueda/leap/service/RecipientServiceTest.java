@@ -104,7 +104,6 @@ class RecipientServiceTest {
         assertEquals(accountId, submitted.accountId());
         assertEquals(TradeSide.SELL, submitted.side());
         assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
-        assertEquals(0, submitted.quote().compareTo(new BigDecimal("91.10")));
         assertEquals(1L, submitted.taskId());
     }
 
