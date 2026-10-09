@@ -2,8 +2,6 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
-import com.neueda.leap.events.TradeSubmittedEvent;
-import com.neueda.leap.external.MarketDataClient;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
