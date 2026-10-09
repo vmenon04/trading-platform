@@ -2,10 +2,7 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
-import com.neueda.leap.entity.Instrument;
-import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
-import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,19 +24,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RecipientServiceTest {
 
     @Mock
     private TradeEventProducer tradeEventProducer;
-
-    @Mock
-    private InstrumentService instrumentService;
-
-    @Mock
-    private MarketDataClient marketDataClient;
 
     @InjectMocks
     private RecipientService recipientService;
@@ -68,11 +58,6 @@ class RecipientServiceTest {
                 new BigDecimal("25.5")
         );
 
-//        Instrument instrument = new Instrument();
-//        instrument.setTicker("AAPL");
-//        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
-//        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
-
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
 
         assertEquals(202, response.getStatusCode().value());
@@ -81,7 +66,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
