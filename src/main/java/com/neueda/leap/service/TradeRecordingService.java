@@ -46,7 +46,7 @@ public class TradeRecordingService {
         LOGGER.info("Received validated trade event. Task ID: {}", tradeValidatedDTO.taskId());
 
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
-        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.SUBMITTED);
+        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
         LOGGER.info("Created database entry for trade with ID: {}", tradeId);
 
         TradeRecordedDTO tradeRecordedDTO = createTradeRecordedDTO(tradeValidatedDTO, tradeId);

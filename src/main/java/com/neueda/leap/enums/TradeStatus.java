@@ -1,5 +1,5 @@
 package com.neueda.leap.enums;
 
 public enum TradeStatus {
-    SUBMITTED, ACCEPTED, REJECTED, FULFILLED
+    PENDING, ACCEPTED, REJECTED, FULFILLED
 }

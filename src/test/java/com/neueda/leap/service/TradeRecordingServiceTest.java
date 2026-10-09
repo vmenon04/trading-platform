@@ -60,7 +60,7 @@ class TradeRecordingServiceTest {
                 3L);
 
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(4L);
-        doNothing().when(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.SUBMITTED);
+        doNothing().when(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.PENDING);
 
         tradeRecordingService.consume(validatedDTO);
 
@@ -79,6 +79,6 @@ class TradeRecordingServiceTest {
         assertEquals(4L, tradeRecordedDTO.tradeId());
 
         verify(accountTradeMapper).insert(validatedDTO);
-        verify(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.SUBMITTED);
+        verify(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.PENDING);
     }
 }

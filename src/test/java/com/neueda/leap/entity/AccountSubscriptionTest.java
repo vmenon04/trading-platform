@@ -1,6 +1,6 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.enums.Status;
+import com.neueda.leap.enums.ActivityStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
@@ -30,7 +30,7 @@ class AccountSubscriptionTest {
                 () -> assertEquals(101, subscription.getAccountId()),
                 () -> assertEquals(7, subscription.getModelPortfolioId()),
                 () -> assertEquals(date, subscription.getSubscriptionDate()),
-                () -> assertEquals(Status.ACTIVE, subscription.getStatus())
+                () -> assertEquals(ActivityStatus.ACTIVE, subscription.getStatus())
         );
     }
 
@@ -42,13 +42,13 @@ class AccountSubscriptionTest {
         subscription.setAccountId(11L);
         subscription.setModelPortfolioId(22L);
         subscription.setSubscriptionDate(date);
-        subscription.setStatus(Status.INACTIVE);
+        subscription.setStatus(ActivityStatus.INACTIVE);
 
         assertAll(
                 () -> assertEquals(11, subscription.getAccountId()),
                 () -> assertEquals(22, subscription.getModelPortfolioId()),
                 () -> assertEquals(date, subscription.getSubscriptionDate()),
-                () -> assertEquals(Status.INACTIVE, subscription.getStatus())
+                () -> assertEquals(ActivityStatus.INACTIVE, subscription.getStatus())
         );
     }
 }

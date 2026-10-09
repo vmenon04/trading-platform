@@ -42,7 +42,7 @@ class AccountTradeTest {
                 () -> assertEquals(TradeSide.BUY, trade.getTradeSide()),
                 () -> assertEquals(BigDecimal.valueOf(10.5), trade.getQuantity()),
                 () -> assertEquals(BigDecimal.valueOf(55.25), trade.getPrice()),
-                () -> assertEquals(TradeStatus.SUBMITTED, trade.getStatus())
+                () -> assertEquals(TradeStatus.PENDING, trade.getStatus())
         );
     }
 
