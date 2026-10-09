@@ -1,0 +1,15 @@
+# Kafka
+spring.kafka.bootstrap-servers=<kafka-host>:9092
+
+# Postgres
+spring.datasource.url=jdbc:postgresql://<postgres-host>:5432/trading
+spring.datasource.username=trading
+spring.datasource.password=<postgres-password>
+
+# Recreate the tables from schema.sql and reload sample-data.sql on every start (drops existing data)
+spring.sql.init.mode=always
+spring.sql.init.data-locations=classpath:sample-data.sql
+
+# Market data (Fauxnance)
+market.data.base-url=<fauxnance-base-url>
+market.data.api-key=<fauxnance-api-key>

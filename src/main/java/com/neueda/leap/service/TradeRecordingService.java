@@ -3,12 +3,12 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.kafka.KafkaTopics;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
@@ -20,7 +20,6 @@ public class TradeRecordingService {
     private static final Logger LOGGER = LoggerFactory.getLogger(TradeRecordingService.class);
 
     private final KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate;
-    private final String tradeRecordedTopic;
 
     @Autowired
     private AccountTradeMapper accountTradeMapper;
@@ -28,13 +27,11 @@ public class TradeRecordingService {
     @Autowired
     private AccountTradeStatusMapper accountTradeStatusMapper;
 
-    public TradeRecordingService(KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate,
-                                 @Value("${trade.recorded}") String tradeRecordedTopic) {
+    public TradeRecordingService(KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate) {
         this.kafkaTemplate = kafkaTemplate;
-        this.tradeRecordedTopic = tradeRecordedTopic;
     }
 
-    @KafkaListener(topics = "${trade.validated}", groupId = "${spring.kafka.consumer.group-id}")
+    @KafkaListener(topics = KafkaTopics.TRADE_VALIDATED, groupId = "recording-service")
     @Transactional
     public void consume(TradeValidatedDTO tradeValidatedDTO) {
         LOGGER.info("Received validated trade event. Task ID: {}", tradeValidatedDTO.taskId());
@@ -49,8 +46,8 @@ public class TradeRecordingService {
     }
 
     public void sendMessage(TradeRecordedDTO tradeRecordedDTO) {
-        kafkaTemplate.send(tradeRecordedTopic,tradeRecordedDTO);
-        LOGGER.info("Published trade recorded event to {}", tradeRecordedTopic);
+        kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, tradeRecordedDTO);
+        LOGGER.info("Published trade recorded event to {}", KafkaTopics.TRADE_RECORDED);
     }
 
     private TradeRecordedDTO createTradeRecordedDTO(TradeValidatedDTO tradeValidatedDTO, long tradeId) {

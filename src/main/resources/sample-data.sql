@@ -1,14 +1,17 @@
--- Sample data loader for mission-model-hardened.sql
+-- Sample data loader for schema.sql
 -- Populates clients, accounts, client_accounts, instruments, model_portfolios (dimension tables) plus
--- account_holdings, account_trades (with account_trade_status and trade_total_price),
--- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run mission-model-hardened.sql first to create the schema.
+-- account_holdings, account_trades (with account_trade_status and account_trade_price),
+-- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run schema.sql first to create the schema.
+--
+-- Demo account: account_id 1 has external id 00000000-0000-0000-0000-000000000001 and a balance of 100,000,
+-- so trades can be posted to /accounts/00000000-0000-0000-0000-000000000001/trades.
 
 TRUNCATE TABLE
     account_subscriptions,
     model_portfolio_holdings,
     model_portfolios,
     account_holdings,
-    trade_total_price,
+    account_trade_price,
     account_trade_status,
     account_trades,
     client_accounts,
@@ -18,7 +21,7 @@ TRUNCATE TABLE
 RESTART IDENTITY CASCADE;
 
 -- clients (1,000 rows) with realistic names and birth dates
-INSERT INTO clients (first_name, last_name, email, birth_date)
+INSERT INTO clients (external_client_id, first_name, last_name, email, birth_date)
 WITH first_names AS (
   SELECT * FROM (VALUES
     ('James'), ('Mary'), ('Robert'), ('Patricia'), ('Michael'), ('Jennifer'), ('William'), ('Linda'),
@@ -41,22 +44,18 @@ last_names AS (
     ('Stevens'), ('Tucker'), ('Porter'), ('Hunter'), ('Hicks'), ('Crawford'), ('Henry'), ('Boyd')
   ) AS t(name)
 )
-SELECT fn.name, ln.name, LOWER(fn.name || '.' || ln.name) || '.' || ROW_NUMBER() OVER () || '@example.com', DATE '1950-01-01' + (random() * 25000)::INT
+SELECT gen_random_uuid(), fn.name, ln.name, LOWER(fn.name || '.' || ln.name) || '.' || ROW_NUMBER() OVER () || '@example.com', DATE '1950-01-01' + (random() * 25000)::INT
 FROM first_names fn
 CROSS JOIN last_names ln
 LIMIT 1000;
 
--- accounts (5,000 rows; 5 account types, roughly 1000 of each)
-INSERT INTO accounts (account_type, balance)
-SELECT CASE (i % 5)
-  WHEN 0 THEN 'cash'
-  WHEN 1 THEN 'margin'
-  WHEN 2 THEN 'retirement'
-  WHEN 3 THEN 'investment'
-  ELSE 'savings'
-END,
-  round((random() * 50000)::NUMERIC(14, 4), 2)
-FROM generate_series(1, 5000) AS i;
+-- accounts (5,000 rows); account 1 is the demo account with a fixed external id and balance
+INSERT INTO accounts (external_account_id, balance)
+SELECT
+  CASE WHEN i = 1 THEN '00000000-0000-0000-0000-000000000001'::uuid ELSE gen_random_uuid() END,
+  CASE WHEN i = 1 THEN 100000 ELSE round((random() * 50000)::NUMERIC(14, 4), 2) END
+FROM generate_series(1, 5000) AS i
+ORDER BY i;
 
 -- client_accounts junction table (1-3 accounts per client, ~2500 rows)
 INSERT INTO client_accounts (client_id, account_id)
@@ -189,7 +188,7 @@ SELECT 'Model Portfolio ' || i
 FROM generate_series(1, 200) AS i;
 
 -- account_holdings (10,000 rows)
--- account_id cycles through available accounts; instrument_id cycles through 500;
+-- account_id cycles through the first 2,500 accounts; instrument_id cycles through all 334;
 -- as_of_date advances to maintain composite key uniqueness.
 INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status)
 SELECT
@@ -201,36 +200,45 @@ SELECT
 FROM generate_series(0, 9999) AS i;
 
 -- account_trades (10,000 rows)
--- Uses account_id, instrument_id, random trade_time within 365 days and a unit price.
-INSERT INTO account_trades (account_id, instrument_id, trade_time, trade_type, quantity, price)
+-- account_trades no longer stores a time or price: the time is on account_trade_status and the price on
+-- account_trade_price. Both are derived from trade_id below, so the inserts stay consistent with each other.
+INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity)
 SELECT
+    gen_random_uuid(),
     ((i % 2500) % 5000) + 1,
     (i % 334) + 1,
-    NOW() - INTERVAL '1 day' * (random() * 365)::INT,
     CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END,
-    round((1 + random() * 9999)::NUMERIC, 4),
-    round((1 + random() * 999)::NUMERIC, 4)
+    round((1 + random() * 9999)::NUMERIC, 4)
 FROM generate_series(0, 9999) AS i;
 
--- account_trade_status: each trade's status history, a second apart.
+-- account_trade_status: each trade's status history, a second apart, placed within the last 365 days.
 -- trade_id % 4 picks where the trade ended up:
 --   0 = PENDING, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
 INSERT INTO account_trade_status (trade_id, status, trade_time)
-SELECT trade_id, 'PENDING', trade_time FROM account_trades
+WITH placed AS (
+    SELECT trade_id, NOW() - INTERVAL '1 day' * ((trade_id * 37) % 365) AS placed_at FROM account_trades
+)
+SELECT trade_id, 'PENDING', placed_at FROM placed
 UNION ALL
-SELECT trade_id, 'ACCEPTED', trade_time + INTERVAL '1 second' FROM account_trades WHERE trade_id % 4 IN (1, 2, 3)
+SELECT trade_id, 'ACCEPTED', placed_at + INTERVAL '1 second' FROM placed WHERE trade_id % 4 IN (1, 2, 3)
 UNION ALL
-SELECT trade_id, 'FULFILLED', trade_time + INTERVAL '2 seconds' FROM account_trades WHERE trade_id % 4 = 2
+SELECT trade_id, 'FULFILLED', placed_at + INTERVAL '2 seconds' FROM placed WHERE trade_id % 4 = 2
 UNION ALL
-SELECT trade_id, 'REJECTED', trade_time + INTERVAL '2 seconds' FROM account_trades WHERE trade_id % 4 = 3;
+SELECT trade_id, 'REJECTED', placed_at + INTERVAL '2 seconds' FROM placed WHERE trade_id % 4 = 3;
 
--- trade_total_price: price * quantity for every trade
-INSERT INTO trade_total_price (trade_id, total_price)
-SELECT trade_id, price * quantity FROM account_trades;
+-- account_trade_price: only fulfilled trades have an execution price (as ExecutionService records it),
+-- a unit price between 1 and 1000
+INSERT INTO account_trade_price (trade_id, price_per_unit, total_price)
+WITH priced AS (
+    SELECT trade_id, quantity, round(1 + ((trade_id * 7919) % 99900) / 100.0, 4) AS price_per_unit
+    FROM account_trades
+    WHERE trade_id % 4 = 2
+)
+SELECT trade_id, price_per_unit, price_per_unit * quantity FROM priced;
 
 -- model_portfolio_holdings (10,000 rows)
 -- Composite key: (model_portfolio_id, instrument_id, effective_date)
--- LCM(200, 500) = 1000, so effective_date advances every 1000 rows to ensure uniqueness
+-- LCM(200, 334) = 33,400 > 10,000, so (model_portfolio_id, instrument_id) never repeats; effective_date advances every 1000 rows
 INSERT INTO model_portfolio_holdings (model_portfolio_id, instrument_id, effective_date, target_weight_pct, status)
 SELECT
     (i % 200) + 1,

@@ -22,7 +22,7 @@ public class ExecutionConsumer {
         this.tradeEventProducer = tradeEventProducer;
     }
     
-    @KafkaListener(topics = "${trade.recorded}", groupId = "execution-service")
+    @KafkaListener(topics = KafkaTopics.TRADE_RECORDED, groupId = "execution-service")
     public void onTradeRecorded(TradeRecordedDTO trade) throws InterruptedException, ExecutionException {
         TradeFinishedDTO outcome = executionService.execute(trade);
         tradeEventProducer.publishTradeFinished(outcome).get();
