@@ -3,7 +3,6 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
-import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
@@ -81,7 +80,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
@@ -97,20 +96,16 @@ class RecipientServiceTest {
 
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<TradeSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedEvent.class);
-        verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
+        ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
+        verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
 
-        TradeSubmittedEvent event = eventCaptor.getValue();
-        assertEquals(accountId, event.accountId());
-        assertNotNull(event.eventId());
-        assertNotNull(event.timestamp());
-        assertNotNull(event.dto());
-        assertEquals(TradeSubmittedDTO.class, event.dto().getClass());
-        assertEquals(44, event.dto().instrumentId());
-        assertEquals(accountId, event.dto().accountId());
-        assertEquals(TradeSide.SELL, event.dto().side());
-        assertEquals(0, event.dto().quantity().compareTo(new BigDecimal("7")));;
-        assertEquals(1L, event.dto().taskId());
+        TradeSubmittedDTO submitted = captor.getValue();
+        assertEquals(44, submitted.instrumentId());
+        assertEquals(accountId, submitted.accountId());
+        assertEquals(TradeSide.SELL, submitted.side());
+        assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
+        assertEquals(0, submitted.quote().compareTo(new BigDecimal("91.10")));
+        assertEquals(1L, submitted.taskId());
     }
 
     private static void resetJobIdGenerator() throws Exception {

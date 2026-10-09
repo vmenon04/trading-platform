@@ -20,6 +20,7 @@ DROP TABLE IF EXISTS client_trades CASCADE;
 -- clients
 CREATE TABLE clients (
     client_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    external_client_id uuid,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -30,6 +31,7 @@ CREATE TABLE clients (
 -- users: login accounts. a CLIENT user is linked to exactly one client, an ADMIN user to none
 CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    external_user_id uuid,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('ADMIN', 'CLIENT')),
@@ -40,6 +42,7 @@ CREATE TABLE users (
 
 CREATE TABLE accounts (
     account_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    external_account_id uuid,
     balance NUMERIC(14, 4) NOT NULL
 );
 
@@ -74,6 +77,7 @@ CREATE INDEX idx_account_holdings_instrument_id ON account_holdings(instrument_i
 
 CREATE TABLE account_trades (
     trade_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    external_trade_id uuid,
     account_id BIGINT REFERENCES accounts(account_id) NOT NULL,
     instrument_id BIGINT REFERENCES instruments(instrument_id) NOT NULL,
     trade_side TEXT NOT NULL

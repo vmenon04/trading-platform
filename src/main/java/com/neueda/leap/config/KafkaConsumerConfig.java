@@ -13,6 +13,8 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.springframework.kafka.support.converter.JsonMessageConverter;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
 
 @Configuration
 public class KafkaConsumerConfig {
@@ -23,6 +25,9 @@ public class KafkaConsumerConfig {
     @Value("${spring.kafka.consumer.group-id}")
     private String groupId;
 
+    // Spring Boot attaches this to the default listener container factory, so every @KafkaListener gets the
+    // JSON message converted to the type of its parameter (TradeValidatedDTO, TradeRecordedDTO, ...).
+    // A message that can't be converted is logged and skipped rather than retried.
     @Bean
     public ConsumerFactory<String, Object> consumerFactory() {
         Map<String, Object> config = new HashMap<>();
@@ -39,5 +44,10 @@ public class KafkaConsumerConfig {
                 new ConcurrentKafkaListenerContainerFactory<>();
         factory.setConsumerFactory(consumerFactory());
         return factory;
+        }
+
+        @Bean
+    public RecordMessageConverter messageConverter() {
+        return new JsonMessageConverter();
     }
 }

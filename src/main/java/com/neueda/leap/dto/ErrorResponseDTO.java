@@ -1,12 +1,14 @@
 package com.neueda.leap.dto;
 
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import org.springframework.http.HttpStatus;
 
 import java.time.Instant;
 import java.util.List;
 
 public record ErrorResponseDTO(
-        @NotBlank int status,
+        @NotNull HttpStatus status,
         @NotBlank String error,
         @NotBlank String message,
         List<FieldError> fieldErrors
@@ -19,11 +21,11 @@ public record ErrorResponseDTO(
 
     public record FieldError(String field, String message) {}
 
-    public static ErrorResponseDTO of(int status, String error, String message) {
+    public static ErrorResponseDTO of(HttpStatus status, String error, String message) {
         return new ErrorResponseDTO(status, error, message, List.of());
     }
 
-    public static ErrorResponseDTO withFieldErrors(int status, String error, String message,
+    public static ErrorResponseDTO withFieldErrors(HttpStatus status, String error, String message,
                                                 List<FieldError> fieldErrors) {
         return new ErrorResponseDTO(status, error, message, fieldErrors);
     }

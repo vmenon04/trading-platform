@@ -15,7 +15,6 @@ class AccountTest {
 
         assertAll(
                 () -> assertNull(account.getAccountId()),
-                () -> assertNull(account.getAccountType()),
                 () -> assertEquals(BigDecimal.ZERO, account.getBalance()),
                 () -> assertNotNull(account.getHoldings()),
                 () -> assertTrue(account.getHoldings().isEmpty())
@@ -24,11 +23,10 @@ class AccountTest {
 
     @Test
     void parameterizedConstructorSetsProvidedValues() {
-        Account account = new Account("Trading", 42L);
+        Account account = new Account(42L);
 
         assertAll(
                 () -> assertNull(account.getAccountId()),
-                () -> assertEquals("Trading", account.getAccountType()),
                 () -> assertEquals(BigDecimal.ZERO, account.getBalance()),
                 () -> assertNotNull(account.getHoldings()),
                 () -> assertTrue(account.getHoldings().isEmpty())
@@ -41,13 +39,11 @@ class AccountTest {
         HashMap<Instrument, AccountHolding> holdings = new HashMap<>();
 
         account.setAccountId(10L);
-        account.setAccountType("Cash");
         account.setBalance(BigDecimal.valueOf(99.5));
         account.setHoldings(holdings);
 
         assertAll(
                 () -> assertEquals(10L, account.getAccountId()),
-                () -> assertEquals("Cash", account.getAccountType()),
                 () -> assertEquals(BigDecimal.valueOf(99.5), account.getBalance()),
                 () -> assertSame(holdings, account.getHoldings())
         );

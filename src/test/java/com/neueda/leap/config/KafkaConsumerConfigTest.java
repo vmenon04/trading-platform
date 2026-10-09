@@ -1,0 +1,45 @@
+package com.neueda.leap.config;
+
+import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.enums.TradeSide;
+import java.math.BigDecimal;
+import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.Test;
+import org.springframework.kafka.support.converter.ConversionException;
+import org.springframework.kafka.support.converter.RecordMessageConverter;
+import org.springframework.messaging.Message;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+
+class KafkaConsumerConfigTest {
+
+    private final RecordMessageConverter converter = new KafkaConsumerConfig().messageConverter();
+
+    private static ConsumerRecord<String, String> record(String json) {
+        return new ConsumerRecord<>("trade.recorded", 0, 0L, "1", json);
+    }
+
+    @Test
+    void convertsJsonToTheListenerParameterType() {
+        String json = "{\"instrumentId\":10,\"accountId\":1,\"side\":\"BUY\",\"quantity\":5,"
+                + "\"quote\":100.25,\"taskId\":3,\"tradeId\":42}";
+
+        Message<?> message = converter.toMessage(record(json), null, null, TradeRecordedDTO.class);
+
+        TradeRecordedDTO trade = (TradeRecordedDTO) message.getPayload();
+        assertEquals(42L, trade.tradeId());
+        assertEquals(1L, trade.accountId());
+        assertEquals(10L, trade.instrumentId());
+        assertEquals(TradeSide.BUY, trade.side());
+        assertEquals(0, trade.quantity().compareTo(new BigDecimal("5")));
+        assertEquals(0, trade.quote().compareTo(new BigDecimal("100.25")));
+        assertEquals(3L, trade.taskId());
+    }
+
+    @Test
+    void rejectsMessagesThatAreNotJson() {
+        assertThrows(ConversionException.class,
+                () -> converter.toMessage(record("not json"), null, null, TradeRecordedDTO.class));
+    }
+}
