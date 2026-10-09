@@ -6,6 +6,7 @@ import java.util.UUID;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.kafka.KafkaTopics;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
@@ -29,8 +30,8 @@ public class ValidationService {
         this.accountHoldingService = accountHoldingService;
     }
 
-    @KafkaListener(topics = "trade.submitted", groupId = "${spring.kafka.consumer.group-id}")
-    @SendTo("trade.validated")
+    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
+    @SendTo(KafkaTopics.TRADE_VALIDATED)
     public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
         LOGGER.info(String.format("Received submitted trade event. Task ID: %d", tradeSubmittedDTO.taskId()));
 
