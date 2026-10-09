@@ -8,6 +8,9 @@ import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.function.Consumer;
+
+import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -29,6 +32,8 @@ class ValidationServiceTest {
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100");
     private static final long TASK_ID = 77L;
+    private static final String BALANCE = "1000";
+    private static final String TICKER = "AAPL";
 
     @Mock
     private InstrumentService instrumentService;
@@ -38,6 +43,12 @@ class ValidationServiceTest {
 
     @Mock
     private AccountHoldingService accountHoldingService;
+
+    @Mock
+    private Consumer<TradeSubmittedDTO> tradeSubmittedConsumer;
+
+    @Mock
+    private Producer<String, TradeValidatedDTO> kafkaProducer;
 
     @InjectMocks
     private ValidationService validationService;
@@ -52,42 +63,42 @@ class ValidationServiceTest {
         );
     }
 
-    private void givenInstrumentAndBalance(String balance) {
+    private void givenInstrumentAndBalance() {
         when(instrumentService.getInstrumentById(INSTRUMENT_ID))
-                .thenReturn(new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK));
+                .thenReturn(new Instrument("Apple Inc", TICKER, InstrumentType.STOCK));
         when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(PRICE);
         when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
-        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(balance));
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
     }
 
     @Test
     void validBuyPasses() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         assertDoesNotThrow(() -> validationService.validate(order("BUY", "5")));
     }
 
     @Test
     void buyWithExactCashPasses() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         assertDoesNotThrow(() -> validationService.validate(order("BUY", "10")));
     }
 
     @Test
     void buyRejectsInsufficientCash() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         assertThrows(IllegalStateException.class, () -> validationService.validate(order("BUY", "11")));
     }
 
     @Test
     void validSellPasses() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
         assertDoesNotThrow(() -> validationService.validate(order("SELL", "5")));
     }
 
     @Test
     void sellRejectsInsufficientHoldings() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
         assertThrows(IllegalStateException.class, () -> validationService.validate(order("SELL", "11")));
     }
@@ -121,7 +132,7 @@ class ValidationServiceTest {
 
     @Test
     void acceptsQuantityWithEightDecimals() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
         assertDoesNotThrow(() -> validationService.validate(order("BUY", "0.12345678")));
     }
 
@@ -146,7 +157,7 @@ class ValidationServiceTest {
 
     @Test
     void validateSubmittedTradeReturnsValidatedDtoWithInternalAccountId() {
-        givenInstrumentAndBalance("1000");
+        givenInstrumentAndBalance();
 
         TradeValidatedDTO validatedDTO = validationService.validateSubmittedTrade(order("BUY", "5"));
 
