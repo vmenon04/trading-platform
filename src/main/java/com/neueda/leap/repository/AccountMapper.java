@@ -29,7 +29,7 @@ public interface AccountMapper {
     List<Account> findAll();
 
     @Select("SELECT account_id as accountId FROM accounts WHERE external_account_id = #{externalAccountId}")
-    Long findAccountIdByExternalAccountId(UUID externalAccountId);
+    Long findAccountIdByExternalAccountId(@Param("externalAccountId") UUID externalAccountId);
 
     // #{...} are Account field names
     @Insert("INSERT INTO accounts(balance) VALUES(#{balance})")
