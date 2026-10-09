@@ -10,7 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
 
-import static org.springframework.kafka.listener.ShareConsumerRecordRecoverer.LOGGER;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Service
 public class ValidationService {
@@ -18,6 +19,7 @@ public class ValidationService {
     private final InstrumentService instrumentService;
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationService.class);
 
 
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
