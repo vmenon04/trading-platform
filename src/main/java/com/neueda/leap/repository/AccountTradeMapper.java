@@ -51,13 +51,13 @@ public interface AccountTradeMapper {
     List<AccountTrade> findHistoryById(Long trade_Id);
 
     // #{...} are AccountTrade field names
-    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{tradeSide}, #{quantity})")
-    @Options(useGeneratedKeys = true, keyProperty = "tradeId", keyColumn = "trade_id")
+    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{side}, #{quantity})")
+    @Options(useGeneratedKeys = true, keyColumn = "trade_id")
     Long insert(TradeValidatedDTO tradeValidatedDTO);
 
     // Postgres INSERT and the RETURNING goes through @Select so MyBatis returns the generated trade_id
     @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}) "
+            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeSide}, #{quantity}) "
             + "RETURNING trade_id")
     Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
                      @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);

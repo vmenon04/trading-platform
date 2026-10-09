@@ -27,7 +27,7 @@ public interface AccountMapper {
     List<Account> findAll();
 
     // #{...} are Account field names
-    @Insert("INSERT INTO accounts(account_type, balance) VALUES(#{accountType}, #{balance})")
+    @Insert("INSERT INTO accounts(balance) VALUES(#{balance})")
     @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")
     void insert(Account account);
 
