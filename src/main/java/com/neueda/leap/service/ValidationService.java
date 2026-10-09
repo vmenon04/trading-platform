@@ -2,13 +2,13 @@ package com.neueda.leap.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.kafka.KafkaTopics;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
 
 import org.slf4j.Logger;
@@ -20,21 +20,28 @@ public class ValidationService {
     private final InstrumentService instrumentService;
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
+    private final TradeEventProducer tradeEventProducer;
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidationService.class);
 
 
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
-                             AccountHoldingService accountHoldingService) {
+                             AccountHoldingService accountHoldingService, TradeEventProducer tradeEventProducer) {
         this.instrumentService = instrumentService;
         this.accountService = accountService;
         this.accountHoldingService = accountHoldingService;
+        this.tradeEventProducer = tradeEventProducer;
     }
 
+    // waits for the send so a failed publish fails the listener and the message is redelivered
     @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
-    @SendTo(KafkaTopics.TRADE_VALIDATED)
-    public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
+    public void onTradeSubmitted(TradeSubmittedDTO tradeSubmittedDTO) throws InterruptedException, ExecutionException {
         LOGGER.info(String.format("Received submitted trade event. Task ID: %d", tradeSubmittedDTO.taskId()));
 
+        TradeValidatedDTO validated = validateSubmittedTrade(tradeSubmittedDTO);
+        tradeEventProducer.publishTradeValidated(validated).get();
+    }
+
+    public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
         validate(tradeSubmittedDTO);
 
         return new TradeValidatedDTO(

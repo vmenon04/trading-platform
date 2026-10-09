@@ -142,8 +142,14 @@ class ValidationServiceKafkaIntegrationTest {
         @Bean
         ValidationService validationService(InstrumentService instrumentService,
                                             AccountService accountService,
-                                            AccountHoldingService accountHoldingService) {
-            return new ValidationService(instrumentService, accountService, accountHoldingService);
+                                            AccountHoldingService accountHoldingService,
+                                            TradeEventProducer tradeEventProducer) {
+            return new ValidationService(instrumentService, accountService, accountHoldingService, tradeEventProducer);
+        }
+
+        @Bean
+        TradeEventProducer tradeEventProducer(@Qualifier("kafkaTemplate") KafkaTemplate<String, Object> kafkaTemplate) {
+            return new TradeEventProducer(kafkaTemplate);
         }
 
         @Bean(name = "kafkaTemplate")
@@ -177,12 +183,10 @@ class ValidationServiceKafkaIntegrationTest {
 
         @Bean
         ConcurrentKafkaListenerContainerFactory<String, TradeSubmittedDTO> kafkaListenerContainerFactory(
-                ConsumerFactory<String, TradeSubmittedDTO> consumerFactory,
-                @Qualifier("kafkaTemplate") KafkaTemplate<String, Object> replyTemplate) {
+                ConsumerFactory<String, TradeSubmittedDTO> consumerFactory) {
             ConcurrentKafkaListenerContainerFactory<String, TradeSubmittedDTO> factory =
                     new ConcurrentKafkaListenerContainerFactory<>();
             factory.setConsumerFactory(consumerFactory);
-            factory.setReplyTemplate(replyTemplate);
             return factory;
         }
     }

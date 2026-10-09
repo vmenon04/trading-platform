@@ -8,11 +8,13 @@ import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -21,6 +23,8 @@ import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
@@ -43,6 +47,9 @@ class ValidationServiceTest {
 
     @Mock
     private AccountHoldingService accountHoldingService;
+
+    @Mock
+    private TradeEventProducer tradeEventProducer;
 
     @InjectMocks
     private ValidationService validationService;
@@ -163,5 +170,26 @@ class ValidationServiceTest {
                 () -> assertEquals(PRICE, validatedDTO.quote()),
                 () -> assertEquals(TASK_ID, validatedDTO.taskId())
         );
+    }
+
+    @Test
+    void onTradeSubmittedPublishesValidatedTrade() throws Exception {
+        givenInstrumentAndBalance();
+        when(tradeEventProducer.publishTradeValidated(any())).thenReturn(CompletableFuture.completedFuture(null));
+
+        validationService.onTradeSubmitted(order("BUY", "5"));
+
+        ArgumentCaptor<TradeValidatedDTO> captor = ArgumentCaptor.forClass(TradeValidatedDTO.class);
+        verify(tradeEventProducer).publishTradeValidated(captor.capture());
+        assertEquals(ACCOUNT_ID, captor.getValue().accountId());
+        assertEquals(PRICE, captor.getValue().quote());
+    }
+
+    @Test
+    void onTradeSubmittedDoesNotPublishARejectedTrade() {
+        givenInstrumentAndBalance();
+
+        assertThrows(IllegalStateException.class, () -> validationService.onTradeSubmitted(order("BUY", "11")));
+        verifyNoInteractions(tradeEventProducer);
     }
 }
