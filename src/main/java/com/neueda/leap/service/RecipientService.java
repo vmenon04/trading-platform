@@ -43,7 +43,6 @@ public class RecipientService {
                 dto.accountId(),
                 dto.side(),
                 dto.quantity(),
-                quote,
                 taskId
         );
 

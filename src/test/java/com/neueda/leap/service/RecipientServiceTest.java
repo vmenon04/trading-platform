@@ -63,7 +63,7 @@ class RecipientServiceTest {
     void publishOrder_returnsAcceptedWithTaskLocation() {
         TradeRequestDTO dto = new TradeRequestDTO(
                 UUID.randomUUID(),
-                10,
+                10L,
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
@@ -85,7 +85,7 @@ class RecipientServiceTest {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
-                44,
+                44L,
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
@@ -109,8 +109,7 @@ class RecipientServiceTest {
         assertEquals(44, event.dto().instrumentId());
         assertEquals(accountId, event.dto().accountId());
         assertEquals(TradeSide.SELL, event.dto().side());
-        assertEquals(0, event.dto().quantity().compareTo(new BigDecimal("7")));
-        assertEquals(0, event.dto().quote().compareTo(new BigDecimal("91.10")));
+        assertEquals(0, event.dto().quantity().compareTo(new BigDecimal("7")));;
         assertEquals(1L, event.dto().taskId());
     }
 
