@@ -10,7 +10,6 @@ import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -34,8 +33,7 @@ public class TradeRecordingService {
     public TradeRecordingService(KafkaTemplate<String, Object> kafkaTemplate,
                                  ObjectMapper objectMapper,
                                  AccountTradeMapper accountTradeMapper,
-                                 AccountTradeStatusMapper accountTradeStatusMapper,
-                                 @Value("${trade.recorded}") String tradeRecordedTopic) {
+                                 AccountTradeStatusMapper accountTradeStatusMapper) {
         this.kafkaTemplate = kafkaTemplate;
         this.objectMapper = objectMapper;
         this.accountTradeMapper = accountTradeMapper;
