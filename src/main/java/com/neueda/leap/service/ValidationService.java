@@ -1,79 +1,111 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 
+import com.neueda.leap.dto.TradeSubmittedDTO;
+import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.kafka.KafkaTopics;
+import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
 
-/**
- * Validates incoming orders against supported order sides, available cash, and held quantities.
- */
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 @Service
 public class ValidationService {
 
     private final InstrumentService instrumentService;
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
+    private final TradeEventProducer tradeEventProducer;
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationService.class);
 
-    /**
-     * Creates a validation service with access to instrument, account, and holding data.
-     *
-     * @param instrumentService service used to verify referenced instruments
-     * @param accountService service used to inspect account balances
-     * @param accountHoldingService service used to inspect account holdings
-     */
+
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
-                             AccountHoldingService accountHoldingService) {
+                             AccountHoldingService accountHoldingService, TradeEventProducer tradeEventProducer) {
         this.instrumentService = instrumentService;
         this.accountService = accountService;
         this.accountHoldingService = accountHoldingService;
+        this.tradeEventProducer = tradeEventProducer;
     }
 
-    /**
-     * Validates that an order is well formed and can be executed at the supplied price.
-     *
-     * @param order order to validate
-     * @param price execution price used to calculate required cash for buy orders
-     * @throws IllegalArgumentException if the order, side, or quantity is invalid
-     * @throws IllegalStateException if the account lacks enough cash or holdings to satisfy the order
-     */
-    public void validate(TradeRequestDTO order, BigDecimal price) {
-        checkOrderNotNull(order);
-        TradeSide side = checkSideValid(order);
-        BigDecimal quantity = checkQuantityPositive(order);
+    // waits for the send so a failed publish fails the listener and the message is redelivered
+    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
+    public void onTradeSubmitted(TradeSubmittedDTO tradeSubmittedDTO) throws InterruptedException, ExecutionException {
+        LOGGER.info(String.format("Received submitted trade event. Task ID: %d", tradeSubmittedDTO.taskId()));
+
+        TradeValidatedDTO validated = validateSubmittedTrade(tradeSubmittedDTO);
+        tradeEventProducer.publishTradeValidated(validated).get();
+    }
+
+    public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
+        validate(tradeSubmittedDTO);
+
+        return new TradeValidatedDTO(
+                tradeSubmittedDTO.instrumentId(),
+                accountService.getAccountIdByExternalAccountId(tradeSubmittedDTO.accountId()),
+                tradeSubmittedDTO.side(),
+                tradeSubmittedDTO.quantity(),
+                instrumentService.getCurrentPrice(tradeSubmittedDTO.instrumentId()),
+                tradeSubmittedDTO.taskId()
+        );
+    }
+
+    public void validate(TradeSubmittedDTO tradeSubmittedDTO) {
+        checkOrderNotNull(tradeSubmittedDTO);
+        TradeSide side = checkSideValid(tradeSubmittedDTO);
+        BigDecimal quantity = checkQuantityPositive(tradeSubmittedDTO);
         checkDecimalsValid(quantity);
 
-        UUID accountId = order.accountId();
+        UUID externalAccountId = tradeSubmittedDTO.accountId();
+        Long accountId = accountService.getAccountIdByExternalAccountId(externalAccountId);
 
-
-        Long instrumentId = order.instrumentId();
+        Long instrumentId = tradeSubmittedDTO.instrumentId();
         instrumentService.getInstrumentById(instrumentId);
-        BigDecimal balance = accountService.getBalance(1L);
+        BigDecimal balance = accountService.getBalance(accountId);
+
+        BigDecimal quote = instrumentService.getCurrentPrice(instrumentId);
+        checkPricePositive(quote);
 
         if (TradeSide.BUY.equals(side)) {
-            BigDecimal cost = price.multiply(quantity);
-            if (balance.compareTo(cost) < 0) {
-                throw new IllegalStateException("Insufficient funds in account " + accountId
-                        + ": balance " + balance + ", order cost " + cost);
-            }
+            checkSufficientFunds(quote, quantity, balance, accountId);
         } else {
-            BigDecimal held = accountHoldingService.getQuantity(1L, instrumentId);
-            if (held.compareTo(quantity) < 0) {
-                throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
-                        + " in account " + accountId + ": holding " + held + ", order quantity " + quantity);
-            }
+            checkSufficientInstrumentQuantity(accountId, instrumentId, quantity);
         }
     }
 
-    private static void checkDecimalsValid(BigDecimal quantity) {
+    private void checkSufficientInstrumentQuantity(Long accountId, Long instrumentId, BigDecimal quantity) {
+        BigDecimal held = accountHoldingService.getQuantity(accountId, instrumentId);
+        if (held.compareTo(quantity) < 0) {
+            throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
+                    + " in account " + accountId + ": holding " + held + ", order quantity " + quantity);
+        }
+    }
+
+    private void checkSufficientFunds(BigDecimal quote, BigDecimal quantity, BigDecimal balance, Long accountId) {
+        BigDecimal cost = quote.multiply(quantity);
+        if (balance.compareTo(cost) < 0) {
+            throw new IllegalStateException("Insufficient funds in account " + accountId
+                    + ": balance " + balance + ", order cost " + cost);
+        }
+    }
+
+    private void checkDecimalsValid(BigDecimal quantity) {
         if (quantity.stripTrailingZeros().scale() > 8) {
             throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
         }
     }
 
-    private static BigDecimal checkQuantityPositive(TradeRequestDTO order) {
+    private void checkPricePositive(BigDecimal price) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price must be positive");
+        }
+    }
+
+    private BigDecimal checkQuantityPositive(TradeSubmittedDTO order) {
         BigDecimal quantity = order.quantity();
         if (quantity == null || quantity.compareTo(BigDecimal.ZERO) <= 0) {
             throw new IllegalArgumentException("Quantity must be positive");
@@ -81,7 +113,7 @@ public class ValidationService {
         return quantity;
     }
 
-    private static TradeSide checkSideValid(TradeRequestDTO order) {
+    private TradeSide checkSideValid(TradeSubmittedDTO order) {
         TradeSide side = order.side();
         if (!TradeSide.BUY.equals(side) && !TradeSide.SELL.equals(side)) {
             throw new IllegalArgumentException("Side must be BUY or SELL, got " + side);
@@ -89,7 +121,7 @@ public class ValidationService {
         return side;
     }
 
-    private static void checkOrderNotNull(TradeRequestDTO order) {
+    private void checkOrderNotNull(TradeSubmittedDTO order) {
         if (order == null) {
             throw new IllegalArgumentException("Order must not be null");
         }

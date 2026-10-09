@@ -5,6 +5,7 @@ target/
 .env
 .env.*
 application.properties
+start-services.sh
 
 # IDEs
 .vscode/

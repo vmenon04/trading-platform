@@ -21,7 +21,6 @@ public interface AccountTradeMapper {
 
     // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
     // (the status column goes into the tradeStatus field)
-    // TODO: TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS are joined without commas, and WHERE trade_id is ambiguous once the tables are joined
     String TRADE_COLUMNS = "trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
             + "trade_side AS tradeSide, quantity";
 
@@ -52,15 +51,13 @@ public interface AccountTradeMapper {
     List<AccountTrade> findHistoryById(Long trade_Id);
 
     // #{...} are AccountTrade field names
-    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{tradeSide}, #{quantity})")
-    @Options(useGeneratedKeys = true, keyProperty = "tradeId", keyColumn = "trade_id")
-    // TODO: useGeneratedKeys can't set tradeId on a record, TradeValidatedDTO has side not tradeSide, and the Long returned is the row count
+    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{side}, #{quantity})")
+    @Options(useGeneratedKeys = true, keyColumn = "trade_id")
     Long insert(TradeValidatedDTO tradeValidatedDTO);
 
     // Postgres INSERT and the RETURNING goes through @Select so MyBatis returns the generated trade_id
-    // TODO: #{tradeType} should be #{tradeSide}, and account_trades no longer has a trade_time column
     @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeType}, #{quantity}) "
+            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeSide}, #{quantity}) "
             + "RETURNING trade_id")
     Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
                      @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);

@@ -1,6 +1,6 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.enums.Status;
+import com.neueda.leap.enums.ActivityStatus;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
@@ -33,7 +33,7 @@ class ModelPortfolioHoldingTest {
                 () -> assertEquals(2L, holding.getInstrumentId()),
                 () -> assertEquals(effectiveDate, holding.getEffectiveDate()),
                 () -> assertEquals(new BigDecimal("35.5"), holding.getTargetWeightPct()),
-                () -> assertEquals(Status.ACTIVE, holding.getStatus())
+                () -> assertEquals(ActivityStatus.ACTIVE, holding.getStatus())
         );
     }
 
@@ -46,14 +46,14 @@ class ModelPortfolioHoldingTest {
         holding.setInstrumentId(20L);
         holding.setEffectiveDate(effectiveDate);
         holding.setTargetWeightPct(new BigDecimal("60.0"));
-        holding.setStatus(Status.INACTIVE);
+        holding.setStatus(ActivityStatus.INACTIVE);
 
         assertAll(
                 () -> assertEquals(10L, holding.getModelPortfolioId()),
                 () -> assertEquals(20L, holding.getInstrumentId()),
                 () -> assertEquals(effectiveDate, holding.getEffectiveDate()),
                 () -> assertEquals(new BigDecimal("60.0"), holding.getTargetWeightPct()),
-                () -> assertEquals(Status.INACTIVE, holding.getStatus())
+                () -> assertEquals(ActivityStatus.INACTIVE, holding.getStatus())
         );
     }
 }

@@ -92,17 +92,15 @@ class RecipientServiceTest {
 
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<TradeSubmittedDTO> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
-        verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
+        ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
+        verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
 
-        TradeSubmittedDTO submittedDTO = eventCaptor.getValue();
-        assertEquals(accountId, submittedDTO.accountId());
-        assertEquals(TradeSubmittedDTO.class, submittedDTO.getClass());
-        assertEquals(44, submittedDTO.instrumentId());
-        assertEquals(accountId, submittedDTO.accountId());
-        assertEquals(TradeSide.SELL, submittedDTO.side());
-        assertEquals(0, submittedDTO.quantity().compareTo(new BigDecimal("7")));
-        assertEquals(1L, submittedDTO.taskId());
+        TradeSubmittedDTO submitted = captor.getValue();
+        assertEquals(44, submitted.instrumentId());
+        assertEquals(accountId, submitted.accountId());
+        assertEquals(TradeSide.SELL, submitted.side());
+        assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
+        assertEquals(1L, submitted.taskId());
     }
 
     private static void resetJobIdGenerator() throws Exception {

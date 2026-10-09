@@ -3,54 +3,48 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.kafka.KafkaTopics;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.util.concurrent.ExecutionException;
 
 @Service
 public class TradeRecordingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TradeRecordingService.class);
 
-    private final KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate;
-    private final String tradeRecordedTopic;
+    private final TradeEventProducer tradeEventProducer;
+    private final AccountTradeMapper accountTradeMapper;
+    private final AccountTradeStatusMapper accountTradeStatusMapper;
 
-    @Autowired
-    private AccountTradeMapper accountTradeMapper;
-
-    @Autowired
-    private AccountTradeStatusMapper accountTradeStatusMapper;
-
-    public TradeRecordingService(KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate,
-                                 @Value("${trade.recorded}") String tradeRecordedTopic) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.tradeRecordedTopic = tradeRecordedTopic;
+    public TradeRecordingService(TradeEventProducer tradeEventProducer,
+                                 AccountTradeMapper accountTradeMapper,
+                                 AccountTradeStatusMapper accountTradeStatusMapper) {
+        this.tradeEventProducer = tradeEventProducer;
+        this.accountTradeMapper = accountTradeMapper;
+        this.accountTradeStatusMapper = accountTradeStatusMapper;
     }
 
-    @KafkaListener(topics = "${trade.validated}", groupId = "${spring.kafka.consumer.group-id}")
-    @Transactional
-    public void consume(TradeValidatedDTO tradeValidatedDTO) {
+    // waits for the send so a failed publish rolls back the inserts and the message is redelivered
+    // (rollbackFor: by default @Transactional would commit on the checked exceptions .get() throws)
+    @KafkaListener(topics = KafkaTopics.TRADE_VALIDATED, groupId = "recording-service")
+    @Transactional(rollbackFor = Exception.class)
+    public void consume(TradeValidatedDTO tradeValidatedDTO) throws InterruptedException, ExecutionException {
         LOGGER.info("Received validated trade event. Task ID: {}", tradeValidatedDTO.taskId());
 
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
-        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.SUBMITTED);
+        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
         LOGGER.info("Created database entry for trade with ID: {}", tradeId);
 
         TradeRecordedDTO tradeRecordedDTO = createTradeRecordedDTO(tradeValidatedDTO, tradeId);
-        sendMessage(tradeRecordedDTO);
-
-    }
-
-    public void sendMessage(TradeRecordedDTO tradeRecordedDTO) {
-        kafkaTemplate.send(tradeRecordedTopic,tradeRecordedDTO);
-        LOGGER.info("Published trade recorded event to {}", tradeRecordedTopic);
+        tradeEventProducer.publishTradeRecorded(tradeRecordedDTO).get();
+        LOGGER.info("Published trade recorded event to {}", KafkaTopics.TRADE_RECORDED);
     }
 
     private TradeRecordedDTO createTradeRecordedDTO(TradeValidatedDTO tradeValidatedDTO, long tradeId) {

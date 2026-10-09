@@ -1,5 +1,6 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.ActivityStatus;
 import static org.junit.jupiter.api.Assertions.*;
 import jakarta.validation.ConstraintViolation;
 import jakarta.validation.Validation;
@@ -28,19 +29,19 @@ class ModelPortfolioHoldingDTOTest {
     @Test
     void testValidModelPortfolioHoldingDTO() {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 25.5, "ACTIVE");
+            1L, 2L, "2026-09-25", 25.5, ActivityStatus.ACTIVE);
         
         assertEquals(1L, dto.modelPortfolioId());
         assertEquals(2L, dto.instrumentId());
         assertEquals("2026-09-25", dto.effectiveDate());
         assertEquals(25.5, dto.targetWeightPct(), 0.01);
-        assertEquals("ACTIVE", dto.status());
+        assertEquals(ActivityStatus.ACTIVE, dto.status());
     }
 
     @Test
     void testValidateNonBlankEffectiveDate() {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1L, 2L, "", 25.5, "ACTIVE");
+            1L, 2L, "", 25.5, ActivityStatus.ACTIVE);
         Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -48,7 +49,7 @@ class ModelPortfolioHoldingDTOTest {
     @Test
     void testValidatePositiveOrZeroWeightPct() {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", -5.0, "ACTIVE");
+            1L, 2L, "2026-09-25", -5.0, ActivityStatus.ACTIVE);
         Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -56,15 +57,15 @@ class ModelPortfolioHoldingDTOTest {
     @Test
     void testValidateZeroWeightPctAllowed() {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 0.0, "ACTIVE");
+            1L, 2L, "2026-09-25", 0.0, ActivityStatus.ACTIVE);
         Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
         assertTrue(violations.isEmpty());
     }
 
     @Test
-    void testValidateNonBlankStatus() {
+    void testValidateStatusRequired() {
         ModelPortfolioHoldingDTO dto = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 25.5, "   ");
+            1L, 2L, "2026-09-25", 25.5, null);
         Set<ConstraintViolation<ModelPortfolioHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
@@ -72,11 +73,11 @@ class ModelPortfolioHoldingDTOTest {
     @Test
     void testRecordEquality() {
         ModelPortfolioHoldingDTO dto1 = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 25.5, "ACTIVE");
+            1L, 2L, "2026-09-25", 25.5, ActivityStatus.ACTIVE);
         ModelPortfolioHoldingDTO dto2 = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 25.5, "ACTIVE");
+            1L, 2L, "2026-09-25", 25.5, ActivityStatus.ACTIVE);
         ModelPortfolioHoldingDTO dto3 = new ModelPortfolioHoldingDTO(
-            1L, 2L, "2026-09-25", 30.0, "ACTIVE");
+            1L, 2L, "2026-09-25", 30.0, ActivityStatus.ACTIVE);
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
