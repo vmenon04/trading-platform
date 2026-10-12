@@ -11,6 +11,7 @@ DROP TABLE IF EXISTS accounts CASCADE;
 DROP TABLE IF EXISTS instruments CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
 
 -- Old client-level tables, replaced by the account-level ones above
 DROP TABLE IF EXISTS client_subscriptions CASCADE;
@@ -28,16 +29,21 @@ CREATE TABLE clients (
     birth_date DATE NOT NULL
 );
 
--- users: login accounts. a CLIENT user is linked to exactly one client, an ADMIN user to none
+-- users: login accounts. a CLIENT user is linked to a client; what each user may do is in roles
 CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     external_user_id uuid,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    user_type VARCHAR(20) NOT NULL CHECK (user_type IN ('ADMIN', 'CLIENT')),
-    client_id INT REFERENCES clients(client_id),
-    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP,
-    CHECK ((user_type = 'CLIENT') = (client_id IS NOT NULL))
+    client_id BIGINT REFERENCES clients(client_id),
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE roles (
+    user_id BIGINT REFERENCES users(user_id),
+    role TEXT NOT NULL,
+    CHECK (role IN ('ADMIN', 'CLIENT', 'ANALYST')),
+    PRIMARY KEY (user_id, role)
 );
 
 CREATE TABLE accounts (
@@ -58,7 +64,9 @@ CREATE TABLE instruments (
     name TEXT NOT NULL,
     ticker TEXT NOT NULL
         CHECK (UPPER(ticker) = ticker),
+    -- same values as the Java InstrumentType enum
     asset_class TEXT NOT NULL
+        CHECK (asset_class IN ('STOCK', 'ETF', 'BOND', 'FOREX', 'CRYPTO'))
 );
 
 CREATE TABLE account_holdings (
