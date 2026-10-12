@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.net.URI;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 @Service
@@ -28,7 +29,8 @@ public class RecipientService {
                 dto.accountId(),
                 dto.side(),
                 dto.quantity(),
-                taskId
+                taskId,
+                UUID.randomUUID()
         );
 
         tradeEventProducer.publishTradeSubmitted(tradeSubmitted);

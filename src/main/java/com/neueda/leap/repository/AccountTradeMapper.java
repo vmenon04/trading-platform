@@ -8,6 +8,7 @@ import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import com.neueda.leap.entity.*;
 
@@ -51,11 +52,16 @@ public interface AccountTradeMapper {
     // Inserts the trade and returns its generated trade_id. #{...} are TradeValidatedDTO fields.
     // The INSERT ... RETURNING goes through @Select so MyBatis returns the trade_id rather than the row count;
     // flushCache stops MyBatis from answering a repeat of the same insert from its cache.
-    @Select("INSERT INTO account_trades (account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (#{accountId}, #{instrumentId}, #{side}, #{quantity}) "
+    // Returns null if a trade with this external_trade_id was already recorded (a redelivered message).
+    @Select("INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity) "
+            + "VALUES (#{externalTradeId}, #{accountId}, #{instrumentId}, #{side}, #{quantity}) "
+            + "ON CONFLICT (external_trade_id) DO NOTHING "
             + "RETURNING trade_id")
     @Options(flushCache = Options.FlushCachePolicy.TRUE)
     Long insert(TradeValidatedDTO tradeValidatedDTO);
+
+    @Select("SELECT trade_id FROM account_trades WHERE external_trade_id = #{externalTradeId}")
+    Long findTradeIdByExternalTradeId(@Param("externalTradeId") UUID externalTradeId);
 
     // record the status change: copies the trade's latest row with the new status and the current time
     @Insert("INSERT INTO account_trade_status "
