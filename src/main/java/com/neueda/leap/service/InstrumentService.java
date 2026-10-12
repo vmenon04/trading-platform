@@ -35,7 +35,7 @@ public class InstrumentService {
      * @return matching instrument
      * @throws NoSuchElementException if the instrument does not exist
      */
-    public Instrument getInstrumentById(int instrumentId) {
+    public Instrument getInstrumentById(Long instrumentId) {
         Instrument instrument = instrumentMapper.findById(instrumentId);
         if (instrument == null) {
             throw new NoSuchElementException("No instrument with id " + instrumentId);
@@ -100,7 +100,7 @@ public class InstrumentService {
      * @throws NoSuchElementException if the instrument does not exist
      * @throws IllegalStateException if no valid market price is available
      */
-    public BigDecimal getCurrentPrice(int instrumentId) {
+    public BigDecimal getCurrentPrice(Long instrumentId) {
         return getCurrentPrice(getInstrumentById(instrumentId).getTicker());
     }
 }

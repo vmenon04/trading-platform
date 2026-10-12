@@ -7,10 +7,9 @@ import jakarta.validation.constraints.Positive;
 import java.math.BigDecimal;
 
 public record OrderResponseDTO(
-        @Positive int tradeId,
+        @Positive Long tradeId,
         @NotBlank String status,
         @Positive BigDecimal executedPrice,
         @Positive BigDecimal executedQuantity,
         @NotBlank String reason
-) {
-}
+) {}

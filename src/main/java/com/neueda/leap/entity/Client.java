@@ -2,9 +2,11 @@ package com.neueda.leap.entity;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.UUID;
 
 public class Client {
     private Long clientId;
+    private UUID externalAccountId;
     private String firstName;
     private String lastName;
     private String email;
@@ -33,6 +35,14 @@ public class Client {
 
     public void setClientId(Long clientId) {
         this.clientId = clientId;
+    }
+
+    public UUID getExternalAccountId() {
+        return externalAccountId;
+    }
+
+    public void setExternalAccountId(UUID externalAccountId) {
+        this.externalAccountId = externalAccountId;
     }
 
     public String getFirstName() {

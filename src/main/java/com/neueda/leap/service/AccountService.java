@@ -3,6 +3,8 @@ package com.neueda.leap.service;
 import com.neueda.leap.repository.AccountMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
+
 import org.springframework.stereotype.Service;
 
 /**
@@ -22,6 +24,15 @@ public class AccountService {
         this.accountMapper = accountMapper;
     }
 
+
+    public Long getAccountIdByExternalAccountId(UUID externalAccountId) {
+        Long accountId = accountMapper.findAccountIdByExternalAccountId(externalAccountId);
+        if (accountId == null) {
+            throw new NoSuchElementException("No account with external account id " + externalAccountId);
+        }
+        return accountId;
+    }
+
     /**
      * Returns the current balance for an account.
      *
@@ -29,7 +40,7 @@ public class AccountService {
      * @return current account balance
      * @throws NoSuchElementException if the account does not exist
      */
-    public BigDecimal getBalance(int accountId) {
+    public BigDecimal getBalance(Long accountId) {
         BigDecimal balance = accountMapper.findBalance(accountId);
         if (balance == null) {
             throw new NoSuchElementException("No account with id " + accountId);
@@ -45,7 +56,7 @@ public class AccountService {
      * @throws IllegalArgumentException if the amount is null or not positive
      * @throws NoSuchElementException if the account does not exist
      */
-    public void deposit(int accountId, BigDecimal amount) {
+    public void deposit(Long accountId, BigDecimal amount) {
         increaseBalance(accountId, amount);
     }
 
@@ -57,7 +68,7 @@ public class AccountService {
      * @throws IllegalArgumentException if the amount is null or not positive
      * @throws IllegalStateException if the account has insufficient funds
      */
-    public void withdraw(int accountId, BigDecimal amount) {
+    public void withdraw(Long accountId, BigDecimal amount) {
         reduceBalance(accountId, amount);
     }
 
@@ -69,7 +80,7 @@ public class AccountService {
      * @throws IllegalArgumentException if the amount is null or not positive
      * @throws IllegalStateException if the account has insufficient funds
      */
-    public void purchase(int accountId, BigDecimal amount) {
+    public void purchase(Long accountId, BigDecimal amount) {
         reduceBalance(accountId, amount);
     }
 
@@ -81,18 +92,18 @@ public class AccountService {
      * @throws IllegalArgumentException if the amount is null or not positive
      * @throws NoSuchElementException if the account does not exist
      */
-    public void sell(int accountId, BigDecimal amount) {
+    public void sell(Long accountId, BigDecimal amount) {
         increaseBalance(accountId, amount);
     }
 
-    private void increaseBalance(int accountId, BigDecimal amount) {
+    private void increaseBalance(Long accountId, BigDecimal amount) {
         requirePositive(amount);
         if (accountMapper.increaseBalance(accountId, amount) == 0) {
             throw new NoSuchElementException("No account with id " + accountId);
         }
     }
 
-    private void reduceBalance(int accountId, BigDecimal amount) {
+    private void reduceBalance(Long accountId, BigDecimal amount) {
         requirePositive(amount);
         if (accountMapper.reduceBalance(accountId, amount) == 0) {
             BigDecimal balance = getBalance(accountId);

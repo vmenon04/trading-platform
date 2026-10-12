@@ -1,0 +1,37 @@
+package com.neueda.leap.kafka;
+
+import com.neueda.leap.dto.TradeSubmittedDTO;
+import com.neueda.leap.dto.TradeValidatedDTO;
+import com.neueda.leap.service.TradeEventProducer;
+import com.neueda.leap.service.ValidationService;
+import java.util.concurrent.ExecutionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.stereotype.Component;
+
+/**
+ * Consumes submitted trades, validates them and publishes the valid ones to trade.validated.
+ */
+@Component
+public class ValidationConsumer {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationConsumer.class);
+
+    private final ValidationService validationService;
+    private final TradeEventProducer tradeEventProducer;
+
+    public ValidationConsumer(ValidationService validationService, TradeEventProducer tradeEventProducer) {
+        this.validationService = validationService;
+        this.tradeEventProducer = tradeEventProducer;
+    }
+
+    // waits for the send so a failed publish fails the listener and the message is redelivered
+    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
+    public void onTradeSubmitted(TradeSubmittedDTO trade) throws InterruptedException, ExecutionException {
+        LOGGER.info("Received submitted trade event. Task ID: {}", trade.taskId());
+
+        TradeValidatedDTO validated = validationService.validateSubmittedTrade(trade);
+        tradeEventProducer.publishTradeValidated(validated).get();
+    }
+}

@@ -4,6 +4,8 @@ target/
 # Environment / secrets
 .env
 .env.*
+application.properties
+start-services.sh
 
 # IDEs
 .vscode/

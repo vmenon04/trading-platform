@@ -6,6 +6,8 @@ import com.neueda.leap.entity.Account;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
+
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
@@ -18,36 +20,39 @@ public interface AccountMapper {
 
     // columns aliased to the Account field names, so MyBatis fills the right fields
     // (accounts has no client_id column, so clientId is not filled here; the link is in client_accounts)
-    String COLUMNS = "account_id AS accountId, account_type AS accountType, balance";
+    String COLUMNS = "account_id AS accountId, balance";
 
     @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{account_Id}")
-    Account findById(Integer account_Id);
+    Account findById(Long account_Id);
 
     @Select("SELECT " + COLUMNS + " FROM accounts")
     List<Account> findAll();
 
+    @Select("SELECT account_id as accountId FROM accounts WHERE external_account_id = #{externalAccountId}")
+    Long findAccountIdByExternalAccountId(@Param("externalAccountId") UUID externalAccountId);
+
     // #{...} are Account field names
-    @Insert("INSERT INTO accounts(account_type, balance) VALUES(#{accountType}, #{balance})")
+    @Insert("INSERT INTO accounts(balance) VALUES(#{balance})")
     @Options(useGeneratedKeys = true, keyProperty = "accountId", keyColumn = "account_id")
     void insert(Account account);
 
-    @Update("UPDATE accounts SET account_type = #{accountType}, balance = #{balance} WHERE account_id = #{accountId}")
+    @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
     void update(Account account);
 
     @Delete("DELETE FROM accounts WHERE account_id = #{account_Id}")
-    void delete(Integer account_Id);
+    void delete(Long account_Id);
 
     // Vasu's additions for accountmapper
 
     @Select("SELECT balance FROM accounts WHERE account_id = #{accountId}")
-    BigDecimal findBalance(int accountId);
+    BigDecimal findBalance(Long accountId);
 
     //returns rows updated: 0 = no such account
     @Update("UPDATE accounts SET balance = balance + #{amount} WHERE account_id = #{accountId}")
-    int increaseBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int increaseBalance(@Param("accountId") Long accountId, @Param("amount") BigDecimal amount);
 
     // returns rows updated: 0 = no such account OR insufficient funds (we check and update in one statement)
     @Update("UPDATE accounts SET balance = balance - #{amount} "
             + "WHERE account_id = #{accountId} AND balance >= #{amount}")
-    int reduceBalance(@Param("accountId") int accountId, @Param("amount") BigDecimal amount);
+    int reduceBalance(@Param("accountId") Long accountId, @Param("amount") BigDecimal amount);
 }

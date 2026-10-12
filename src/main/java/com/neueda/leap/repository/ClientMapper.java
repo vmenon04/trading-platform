@@ -21,7 +21,7 @@ public interface ClientMapper {
     void insert(Client client);
 
     @Select("SELECT " + COLUMNS + " FROM clients WHERE client_id = #{client_Id}")
-    Client findById(Integer client_Id);
+    Client findById(Long client_Id);
 
     @Select("SELECT " + COLUMNS + " FROM clients")
     List<Client> findAll();
@@ -30,5 +30,5 @@ public interface ClientMapper {
     void update(Client client);
 
     @Delete("DELETE FROM clients WHERE client_id = #{client_Id}")
-    void delete(Integer client_Id);
+    void delete(Long client_Id);
 }

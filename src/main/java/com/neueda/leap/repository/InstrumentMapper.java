@@ -17,7 +17,7 @@ public interface InstrumentMapper {
     String COLUMNS = "instrument_id AS instrumentId, name, ticker, asset_class AS instrumentType";
 
     @Select("SELECT " + COLUMNS + " FROM instruments WHERE instrument_id = #{instrument_Id}")
-    Instrument findById(Integer instrument_Id);
+    Instrument findById(Long instrument_Id);
 
     @Select("SELECT " + COLUMNS + " FROM instruments")
     List<Instrument> findAll();
@@ -33,5 +33,5 @@ public interface InstrumentMapper {
     void update(Instrument instrument);
 
     @Delete("DELETE FROM instruments WHERE instrument_id = #{instrument_Id}")
-    void delete(Integer instrument_Id);
+    void delete(Long instrument_Id);
 }

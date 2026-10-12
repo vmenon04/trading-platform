@@ -1,50 +1,20 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
 public record AccountTradeDTO(
-        @Positive int tradeId,
+        @Positive Long tradeId,
         @NotBlank String tradeTime,
-        @Positive int accountId,
-        @Positive int instrumentId,
-        @NotBlank String tradeType,
+        @Positive Long accountId,
+        @Positive Long instrumentId,
+        @NotNull TradeSide tradeSide,
         @Positive BigDecimal quantity,
         @Positive BigDecimal price,
-        @NotBlank String status
-) {
-
-    public int getTradeId() {
-        return tradeId;
-    }
-
-    public String getTradeTime() {
-        return tradeTime;
-    }
-
-    public int getAccountId() {
-        return accountId;
-    }
-
-    public int getInstrumentId() {
-        return instrumentId;
-    }
-
-    public String getTradeType() {
-        return tradeType;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public BigDecimal getPrice() {
-        return price;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-}
+        @NotNull TradeStatus status
+) {}

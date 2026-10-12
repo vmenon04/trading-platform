@@ -9,30 +9,9 @@ import java.time.LocalDate;
 import java.util.List;
 
 public record ClientDTO(
-        @Positive int clientId,
+        @Positive Long clientId,
         @NotBlank String firstName,
         @NotBlank String lastName,
         @NotNull @Past LocalDate birthDate,
         @NotNull @Valid List<AccountDTO> clientAccounts
-) {
-
-    public int getClientId() {
-        return clientId;
-    }
-
-    public String getFirstName() {
-        return firstName;
-    }
-
-    public String getLastName() {
-        return lastName;
-    }
-
-    public LocalDate getBirthDate() {
-        return birthDate;
-    }
-
-    public List<AccountDTO> getClientAccounts() {
-        return clientAccounts;
-    }
-}
+) {}

@@ -1,35 +1,16 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.ActivityStatus;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
 
 public record AccountHoldingDTO(
-        @Positive int accountId,
-        @Positive int instrumentId,
+        @Positive Long accountId,
+        @Positive Long instrumentId,
         @NotBlank String asOfDate,
         @Positive BigDecimal quantity,
-        @NotBlank String status
-) {
-
-    public int getAccountId() {
-        return accountId;
-    }
-
-    public int getInstrumentId() {
-        return instrumentId;
-    }
-
-    public String getAsOfDate() {
-        return asOfDate;
-    }
-
-    public BigDecimal getQuantity() {
-        return quantity;
-    }
-
-    public String getStatus() {
-        return status;
-    }
-}
+        @NotNull ActivityStatus status
+) {}

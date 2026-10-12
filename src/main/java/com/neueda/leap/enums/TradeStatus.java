@@ -1,5 +1,5 @@
 package com.neueda.leap.enums;
 
-public enum Status {
+public enum TradeStatus {
     PENDING, ACCEPTED, REJECTED, FULFILLED
 }

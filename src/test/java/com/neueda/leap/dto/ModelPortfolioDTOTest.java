@@ -17,49 +17,54 @@ class ModelPortfolioDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
     void testValidModelPortfolioDTO() {
-        ModelPortfolioDTO dto = new ModelPortfolioDTO(1, "Growth Portfolio");
-        assertEquals(1, dto.getModelPortfolioId());
-        assertEquals("Growth Portfolio", dto.getName());
+        ModelPortfolioDTO dto = new ModelPortfolioDTO(1L, "Growth Portfolio");
+        assertEquals(1L, dto.modelPortfolioId());
+        assertEquals("Growth Portfolio", dto.name());
     }
 
     @Test
     void testValidatePositiveId() {
-        ModelPortfolioDTO dto = new ModelPortfolioDTO(-1, "Growth Portfolio");
+        ModelPortfolioDTO dto = new ModelPortfolioDTO(invalidModelPortfolioId(), "Growth Portfolio");
         Set<ConstraintViolation<ModelPortfolioDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testValidateNonBlankName() {
-        ModelPortfolioDTO dto = new ModelPortfolioDTO(1, "   ");
+        ModelPortfolioDTO dto = new ModelPortfolioDTO(1L, "   ");
         Set<ConstraintViolation<ModelPortfolioDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testValidateNullName() {
-        ModelPortfolioDTO dto = new ModelPortfolioDTO(1, null);
+        ModelPortfolioDTO dto = new ModelPortfolioDTO(1L, null);
         Set<ConstraintViolation<ModelPortfolioDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testRecordEquality() {
-        ModelPortfolioDTO dto1 = new ModelPortfolioDTO(1, "Growth Portfolio");
-        ModelPortfolioDTO dto2 = new ModelPortfolioDTO(1, "Growth Portfolio");
-        ModelPortfolioDTO dto3 = new ModelPortfolioDTO(2, "Value Portfolio");
+        ModelPortfolioDTO dto1 = new ModelPortfolioDTO(1L, "Growth Portfolio");
+        ModelPortfolioDTO dto2 = new ModelPortfolioDTO(1L, "Growth Portfolio");
+        ModelPortfolioDTO dto3 = new ModelPortfolioDTO(2L, "Value Portfolio");
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private Long invalidModelPortfolioId() {
+        return Long.parseLong("-1");
     }
 }
 

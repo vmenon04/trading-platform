@@ -1,15 +1,9 @@
 package com.neueda.leap.entity;
 
+import com.neueda.leap.enums.InstrumentType;
+
 public class Instrument {
 
-    // match the values stored in instruments.asset_class (MyBatis maps enums by name)
-    public enum InstrumentType {
-        STOCK,
-        ETF,
-        BOND,
-        FOREX,
-        CRYPTO
-    }
     private Long instrumentId;
     private String name;
     private String ticker;

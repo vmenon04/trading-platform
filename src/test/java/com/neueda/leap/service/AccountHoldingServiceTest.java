@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
 import org.junit.jupiter.api.Test;
@@ -16,8 +17,8 @@ import static org.mockito.Mockito.*;
 @ExtendWith(MockitoExtension.class)
 class AccountHoldingServiceTest {
 
-    private static final int ACCOUNT_ID = 1;
-    private static final int INSTRUMENT_ID = 10;
+    private static final Long ACCOUNT_ID = 1L;
+    private static final Long INSTRUMENT_ID = 10L;
 
     @Mock
     private AccountHoldingMapper accountHoldingMapper;
@@ -36,7 +37,7 @@ class AccountHoldingServiceTest {
     }
 
     // The previous active holding is deactivated before the new snapshot is inserted
-    private void verifyDeactivatedThenInserted(String quantity, String status) {
+    private void verifyDeactivatedThenInserted(String quantity, ActivityStatus status) {
         InOrder inOrder = inOrder(accountHoldingMapper);
         inOrder.verify(accountHoldingMapper).deactivateHolding(ACCOUNT_ID, INSTRUMENT_ID);
         inOrder.verify(accountHoldingMapper)
@@ -44,8 +45,8 @@ class AccountHoldingServiceTest {
     }
 
     private void verifyNothingChanged() {
-        verify(accountHoldingMapper, never()).deactivateHolding(anyInt(), anyInt());
-        verify(accountHoldingMapper, never()).insertSnapshot(anyInt(), anyInt(), any(), any());
+        verify(accountHoldingMapper, never()).deactivateHolding(anyLong(), anyLong());
+        verify(accountHoldingMapper, never()).insertSnapshot(anyLong(), anyLong(), any(), any());
     }
 
     @Test
@@ -64,14 +65,14 @@ class AccountHoldingServiceTest {
     void addQuantityInsertsIncreasedSnapshot() {
         givenActiveQuantity("100");
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verifyDeactivatedThenInserted("150", "ACTIVE");
+        verifyDeactivatedThenInserted("150", ActivityStatus.ACTIVE);
     }
 
     @Test
     void addQuantityStartsFromZeroForNewHolding() {
         givenActiveQuantity(null);
         accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("50"));
-        verifyDeactivatedThenInserted("50", "ACTIVE");
+        verifyDeactivatedThenInserted("50", ActivityStatus.ACTIVE);
     }
 
     @Test
@@ -87,14 +88,14 @@ class AccountHoldingServiceTest {
     void removeQuantityInsertsDecreasedSnapshot() {
         givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("30"));
-        verifyDeactivatedThenInserted("70", "ACTIVE");
+        verifyDeactivatedThenInserted("70", ActivityStatus.ACTIVE);
     }
 
     @Test
     void removeQuantityMarksInactiveOnFullSell() {
         givenActiveQuantity("100");
         accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("100"));
-        verifyDeactivatedThenInserted("0", "INACTIVE");
+        verifyDeactivatedThenInserted("0", ActivityStatus.INACTIVE);
     }
 
     @Test
