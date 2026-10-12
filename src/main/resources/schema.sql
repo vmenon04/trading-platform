@@ -77,7 +77,8 @@ CREATE INDEX idx_account_holdings_instrument_id ON account_holdings(instrument_i
 
 CREATE TABLE account_trades (
     trade_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_trade_id uuid,
+    -- generated when the order is submitted; UNIQUE so a redelivered trade.validated message can't record it twice
+    external_trade_id uuid UNIQUE NOT NULL,
     account_id BIGINT REFERENCES accounts(account_id) NOT NULL,
     instrument_id BIGINT REFERENCES instruments(instrument_id) NOT NULL,
     trade_side TEXT NOT NULL

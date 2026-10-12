@@ -86,6 +86,7 @@ class RecipientServiceTest {
         assertEquals(TradeSide.SELL, submitted.side());
         assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
         assertEquals(1L, submitted.taskId());
+        assertNotNull(submitted.externalTradeId());
     }
 
     private static void resetJobIdGenerator() throws Exception {

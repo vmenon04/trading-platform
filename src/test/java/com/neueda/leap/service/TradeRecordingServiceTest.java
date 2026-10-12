@@ -7,26 +7,23 @@ import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class TradeRecordingServiceTest {
 
-    @Mock
-    private TradeEventProducer tradeEventProducer;
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private AccountTradeMapper accountTradeMapper;
@@ -42,29 +39,24 @@ class TradeRecordingServiceTest {
             TradeSide.BUY,
             new BigDecimal("100"),
             new BigDecimal("10.0"),
-            3L);
+            3L,
+            EXTERNAL_TRADE_ID);
 
     @BeforeEach
     void setUp() {
         tradeRecordingService = new TradeRecordingService(
-                tradeEventProducer,
                 accountTradeMapper,
                 accountTradeStatusMapper);
     }
 
     @Test
-    void recordsTradeAsPendingAndPublishesIt() throws Exception {
+    void recordsTradeAsPendingAndReturnsIt() {
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(4L);
-        when(tradeEventProducer.publishTradeRecorded(any())).thenReturn(CompletableFuture.completedFuture(null));
 
-        tradeRecordingService.consume(validatedDTO);
+        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.record(validatedDTO);
 
         verify(accountTradeMapper).insert(validatedDTO);
         verify(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.PENDING);
-
-        ArgumentCaptor<TradeRecordedDTO> captor = ArgumentCaptor.forClass(TradeRecordedDTO.class);
-        verify(tradeEventProducer).publishTradeRecorded(captor.capture());
-        TradeRecordedDTO tradeRecordedDTO = captor.getValue();
         assertEquals(1L, tradeRecordedDTO.instrumentId());
         assertEquals(2L, tradeRecordedDTO.accountId());
         assertEquals(TradeSide.BUY, tradeRecordedDTO.side());
@@ -75,11 +67,13 @@ class TradeRecordingServiceTest {
     }
 
     @Test
-    void failedPublishFailsTheListenerSoTheMessageIsRedelivered() {
-        when(accountTradeMapper.insert(validatedDTO)).thenReturn(4L);
-        when(tradeEventProducer.publishTradeRecorded(any()))
-                .thenReturn(CompletableFuture.failedFuture(new RuntimeException("broker down")));
+    void alreadyRecordedTradeReturnsExistingTradeWithoutRecordingAgain() {
+        when(accountTradeMapper.insert(validatedDTO)).thenReturn(null);
+        when(accountTradeMapper.findTradeIdByExternalTradeId(EXTERNAL_TRADE_ID)).thenReturn(4L);
 
-        assertThrows(ExecutionException.class, () -> tradeRecordingService.consume(validatedDTO));
+        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.record(validatedDTO);
+
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
+        assertEquals(4L, tradeRecordedDTO.tradeId());
     }
 }

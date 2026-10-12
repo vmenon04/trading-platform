@@ -2,17 +2,11 @@ package com.neueda.leap.service;
 
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.ExecutionException;
 
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
-import com.neueda.leap.kafka.KafkaTopics;
-import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Service;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class ValidationService {
@@ -20,25 +14,12 @@ public class ValidationService {
     private final InstrumentService instrumentService;
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
-    private final TradeEventProducer tradeEventProducer;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationService.class);
-
 
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
-                             AccountHoldingService accountHoldingService, TradeEventProducer tradeEventProducer) {
+                             AccountHoldingService accountHoldingService) {
         this.instrumentService = instrumentService;
         this.accountService = accountService;
         this.accountHoldingService = accountHoldingService;
-        this.tradeEventProducer = tradeEventProducer;
-    }
-
-    // waits for the send so a failed publish fails the listener and the message is redelivered
-    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
-    public void onTradeSubmitted(TradeSubmittedDTO tradeSubmittedDTO) throws InterruptedException, ExecutionException {
-        LOGGER.info(String.format("Received submitted trade event. Task ID: %d", tradeSubmittedDTO.taskId()));
-
-        TradeValidatedDTO validated = validateSubmittedTrade(tradeSubmittedDTO);
-        tradeEventProducer.publishTradeValidated(validated).get();
     }
 
     public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
@@ -50,7 +31,8 @@ public class ValidationService {
                 tradeSubmittedDTO.side(),
                 tradeSubmittedDTO.quantity(),
                 instrumentService.getCurrentPrice(tradeSubmittedDTO.instrumentId()),
-                tradeSubmittedDTO.taskId()
+                tradeSubmittedDTO.taskId(),
+                tradeSubmittedDTO.externalTradeId()
         );
     }
 
