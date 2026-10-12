@@ -1,5 +1,5 @@
 package com.neueda.leap.enums;
 
-public enum Status {
+public enum ActivityStatus {
     ACTIVE, INACTIVE
 }

@@ -139,7 +139,7 @@ export function outcomes(rows: StatusMixRow[], range: Range): Config {
     ['FULFILLED', 'Fulfilled', '--series-1'],
     ['REJECTED', 'Rejected', '--series-2'],
     ['ACCEPTED', 'Accepted', '--series-3'],
-    ['SUBMITTED', 'Submitted', '--series-4'],
+    ['PENDING', 'Pending', '--series-4'],
   ];
   return {
     type: 'bar',

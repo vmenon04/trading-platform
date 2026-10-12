@@ -2,10 +2,7 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
-import com.neueda.leap.entity.Instrument;
-import com.neueda.leap.events.TradeSubmittedEvent;
 import com.neueda.leap.enums.TradeSide;
-import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -27,19 +24,12 @@ import java.util.concurrent.atomic.AtomicLong;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
 class RecipientServiceTest {
 
     @Mock
     private TradeEventProducer tradeEventProducer;
-
-    @Mock
-    private InstrumentService instrumentService;
-
-    @Mock
-    private MarketDataClient marketDataClient;
 
     @InjectMocks
     private RecipientService recipientService;
@@ -68,11 +58,6 @@ class RecipientServiceTest {
                 new BigDecimal("25.5")
         );
 
-        Instrument instrument = new Instrument();
-        instrument.setTicker("AAPL");
-        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
-
         ResponseEntity<Void> response = recipientService.publishOrder(dto);
 
         assertEquals(202, response.getStatusCode().value());
@@ -81,7 +66,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_publishesTradeSubmittedEventWithExpectedPayload() {
+    void publishOrder_publishesTradeSubmittedWithExpectedPayload() {
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
@@ -90,28 +75,18 @@ class RecipientServiceTest {
                 new BigDecimal("7")
         );
 
-        Instrument instrument = new Instrument();
-        instrument.setTicker("MSFT");
-        when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
-        when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
-
         recipientService.publishOrder(dto);
 
-        ArgumentCaptor<TradeSubmittedEvent> eventCaptor = ArgumentCaptor.forClass(TradeSubmittedEvent.class);
-        verify(tradeEventProducer).publishTradeSubmitted(eventCaptor.capture());
+        ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
+        verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
 
-        TradeSubmittedEvent event = eventCaptor.getValue();
-        assertEquals(accountId, event.accountId());
-        assertNotNull(event.eventId());
-        assertNotNull(event.timestamp());
-        assertNotNull(event.dto());
-        assertEquals(TradeSubmittedDTO.class, event.dto().getClass());
-        assertEquals(44, event.dto().instrumentId());
-        assertEquals(accountId, event.dto().accountId());
-        assertEquals(TradeSide.SELL, event.dto().side());
-        assertEquals(0, event.dto().quantity().compareTo(new BigDecimal("7")));
-        assertEquals(0, event.dto().quote().compareTo(new BigDecimal("91.10")));
-        assertEquals(1L, event.dto().taskId());
+        TradeSubmittedDTO submitted = captor.getValue();
+        assertEquals(44, submitted.instrumentId());
+        assertEquals(accountId, submitted.accountId());
+        assertEquals(TradeSide.SELL, submitted.side());
+        assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
+        assertEquals(1L, submitted.taskId());
+        assertNotNull(submitted.externalTradeId());
     }
 
     private static void resetJobIdGenerator() throws Exception {

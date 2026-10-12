@@ -2,6 +2,9 @@
 -- Populates clients, accounts, client_accounts, instruments, model_portfolios (dimension tables) plus
 -- account_holdings, account_trades (with account_trade_status and account_trade_price),
 -- model_portfolio_holdings, account_subscriptions with 10,000 rows each. Run schema.sql first to create the schema.
+--
+-- Demo account: account_id 1 has external id 00000000-0000-0000-0000-000000000001 and a balance of 100,000,
+-- so trades can be posted to /accounts/00000000-0000-0000-0000-000000000001/trades.
 
 TRUNCATE TABLE
     account_subscriptions,
@@ -20,7 +23,7 @@ TRUNCATE TABLE
 RESTART IDENTITY CASCADE;
 
 -- clients (1,000 rows) with realistic names and birth dates
-INSERT INTO clients (first_name, last_name, email, birth_date)
+INSERT INTO clients (external_client_id, first_name, last_name, email, birth_date)
 WITH first_names AS (
   SELECT * FROM (VALUES
     ('James'), ('Mary'), ('Robert'), ('Patricia'), ('Michael'), ('Jennifer'), ('William'), ('Linda'),
@@ -43,15 +46,18 @@ last_names AS (
     ('Stevens'), ('Tucker'), ('Porter'), ('Hunter'), ('Hicks'), ('Crawford'), ('Henry'), ('Boyd')
   ) AS t(name)
 )
-SELECT fn.name, ln.name, LOWER(fn.name || '.' || ln.name) || '.' || ROW_NUMBER() OVER () || '@example.com', DATE '1950-01-01' + (random() * 25000)::INT
+SELECT gen_random_uuid(), fn.name, ln.name, LOWER(fn.name || '.' || ln.name) || '.' || ROW_NUMBER() OVER () || '@example.com', DATE '1950-01-01' + (random() * 25000)::INT
 FROM first_names fn
 CROSS JOIN last_names ln
 LIMIT 1000;
 
--- accounts (5,000 rows)
-INSERT INTO accounts (balance)
-SELECT round((random() * 50000)::NUMERIC(14, 4), 2)
-FROM generate_series(1, 5000) AS i;
+-- accounts (5,000 rows); account 1 is the demo account with a fixed external id and balance
+INSERT INTO accounts (external_account_id, balance)
+SELECT
+  CASE WHEN i = 1 THEN '00000000-0000-0000-0000-000000000001'::uuid ELSE gen_random_uuid() END,
+  CASE WHEN i = 1 THEN 100000 ELSE round((random() * 50000)::NUMERIC(14, 4), 2) END
+FROM generate_series(1, 5000) AS i
+ORDER BY i;
 
 -- client_accounts junction table (1-3 accounts per client, ~2500 rows)
 INSERT INTO client_accounts (client_id, account_id)
@@ -60,9 +66,7 @@ SELECT
   (i % 5000) + 1
 FROM generate_series(0, 2499) AS i;
 
--- instruments (291 rows) with real ticker symbols: stocks, ETFs, crypto and forex.
--- No bonds: Fauxnance, our price source, has no bond market.
--- A ticker is only unique together with its asset class: CVX is both Chevron (STOCK) and Convex (CRYPTO).
+-- instruments (334 rows) with real ticker symbols and asset classes
 INSERT INTO instruments (name, ticker, asset_class)
 WITH real_instruments AS (
   SELECT * FROM (VALUES
@@ -96,6 +100,28 @@ WITH real_instruments AS (
     ('Eli Lilly and Company', 'LLY', 'STOCK'), ('Thermo Fisher Scientific', 'TMO', 'STOCK'), ('Illumina Inc', 'ILMN', 'STOCK'),
     ('Qiagen NV', 'QGEN', 'STOCK'), ('BioRad Laboratories', 'BIO', 'STOCK'), ('Avantor Inc', 'AVTR', 'STOCK'),
     ('Charles River Labs', 'CRL', 'STOCK'), ('Zoetis Inc', 'ZTS', 'STOCK'), ('Neogen Corporation', 'NEOG', 'STOCK'),
+    -- Bonds (100)
+    ('US Treasury 2Y', 'UST2', 'BOND'), ('US Treasury 5Y', 'UST5', 'BOND'), ('US Treasury 10Y', 'UST10', 'BOND'),
+    ('US Treasury 20Y', 'UST20', 'BOND'), ('US Treasury 30Y', 'UST30', 'BOND'), ('UK Gilts 10Y', 'GBL10', 'BOND'),
+    ('German Bunds 10Y', 'BUN10', 'BOND'), ('Japanese JGB 10Y', 'JGB10', 'BOND'), ('Canadian Bond 10Y', 'CAD10', 'BOND'),
+    ('Australian Bond 10Y', 'AUD10', 'BOND'), ('Swiss Bond 10Y', 'CHB10', 'BOND'), ('Sweden Bond 10Y', 'SEB10', 'BOND'),
+    ('Norway Bond 10Y', 'NOB10', 'BOND'), ('New Zealand Bond 10Y', 'NZB10', 'BOND'), ('Singapore Bond 10Y', 'SGB10', 'BOND'),
+    ('Hong Kong Bond 10Y', 'HKB10', 'BOND'), ('India Bond 10Y', 'INB10', 'BOND'), ('Brazil Bond 10Y', 'BRB10', 'BOND'),
+    ('Mexico Bond 10Y', 'MXB10', 'BOND'), ('Russia Bond 10Y', 'RUB10', 'BOND'), ('South Africa Bond 10Y', 'ZAB10', 'BOND'),
+    ('Egypt Bond 10Y', 'EGB10', 'BOND'), ('Nigeria Bond 10Y', 'NGB10', 'BOND'), ('UAE Bond 10Y', 'AED10', 'BOND'),
+    ('Saudi Bond 10Y', 'SAB10', 'BOND'), ('Israel Bond 10Y', 'ILB10', 'BOND'), ('Turkey Bond 10Y', 'TRB10', 'BOND'),
+    ('Greece Bond 10Y', 'GRB10', 'BOND'), ('Portugal Bond 10Y', 'PTB10', 'BOND'), ('Spain Bond 10Y', 'ESB10', 'BOND'),
+    ('Italy Bond 10Y', 'ITB10', 'BOND'), ('Ireland Bond 10Y', 'IEB10', 'BOND'), ('Belgium Bond 10Y', 'BEB10', 'BOND'),
+    ('France Bond 10Y', 'FRB10', 'BOND'), ('Netherlands Bond 10Y', 'NLB10', 'BOND'), ('Austria Bond 10Y', 'ATB10', 'BOND'),
+    ('Corporate AAA Bond', 'CAAA', 'BOND'), ('Corporate AA Bond', 'CAAB', 'BOND'), ('Corporate A Bond', 'CACA', 'BOND'),
+    ('Corporate BBB Bond', 'CBBB', 'BOND'), ('Corporate BB Bond', 'CBBC', 'BOND'), ('Corporate B Bond', 'CBCD', 'BOND'),
+    ('High Yield Bond 1', 'HYB1', 'BOND'), ('High Yield Bond 2', 'HYB2', 'BOND'), ('High Yield Bond 3', 'HYB3', 'BOND'),
+    ('Municipal Bond 1', 'MUB1', 'BOND'), ('Municipal Bond 2', 'MUB2', 'BOND'), ('Municipal Bond 3', 'MUB3', 'BOND'),
+    ('Inflation Bond 1', 'INB1', 'BOND'), ('Inflation Bond 2', 'INB2', 'BOND'), ('Floating Rate Bond 1', 'FLB1', 'BOND'),
+    ('Floating Rate Bond 2', 'FLB2', 'BOND'), ('Convertible Bond 1', 'CVB1', 'BOND'), ('Convertible Bond 2', 'CVB2', 'BOND'),
+    ('Green Bond 1', 'GRB1', 'BOND'), ('Green Bond 2', 'GRB2', 'BOND'), ('ESG Bond 1', 'ESB1', 'BOND'),
+    ('ESG Bond 2', 'ESB2', 'BOND'), ('Sustainability Bond 1', 'SUS1', 'BOND'), ('Sustainability Bond 2', 'SUS2', 'BOND'),
+    ('Emerging Market Bond 1', 'EMB1', 'BOND'), ('Emerging Market Bond 2', 'EMB2', 'BOND'), ('Emerging Market Bond 3', 'EMB3', 'BOND'),
     -- Cryptocurrencies (150)
     ('Bitcoin', 'BTC', 'CRYPTO'), ('Ethereum', 'ETH', 'CRYPTO'), ('Tether', 'USDT', 'CRYPTO'), ('USD Coin', 'USDC', 'CRYPTO'),
     ('Binance Coin', 'BNB', 'CRYPTO'), ('Solana', 'SOL', 'CRYPTO'), ('Ripple', 'XRP', 'CRYPTO'), ('Polkadot', 'DOT', 'CRYPTO'),
@@ -151,23 +177,12 @@ WITH real_instruments AS (
     ('Vanguard Utilities ETF', 'VPU', 'ETF'), ('iShares US Utilities ETF', 'IDU', 'ETF'), ('SPDR Utilities Select Sector', 'XLU', 'ETF'),
     ('Vanguard Financials ETF', 'VFV', 'ETF'), ('iShares US Financials ETF', 'IYF', 'ETF'), ('SPDR Financials Select Sector', 'XLF', 'ETF'),
     ('Vanguard Telecom ETF', 'VOX', 'ETF'), ('iShares US Telecom ETF', 'IYZ', 'ETF'), ('SPDR Comm Services Select', 'XLC', 'ETF'),
-    ('Vanguard Dividend ETF', 'VYM', 'ETF'), ('iShares Select Dividend', 'DVYD', 'ETF'), ('SPDR S&P Dividend ETF', 'SPDV', 'ETF'),
-    -- Forex (20): currency pairs, base currency first
-    ('Euro / US Dollar', 'EURUSD', 'FOREX'), ('British Pound / US Dollar', 'GBPUSD', 'FOREX'),
-    ('US Dollar / Japanese Yen', 'USDJPY', 'FOREX'), ('US Dollar / Swiss Franc', 'USDCHF', 'FOREX'),
-    ('Australian Dollar / US Dollar', 'AUDUSD', 'FOREX'), ('US Dollar / Canadian Dollar', 'USDCAD', 'FOREX'),
-    ('New Zealand Dollar / US Dollar', 'NZDUSD', 'FOREX'), ('Euro / British Pound', 'EURGBP', 'FOREX'),
-    ('Euro / Japanese Yen', 'EURJPY', 'FOREX'), ('British Pound / Japanese Yen', 'GBPJPY', 'FOREX'),
-    ('Euro / Swiss Franc', 'EURCHF', 'FOREX'), ('Australian Dollar / Japanese Yen', 'AUDJPY', 'FOREX'),
-    ('Euro / Australian Dollar', 'EURAUD', 'FOREX'), ('Euro / Canadian Dollar', 'EURCAD', 'FOREX'),
-    ('British Pound / Swiss Franc', 'GBPCHF', 'FOREX'), ('Canadian Dollar / Japanese Yen', 'CADJPY', 'FOREX'),
-    ('Swiss Franc / Japanese Yen', 'CHFJPY', 'FOREX'), ('US Dollar / Mexican Peso', 'USDMXN', 'FOREX'),
-    ('US Dollar / Singapore Dollar', 'USDSGD', 'FOREX'), ('US Dollar / Hong Kong Dollar', 'USDHKD', 'FOREX')
+    ('Vanguard Dividend ETF', 'VYM', 'ETF'), ('iShares Select Dividend', 'DVYD', 'ETF'), ('SPDR S&P Dividend ETF', 'SPDV', 'ETF')
   ) AS t(instrument_name, ticker_symbol, asset_class)
 )
-SELECT instrument_name, ticker_symbol, asset_class::instrument_type
+SELECT instrument_name, ticker_symbol, asset_class
 FROM real_instruments
-LIMIT 291;
+LIMIT 334;
 
 -- model_portfolios (200 rows)
 INSERT INTO model_portfolios (name)
@@ -175,37 +190,37 @@ SELECT 'Model Portfolio ' || i
 FROM generate_series(1, 200) AS i;
 
 -- account_holdings (10,000 rows)
--- account_id cycles through available accounts; instrument_id cycles through 500;
+-- account_id cycles through the first 2,500 accounts; instrument_id cycles through all 334;
 -- as_of_date advances to maintain composite key uniqueness.
 INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status)
 SELECT
     ((i % 2500) % 5000) + 1,
-    (i % 291) + 1,
+    (i % 334) + 1,
     NOW() - INTERVAL '1 day' * (10000 - i),
     (random() * 100000)::INT,
-    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
--- account_trades (10,000 rows): who traded what, which side, how much.
--- When it happened lives in account_trade_status, and the price in account_trade_price.
-INSERT INTO account_trades (account_id, instrument_id, trade_side, quantity)
+-- account_trades (10,000 rows)
+-- account_trades no longer stores a time or price: the time is on account_trade_status and the price on
+-- account_trade_price. Both are derived from trade_id below, so the inserts stay consistent with each other.
+INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity)
 SELECT
+    gen_random_uuid(),
     ((i % 2500) % 5000) + 1,
-    (i % 291) + 1,
-    (CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END)::trade_side,
+    (i % 334) + 1,
+    CASE WHEN random() < 0.5 THEN 'BUY' ELSE 'SELL' END,
     round((1 + random() * 9999)::NUMERIC, 4)
 FROM generate_series(0, 9999) AS i;
 
--- account_trade_status: each trade's status history, a second apart, starting
--- on a random day in the last year (the SUBMITTED row is when the order was placed).
+-- account_trade_status: each trade's status history, a second apart, placed within the last 365 days.
 -- trade_id % 4 picks where the trade ended up:
---   0 = SUBMITTED, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
+--   0 = PENDING, 1 = ACCEPTED, 2 = FULFILLED, 3 = REJECTED (rejected after being accepted)
 INSERT INTO account_trade_status (trade_id, status, trade_time)
 WITH placed AS (
-    SELECT trade_id, NOW() - INTERVAL '1 day' * (random() * 365)::INT AS placed_at
-    FROM account_trades
+    SELECT trade_id, NOW() - INTERVAL '1 day' * ((trade_id * 37) % 365) AS placed_at FROM account_trades
 )
-SELECT trade_id, 'SUBMITTED'::trade_status, placed_at FROM placed
+SELECT trade_id, 'PENDING', placed_at FROM placed
 UNION ALL
 SELECT trade_id, 'ACCEPTED', placed_at + INTERVAL '1 second' FROM placed WHERE trade_id % 4 IN (1, 2, 3)
 UNION ALL
@@ -213,24 +228,26 @@ SELECT trade_id, 'FULFILLED', placed_at + INTERVAL '2 seconds' FROM placed WHERE
 UNION ALL
 SELECT trade_id, 'REJECTED', placed_at + INTERVAL '2 seconds' FROM placed WHERE trade_id % 4 = 3;
 
--- account_trade_price: a random unit price between $1 and $1,000, and quantity * that price
+-- account_trade_price: only fulfilled trades have an execution price (as ExecutionService records it),
+-- a unit price between 1 and 1000
 INSERT INTO account_trade_price (trade_id, price_per_unit, total_price)
-SELECT trade_id, unit_price, round(quantity * unit_price, 8)
-FROM (
-    SELECT trade_id, quantity, round((1 + random() * 999)::NUMERIC, 4) AS unit_price
+WITH priced AS (
+    SELECT trade_id, quantity, round(1 + ((trade_id * 7919) % 99900) / 100.0, 4) AS price_per_unit
     FROM account_trades
-) AS priced;
+    WHERE trade_id % 4 = 2
+)
+SELECT trade_id, price_per_unit, price_per_unit * quantity FROM priced;
 
 -- model_portfolio_holdings (10,000 rows)
 -- Composite key: (model_portfolio_id, instrument_id, effective_date)
--- LCM(200, 500) = 1000, so effective_date advances every 1000 rows to ensure uniqueness
+-- LCM(200, 334) = 33,400 > 10,000, so (model_portfolio_id, instrument_id) never repeats; effective_date advances every 1000 rows
 INSERT INTO model_portfolio_holdings (model_portfolio_id, instrument_id, effective_date, target_weight_pct, status)
 SELECT
     (i % 200) + 1,
-    (i % 291) + 1,
+    (i % 334) + 1,
     DATE '2024-01-01' + (i / 1000),
     round((random() * 100)::NUMERIC, 2),
-    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
 -- account_subscriptions (10,000 rows)
@@ -241,18 +258,18 @@ SELECT
     (i % 5000) + 1,
     (i % 200) + 1,
     DATE '2024-01-01' + (i / 5000),
-    (CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END)::status
+    CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
 -- users: one CLIENT login per client (e.g. james.smith1), plus one ADMIN and one ANALYST.
 -- password_hash is a placeholder; real hashes come from the app's sign-up flow.
-INSERT INTO users (username, password_hash, client_id)
-SELECT lower(first_name || '.' || last_name) || client_id, 'placeholder-not-a-real-hash', client_id
+INSERT INTO users (external_user_id, username, password_hash, client_id)
+SELECT gen_random_uuid(), lower(first_name || '.' || last_name) || client_id, 'placeholder-not-a-real-hash', client_id
 FROM clients;
 
-INSERT INTO users (username, password_hash)
-VALUES ('admin', 'placeholder-not-a-real-hash'),
-       ('analyst', 'placeholder-not-a-real-hash');
+INSERT INTO users (external_user_id, username, password_hash)
+VALUES (gen_random_uuid(), 'admin', 'placeholder-not-a-real-hash'),
+       (gen_random_uuid(), 'analyst', 'placeholder-not-a-real-hash');
 
 -- roles: what each login may do
 INSERT INTO roles (user_id, role)
@@ -262,11 +279,3 @@ SELECT user_id,
             ELSE 'ANALYST'
        END
 FROM users;
-
--- External ids: the random UUIDs the API uses to refer to clients, users, accounts and trades
--- (e.g. POST /accounts/{external_account_id}/trades). The Java code makes one with
--- UUID.randomUUID() for every new row; gen_random_uuid() is the Postgres equivalent.
-UPDATE clients        SET external_client_id  = gen_random_uuid();
-UPDATE users          SET external_user_id    = gen_random_uuid();
-UPDATE accounts       SET external_account_id = gen_random_uuid();
-UPDATE account_trades SET external_trade_id   = gen_random_uuid();

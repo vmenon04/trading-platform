@@ -7,10 +7,6 @@ import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,38 +15,28 @@ public class TradeRecordingService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(TradeRecordingService.class);
 
-    private final KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate;
-    private final String tradeRecordedTopic;
+    private final AccountTradeMapper accountTradeMapper;
+    private final AccountTradeStatusMapper accountTradeStatusMapper;
 
-    @Autowired
-    private AccountTradeMapper accountTradeMapper;
-
-    @Autowired
-    private AccountTradeStatusMapper accountTradeStatusMapper;
-
-    public TradeRecordingService(KafkaTemplate<String, TradeRecordedDTO> kafkaTemplate,
-                                 @Value("${trade.recorded}") String tradeRecordedTopic) {
-        this.kafkaTemplate = kafkaTemplate;
-        this.tradeRecordedTopic = tradeRecordedTopic;
+    public TradeRecordingService(AccountTradeMapper accountTradeMapper,
+                                 AccountTradeStatusMapper accountTradeStatusMapper) {
+        this.accountTradeMapper = accountTradeMapper;
+        this.accountTradeStatusMapper = accountTradeStatusMapper;
     }
 
-    @KafkaListener(topics = "${trade.validated}", groupId = "${spring.kafka.consumer.group-id}")
+    // commits before the caller publishes, so trade.recorded only ever carries a trade that is in the database.
+    // A redelivered message finds the trade by its external_trade_id and returns it again instead of inserting it twice.
     @Transactional
-    public void consume(TradeValidatedDTO tradeValidatedDTO) {
-        LOGGER.info("Received validated trade event. Task ID: {}", tradeValidatedDTO.taskId());
-
+    public TradeRecordedDTO record(TradeValidatedDTO tradeValidatedDTO) {
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
-        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.SUBMITTED);
-        LOGGER.info("Created database entry for trade with ID: {}", tradeId);
-
-        TradeRecordedDTO tradeRecordedDTO = createTradeRecordedDTO(tradeValidatedDTO, tradeId);
-        sendMessage(tradeRecordedDTO);
-
-    }
-
-    public void sendMessage(TradeRecordedDTO tradeRecordedDTO) {
-        kafkaTemplate.send(tradeRecordedTopic,tradeRecordedDTO);
-        LOGGER.info("Published trade recorded event to {}", tradeRecordedTopic);
+        if (tradeId == null) {
+            tradeId = accountTradeMapper.findTradeIdByExternalTradeId(tradeValidatedDTO.externalTradeId());
+            LOGGER.info("Trade {} was already recorded with ID: {}", tradeValidatedDTO.externalTradeId(), tradeId);
+        } else {
+            accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
+            LOGGER.info("Created database entry for trade with ID: {}", tradeId);
+        }
+        return createTradeRecordedDTO(tradeValidatedDTO, tradeId);
     }
 
     private TradeRecordedDTO createTradeRecordedDTO(TradeValidatedDTO tradeValidatedDTO, long tradeId) {
