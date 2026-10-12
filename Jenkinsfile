@@ -31,7 +31,12 @@ def SmokeTest() {
             -e MARKET_DATA_BASE_URL=http://localhost:1 \\
             -e MARKET_DATA_API_KEY=smoke-test \\
             fintech-five:${safeTag}"""
-        sh "for i in \$(seq 45); do docker exec ${name}-app wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"' && exit 0; sleep 2; done; exit 1"
+        // stops as soon as the app container exits (it failed to start), rather than waiting out the timeout
+        sh """for i in \$(seq 45); do
+                [ "\$(docker inspect -f '{{.State.Running}}' ${name}-app)" = true ] || { echo 'App container exited during startup'; exit 1; }
+                docker exec ${name}-app wget -qO- http://localhost:8080/actuator/health 2>/dev/null | grep -q '"status":"UP"' && exit 0
+                sleep 2
+            done; echo 'App did not report UP within 90 seconds'; exit 1"""
     } finally {
         // the app's log shows why it failed to start
         sh "docker logs ${name}-app || true"
