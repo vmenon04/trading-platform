@@ -1,4 +1,22 @@
-@Library('trading-platform-tests@main') _
+def CodeCoverage() {
+    sh 'mvn test jacoco:report'
+    junit 'target/surefire-reports/*.xml'
+    archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: false
+}
+
+def getSafeTag() {
+    return env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
+}
+
+def SmokeTest() {
+    def safeTag = getSafeTag()
+    sh "docker run --rm fintech-five:${safeTag}"
+}
+
+def StaticAnalysis() {
+    sh 'mvn site'
+}
+
 pipeline {
     agent any
     tools {
@@ -18,19 +36,21 @@ pipeline {
         }
         stage('Build Image') {
             steps {
-                sh 'mvn -B clean package'
+                // skip compiling and running them while building (tests will be run in the Code-Coverage stage)
+                sh 'mvn -B clean package -Dmaven.test.skip=true'
                 script {
-                    // here we're sanitizing the branch name
-                    // github branch names can contain characters that are not valid in docker tags, so we replace them here with hyphens
-                    def safeTag = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-') 
-                    sh "docker build -t team-skeleton:${safeTag} ."
+                    // github branch names can contain characters that are not valid in docker tags.
+                    def safeTag = getSafeTag()
+                    sh "docker build -t fintech-five:${safeTag} ."
                 }
             }
         }
         stage('Smoke-Test') {
             steps {
                 echo "Starting Library Smoke Test"
-                SmokeTest()
+                script {
+                    SmokeTest()
+                }
             }
         }
         stage('Parallel') {
@@ -38,14 +58,18 @@ pipeline {
                 stage('Code-Coverage') {
                     steps {
                         echo "Starting Library Code Coverage"
-                        CodeCoverage()
+                        script {
+                            CodeCoverage()
+                        }
                     }
                 }
                 
                 stage('Static-Analysis') {
                     steps {
                         echo "Starting Library Static Analysis"
-                        StaticAnalysis()
+                        script {
+                            StaticAnalysis()
+                        }
                     }
                 }
             }

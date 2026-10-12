@@ -1,0 +1,131 @@
+openapi: 3.0.3
+info:
+  title: Account Trade Management Service
+  description: API for managing account trades, including creating and retrieving trade information.
+  version: 1.0.0
+  license:
+    name: Internal use only # FIXME: Update license information as needed
+    url: https://example.com/license
+
+servers:
+  - url: /v1
+
+paths:
+  /accounts/{accountId}/trades:
+    post:
+      summary: Submit a new trade request
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The ID of the account for which the trade is being submitted
+          schema:
+            type: integer
+      operationId: submitTrade
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TradeRequest'
+            example:
+              instrument_id: 1
+              tradeType: "BUY"
+              quantity: 10
+      responses:
+        '201':
+          description: Trade accepted and executed successfully
+          headers:
+            Location:
+              description: URL of the newly created trade resource
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeResponse'
+              example:
+                tradeId: 123
+                status: "SUBMITTED"
+                executedPrice: 150.00
+                executedQuantity: 10
+        '400':
+          description: Invalid trade request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '422':
+            description: Unprocessable entity, trade request could not be processed because of a business rule violation
+            content:
+                application/json:
+                  schema:
+                      $ref: '#/components/schemas/TradeResponse'
+                  example:
+                    tradeId: 123
+                    status: "REJECTED"
+                    reason: "Insufficient funds for the requested trade"
+
+components:
+  schemas:
+    TradeRequest:
+      type: object
+      required: ["instrument_id", "tradeType", "quantity"]
+      properties:
+        instrument_id:
+            type: integer
+        tradeType:
+            type: string
+            enum: ["BUY", "SELL"]
+        quantity:
+            type: number
+            format: double
+            exclusiveMinimum: 0
+    TradeResponse:
+        type: object
+        required: ["tradeId", "status"]
+        properties:
+            tradeId:
+                type: integer
+            status:
+                type: string
+                enum: ["SUBMITTED", "ACCEPTED", "FILLED", "REJECTED"]
+            executedPrice:
+                type: number
+                format: double
+            executedQuantity:
+                type: integer
+            reason:
+                type: string
+                description: Reason for rejection if the trade was rejected
+    ErrorResponse:
+        type: object
+        required: ["error", "message"]
+        properties:
+            error:
+                type: string
+            message:
+                type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+
+
