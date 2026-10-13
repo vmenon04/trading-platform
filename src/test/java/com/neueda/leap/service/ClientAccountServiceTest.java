@@ -15,19 +15,19 @@ import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-class ClientAccountsServiceTest {
+class ClientAccountServiceTest {
 
     @Mock
     private ClientAccountMapper clientAccountMapper;
 
     @InjectMocks
-    private ClientAccountsService clientAccountsService;
+    private ClientAccountService clientAccountService;
 
     @Test
     void getClientIdByAccountIdDelegatesToMapper() {
         when(clientAccountMapper.getClientIdByAccountId(42L)).thenReturn(List.of(7L, 8L));
 
-        List<Long> result = clientAccountsService.getClientIdByAccountId(42L);
+        List<Long> result = clientAccountService.getClientIdByAccountId(42L);
 
         assertEquals(List.of(7L, 8L), result);
         verify(clientAccountMapper).getClientIdByAccountId(42L);
@@ -38,7 +38,7 @@ class ClientAccountsServiceTest {
     void getClientIdByAccountIdPassesNullThroughToMapper() {
         when(clientAccountMapper.getClientIdByAccountId(null)).thenReturn(null);
 
-        List<Long> result = clientAccountsService.getClientIdByAccountId(null);
+        List<Long> result = clientAccountService.getClientIdByAccountId(null);
 
         assertNull(result);
         verify(clientAccountMapper).getClientIdByAccountId(null);

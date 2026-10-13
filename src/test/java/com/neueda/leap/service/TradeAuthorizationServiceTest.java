@@ -17,7 +17,7 @@ class TradeAuthorizationServiceTest {
     @Mock
     private AccountService accountService;
     @Mock
-    private ClientAccountsService clientAccountsService;
+    private ClientAccountService clientAccountService;
     @Mock
     private UserService userService;
     @InjectMocks
@@ -31,7 +31,7 @@ class TradeAuthorizationServiceTest {
                 new BigDecimal("5")
         );
         when(accountService.getAccountIdByExternalAccountId(dto.accountId())).thenReturn(1L);
-        when(clientAccountsService.getClientIdByAccountId(1L)).thenReturn(List.of(100L, 200L));
+        when(clientAccountService.getClientIdByAccountId(1L)).thenReturn(List.of(100L, 200L));
         when(userService.getUsernameByClientId(100L)).thenReturn("someone-else");
         when(userService.getUsernameByClientId(200L)).thenReturn("alice");
         assertTrue(tradeAuthorizationService.isValidUsername(dto, "alice"));
@@ -45,7 +45,7 @@ class TradeAuthorizationServiceTest {
                 new BigDecimal("5")
         );
         when(accountService.getAccountIdByExternalAccountId(dto.accountId())).thenReturn(1L);
-        when(clientAccountsService.getClientIdByAccountId(1L)).thenReturn(List.of(100L));
+        when(clientAccountService.getClientIdByAccountId(1L)).thenReturn(List.of(100L));
         when(userService.getUsernameByClientId(100L)).thenReturn("bob");
         assertFalse(tradeAuthorizationService.isValidUsername(dto, "alice"));
     }
