@@ -27,6 +27,7 @@ def SonarQube() {
             -Dsonar.sources=src/main/java \
             -Dsonar.tests=src/test/java"
     }
+}
 
 def SmokeTest() {
     // starts the image and waits for /actuator/health to report UP. application.properties isn't in git, so the
