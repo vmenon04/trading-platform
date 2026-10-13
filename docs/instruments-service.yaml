@@ -1,0 +1,79 @@
+openapi: 3.0.3
+info:
+  title: Instruments Service
+  description: API for listing instruments and their current price
+  version: 1.0.0
+
+servers:
+  - url: /v1
+
+paths:
+  /instruments:
+    get:
+      summary: List instruments
+      tags: [instruments]
+      parameters: []
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of instruments
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instrument'
+              example:
+                - instrument_id: 44
+                  ticker: "AAPL"
+                  name: "Apple Inc."
+                  price: 151.23
+                - instrument_id: 12
+                  ticker: "MSFT"
+                  name: "Microsoft Corp."
+                  price: 305.40
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    Instrument:
+      type: object
+      required: [instrument_id, ticker, name, price]
+      properties:
+        instrument_id:
+          type: integer
+        ticker:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+
+    ErrorResponse:
+      type: object
+      required: [error, message]
+      properties:
+        error:
+          type: string
+        message:
+          type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
