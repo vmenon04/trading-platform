@@ -25,7 +25,8 @@ public class SecurityConfig {
     return NimbusJwtDecoder.withSecretKey(key).build();
   }
 
-  @Bean public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+  @Bean
+  public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
     http.authorizeHttpRequests(auth -> auth
         .requestMatchers("/public").permitAll()
         .anyRequest().authenticated())
