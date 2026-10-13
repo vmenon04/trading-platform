@@ -1,15 +1,14 @@
 package com.neueda.leap.repository;
 
 import com.neueda.leap.dto.TradeValidatedDTO;
-import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
 import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Options;
 import org.apache.ibatis.annotations.Param;
 
-import java.math.BigDecimal;
 import java.util.List;
+import java.util.UUID;
 import org.apache.ibatis.annotations.Mapper;
 import com.neueda.leap.entity.*;
 
@@ -50,17 +49,20 @@ public interface AccountTradeMapper {
             "WHERE trade_id = #{trade_Id} ORDER BY trade_time")
     List<AccountTrade> findHistoryById(Long trade_Id);
 
-    // #{...} are AccountTrade field names
-    @Insert("INSERT INTO account_trades(account_id, instrument_id, trade_side, quantity) VALUES (#{accountId}, #{instrumentId}, #{side}, #{quantity})")
-    @Options(useGeneratedKeys = true, keyColumn = "trade_id")
+    // Inserts the trade and returns its generated trade_id. #{...} are TradeValidatedDTO fields.
+    // The INSERT ... RETURNING goes through @Select so MyBatis returns the trade_id rather than the row count;
+    // flushCache stops MyBatis from answering a repeat of the same insert from its cache.
+    // Returns null if a trade with this external_trade_id was already recorded (a redelivered message).
+    // MyBatis has no UUID type handler; ObjectTypeHandler hands the UUID to the Postgres driver, which maps it to uuid.
+    @Select("INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity) "
+            + "VALUES (#{externalTradeId, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}, #{accountId}, #{instrumentId}, #{side}, #{quantity}) "
+            + "ON CONFLICT (external_trade_id) DO NOTHING "
+            + "RETURNING trade_id")
+    @Options(flushCache = Options.FlushCachePolicy.TRUE)
     Long insert(TradeValidatedDTO tradeValidatedDTO);
 
-    // Postgres INSERT and the RETURNING goes through @Select so MyBatis returns the generated trade_id
-    @Select("INSERT INTO account_trades (trade_time, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (clock_timestamp(), #{accountId}, #{instrumentId}, #{tradeSide}, #{quantity}) "
-            + "RETURNING trade_id")
-    Long insertTrade(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
-                     @Param("tradeSide") TradeSide tradeSide, @Param("quantity") BigDecimal quantity);
+    @Select("SELECT trade_id FROM account_trades WHERE external_trade_id = #{externalTradeId}")
+    Long findTradeIdByExternalTradeId(@Param("externalTradeId") UUID externalTradeId);
 
     // record the status change: copies the trade's latest row with the new status and the current time
     @Insert("INSERT INTO account_trade_status "

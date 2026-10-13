@@ -8,9 +8,7 @@ import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import java.util.UUID;
-import java.util.function.Consumer;
 
-import org.apache.kafka.clients.producer.Producer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -34,6 +32,7 @@ class ValidationServiceTest {
     private static final long TASK_ID = 77L;
     private static final String BALANCE = "1000";
     private static final String TICKER = "AAPL";
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private InstrumentService instrumentService;
@@ -53,7 +52,8 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.valueOf(side),
                 new BigDecimal(quantity),
-                TASK_ID
+                TASK_ID,
+                EXTERNAL_TRADE_ID
         );
     }
 
@@ -104,7 +104,8 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 null,
                 new BigDecimal("5"),
-                TASK_ID
+                TASK_ID,
+                EXTERNAL_TRADE_ID
         );
 
         assertThrows(IllegalArgumentException.class, () -> validationService.validate(invalidOrder));
@@ -161,7 +162,8 @@ class ValidationServiceTest {
                 () -> assertEquals(TradeSide.BUY, validatedDTO.side()),
                 () -> assertEquals(new BigDecimal("5"), validatedDTO.quantity()),
                 () -> assertEquals(PRICE, validatedDTO.quote()),
-                () -> assertEquals(TASK_ID, validatedDTO.taskId())
+                () -> assertEquals(TASK_ID, validatedDTO.taskId()),
+                () -> assertEquals(EXTERNAL_TRADE_ID, validatedDTO.externalTradeId())
         );
     }
 }

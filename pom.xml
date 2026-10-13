@@ -53,7 +53,6 @@
         <dependency>
             <groupId>org.springframework.kafka</groupId>
             <artifactId>spring-kafka</artifactId>
-            <version>4.2.0-M2</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.kafka</groupId>
@@ -106,27 +105,22 @@
                     </execution>
                 </executions>
             </plugin>
+            <!-- static analysis, run by Jenkins with `mvn checkstyle:checkstyle spotbugs:spotbugs`.
+                 Each writes an XML file that the Jenkins Warnings plugin reads (see StaticAnalysis in the Jenkinsfile). -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>config/checkstyle.xml</configLocation>
+                    <consoleOutput>false</consoleOutput>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.10.3.0</version>
+            </plugin>
         </plugins>
     </build>
-     <reporting>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.6.0</version>
-          <reportSets>
-            <reportSet>
-              <reports>
-                <report>checkstyle</report>
-              </reports>
-            </reportSet>
-          </reportSets>
-        </plugin>
-         <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.10.3.0</version>
-      </plugin>
-      </plugins>
-    </reporting>
 </project>

@@ -1,9 +1,11 @@
+# syntax=docker/dockerfile:1
 FROM maven:3.9-eclipse-temurin-25-alpine AS build
 WORKDIR /src
 COPY pom.xml .
 COPY src ./src
-# skip running tests during the build process
-RUN mvn -B clean package -Dmaven.test.skip=true
+# skip running tests during the build process. The Maven repository is a cache mount, kept between builds on the
+# build machine (but not in the image), so dependencies are only downloaded again when pom.xml changes.
+RUN --mount=type=cache,target=/root/.m2 mvn -B clean package -Dmaven.test.skip=true
 
 FROM eclipse-temurin:25-jre-alpine
 WORKDIR /app

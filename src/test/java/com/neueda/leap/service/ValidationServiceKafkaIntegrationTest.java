@@ -5,6 +5,7 @@ import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.kafka.ValidationConsumer;
 import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.HashMap;
@@ -56,6 +57,7 @@ class ValidationServiceKafkaIntegrationTest {
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100.50");
     private static final long TASK_ID = 88L;
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Autowired
     private EmbeddedKafkaBroker embeddedKafkaBroker;
@@ -115,7 +117,8 @@ class ValidationServiceKafkaIntegrationTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.BUY,
                 new BigDecimal("5.25"),
-                TASK_ID
+                TASK_ID,
+                EXTERNAL_TRADE_ID
         );
 
         kafkaTemplate.send("trade.submitted", EXTERNAL_ACCOUNT_ID.toString(), submitted);
@@ -131,7 +134,8 @@ class ValidationServiceKafkaIntegrationTest {
                 () -> assertEquals(TradeSide.BUY, validated.side()),
                 () -> assertEquals(new BigDecimal("5.25"), validated.quantity()),
                 () -> assertEquals(PRICE, validated.quote()),
-                () -> assertEquals(TASK_ID, validated.taskId())
+                () -> assertEquals(TASK_ID, validated.taskId()),
+                () -> assertEquals(EXTERNAL_TRADE_ID, validated.externalTradeId())
         );
     }
 
@@ -144,6 +148,17 @@ class ValidationServiceKafkaIntegrationTest {
                                             AccountService accountService,
                                             AccountHoldingService accountHoldingService) {
             return new ValidationService(instrumentService, accountService, accountHoldingService);
+        }
+
+        @Bean
+        ValidationConsumer validationConsumer(ValidationService validationService,
+                                              TradeEventProducer tradeEventProducer) {
+            return new ValidationConsumer(validationService, tradeEventProducer);
+        }
+
+        @Bean
+        TradeEventProducer tradeEventProducer(@Qualifier("kafkaTemplate") KafkaTemplate<String, Object> kafkaTemplate) {
+            return new TradeEventProducer(kafkaTemplate);
         }
 
         @Bean(name = "kafkaTemplate")
@@ -177,12 +192,10 @@ class ValidationServiceKafkaIntegrationTest {
 
         @Bean
         ConcurrentKafkaListenerContainerFactory<String, TradeSubmittedDTO> kafkaListenerContainerFactory(
-                ConsumerFactory<String, TradeSubmittedDTO> consumerFactory,
-                @Qualifier("kafkaTemplate") KafkaTemplate<String, Object> replyTemplate) {
+                ConsumerFactory<String, TradeSubmittedDTO> consumerFactory) {
             ConcurrentKafkaListenerContainerFactory<String, TradeSubmittedDTO> factory =
                     new ConcurrentKafkaListenerContainerFactory<>();
             factory.setConsumerFactory(consumerFactory);
-            factory.setReplyTemplate(replyTemplate);
             return factory;
         }
     }

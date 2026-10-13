@@ -1,5 +1,6 @@
 package com.neueda.leap.repository;
 
+import com.neueda.leap.enums.ActivityStatus;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -54,5 +55,5 @@ public interface AccountHoldingMapper {
     @Insert("INSERT INTO account_holdings (account_id, instrument_id, as_of_date, quantity, status) "
             + "VALUES (#{accountId}, #{instrumentId}, clock_timestamp(), #{quantity}, #{status})")
     void insertSnapshot(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
-                        @Param("quantity") BigDecimal quantity, @Param("status") String status);
+                        @Param("quantity") BigDecimal quantity, @Param("status") ActivityStatus status);
 }

@@ -1,8 +1,11 @@
+# SpringBoot Server
+server.port=8081
+
 # Kafka
 spring.kafka.bootstrap-servers=<kafka-host>:9092
 
 # Postgres
-spring.datasource.url=jdbc:postgresql://<postgres-host>:5432/trading
+spring.datasource.url=jdbc:postgresql://<postgres-host>:8082/trading
 spring.datasource.username=trading
 spring.datasource.password=<postgres-password>
 

@@ -31,7 +31,7 @@ public class AccountTrade {
         this.quantity = quantity;
         this.price = price;
         this.accountTradeStatus = new AccountTradeStatus();
-        accountTradeStatus.setTradeStatus(TradeStatus.SUBMITTED);
+        accountTradeStatus.setTradeStatus(TradeStatus.PENDING);
     }
 
     public UUID getExternalTradeId() {

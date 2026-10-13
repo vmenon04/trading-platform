@@ -17,6 +17,8 @@ TRUNCATE TABLE
     client_accounts,
     accounts,
     instruments,
+    roles,
+    users,
     clients
 RESTART IDENTITY CASCADE;
 
@@ -258,3 +260,22 @@ SELECT
     DATE '2024-01-01' + (i / 5000),
     CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
+
+-- users: one CLIENT login per client (e.g. james.smith1), plus one ADMIN and one ANALYST.
+-- password_hash is a placeholder; real hashes come from the app's sign-up flow.
+INSERT INTO users (external_user_id, username, password_hash, client_id)
+SELECT gen_random_uuid(), lower(first_name || '.' || last_name) || client_id, 'placeholder-not-a-real-hash', client_id
+FROM clients;
+
+INSERT INTO users (external_user_id, username, password_hash)
+VALUES (gen_random_uuid(), 'admin', 'placeholder-not-a-real-hash'),
+       (gen_random_uuid(), 'analyst', 'placeholder-not-a-real-hash');
+
+-- roles: what each login may do
+INSERT INTO roles (user_id, role)
+SELECT user_id,
+       CASE WHEN client_id IS NOT NULL THEN 'CLIENT'
+            WHEN username = 'admin'    THEN 'ADMIN'
+            ELSE 'ANALYST'
+       END
+FROM users;

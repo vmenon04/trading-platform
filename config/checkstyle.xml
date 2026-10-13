@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<!DOCTYPE module PUBLIC
+        "-//Checkstyle//DTD Checkstyle Configuration 1.3//EN"
+        "https://checkstyle.org/dtds/configuration_1_3.dtd">
+
+<!-- The team's Checkstyle rules: likely bugs and readability problems, not formatting preferences.
+     Checkstyle's default sun_checks.xml (Javadoc on everything, final parameters, magic numbers) reported
+     over a thousand issues, and google_checks.xml expects 2-space indentation. Add rules here as the team agrees on them. -->
+<module name="Checker">
+    <property name="severity" value="warning"/>
+
+    <module name="FileTabCharacter"/>
+    <module name="LineLength">
+        <property name="max" value="160"/>
+        <property name="ignorePattern" value="^(package|import) "/>
+    </module>
+
+    <module name="TreeWalker">
+        <!-- imports -->
+        <module name="UnusedImports"/>
+        <module name="RedundantImport"/>
+
+        <!-- likely bugs -->
+        <module name="EmptyCatchBlock"/>
+        <module name="EmptyBlock">
+            <property name="option" value="text"/>
+        </module>
+        <module name="EqualsHashCode"/>
+        <module name="StringLiteralEquality"/>
+        <module name="FallThrough"/>
+        <module name="DefaultComesLast"/>
+        <module name="MissingSwitchDefault"/>
+
+        <!-- readability -->
+        <module name="NeedBraces"/>
+        <module name="OneStatementPerLine"/>
+        <module name="MultipleVariableDeclarations"/>
+        <module name="SimplifyBooleanExpression"/>
+        <module name="SimplifyBooleanReturn"/>
+        <module name="ModifierOrder"/>
+
+        <!-- naming -->
+        <module name="TypeName"/>
+        <module name="MethodName"/>
+        <module name="ConstantName"/>
+        <module name="MemberName"/>
+        <module name="ParameterName"/>
+        <module name="LocalVariableName"/>
+    </module>
+</module>

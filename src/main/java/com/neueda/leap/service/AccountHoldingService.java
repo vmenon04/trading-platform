@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
 import org.springframework.stereotype.Service;
@@ -11,8 +12,6 @@ import org.springframework.stereotype.Service;
 public class AccountHoldingService {
 
     // Must match the CHECK constraint on account_holdings.status
-    private static final String ACTIVE = "ACTIVE";
-    private static final String INACTIVE = "INACTIVE";
 
     private final AccountHoldingMapper accountHoldingMapper;
 
@@ -49,7 +48,7 @@ public class AccountHoldingService {
         requirePositive(quantity);
         BigDecimal newQuantity = getQuantity(accountId, instrumentId).add(quantity);
         accountHoldingMapper.deactivateHolding(accountId, instrumentId);
-        accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, ACTIVE);
+        accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, ActivityStatus.ACTIVE);
     }
 
     /**
@@ -70,7 +69,7 @@ public class AccountHoldingService {
         }
         BigDecimal newQuantity = current.subtract(quantity);
         // a fully sold position should be marked as inactive
-        String status = newQuantity.compareTo(BigDecimal.ZERO) == 0 ? INACTIVE : ACTIVE;
+        ActivityStatus status = newQuantity.compareTo(BigDecimal.ZERO) == 0 ? ActivityStatus.INACTIVE : ActivityStatus.ACTIVE;
         accountHoldingMapper.deactivateHolding(accountId, instrumentId);
         accountHoldingMapper.insertSnapshot(accountId, instrumentId, newQuantity, status);
     }

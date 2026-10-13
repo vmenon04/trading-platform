@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 
 import java.math.BigDecimal;
+import java.util.UUID;
 
 public record TradeValidatedDTO(
 
@@ -14,5 +15,6 @@ public record TradeValidatedDTO(
         @NotNull TradeSide side,
         @Positive BigDecimal quantity,
         @Positive BigDecimal quote,
-        @NotBlank Long taskId
+        @NotBlank Long taskId,
+        @NotNull UUID externalTradeId
 ){}

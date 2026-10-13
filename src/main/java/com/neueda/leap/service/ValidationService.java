@@ -6,12 +6,7 @@ import java.util.UUID;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
-import org.springframework.kafka.annotation.KafkaListener;
-import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.stereotype.Service;
-
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 @Service
 public class ValidationService {
@@ -19,8 +14,6 @@ public class ValidationService {
     private final InstrumentService instrumentService;
     private final AccountService accountService;
     private final AccountHoldingService accountHoldingService;
-    private static final Logger LOGGER = LoggerFactory.getLogger(ValidationService.class);
-
 
     public ValidationService(InstrumentService instrumentService, AccountService accountService,
                              AccountHoldingService accountHoldingService) {
@@ -29,11 +22,7 @@ public class ValidationService {
         this.accountHoldingService = accountHoldingService;
     }
 
-    @KafkaListener(topics = "trade.submitted", groupId = "${spring.kafka.consumer.group-id}")
-    @SendTo("trade.validated")
     public TradeValidatedDTO validateSubmittedTrade(TradeSubmittedDTO tradeSubmittedDTO) {
-        LOGGER.info(String.format("Received submitted trade event. Task ID: %d", tradeSubmittedDTO.taskId()));
-
         validate(tradeSubmittedDTO);
 
         return new TradeValidatedDTO(
@@ -42,7 +31,8 @@ public class ValidationService {
                 tradeSubmittedDTO.side(),
                 tradeSubmittedDTO.quantity(),
                 instrumentService.getCurrentPrice(tradeSubmittedDTO.instrumentId()),
-                tradeSubmittedDTO.taskId()
+                tradeSubmittedDTO.taskId(),
+                tradeSubmittedDTO.externalTradeId()
         );
     }
 
