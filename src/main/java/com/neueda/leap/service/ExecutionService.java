@@ -64,9 +64,9 @@ public class ExecutionService {
     }
 
     /**
-     * Executes a recorded trade at the current market price. The balance, holding, price and FULFILLED status
-     * updates commit together; if the trade can't be priced or settled, none of them are applied and the trade
-     * is marked REJECTED instead. A trade that already finished is not executed again, its stored outcome is
+     * Executes a recorded trade at the current market price. The balance, holding, price, ACCEPTED and FULFILLED
+     * status updates commit together; if the trade can't be priced or settled, none of them are applied and the
+     * trade is marked REJECTED instead. A trade that already finished is not executed again, its stored outcome is
      * returned so it can be republished.
      *
      * @param trade recorded trade to execute
@@ -89,6 +89,8 @@ public class ExecutionService {
 
             transactionTemplate.executeWithoutResult(transaction -> {
                 applyTrade(trade.accountId(), trade.instrumentId(), trade.side(), trade.quantity(), total);
+                // applyTrade fails if the account can't afford the trade, so after it the trade is accepted
+                accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.ACCEPTED);
                 // the price mapper takes Doubles for now
                 accountTradePriceMapper.insertTradePrice(tradeId, price.doubleValue(), total.doubleValue());
                 accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.FULFILLED);
