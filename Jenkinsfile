@@ -87,7 +87,8 @@ pipeline {
                 script {
                     // github branch names can contain characters that are not valid in docker tags.
                     def safeTag = getSafeTag()
-                    sh "docker build -t fintech-five:${safeTag} ."
+                    // DOCKER_BUILDKIT=1: the Dockerfile's cache mount needs BuildKit (already the default from Docker 23)
+                    sh "DOCKER_BUILDKIT=1 docker build -t fintech-five:${safeTag} ."
                 }
             }
         }
