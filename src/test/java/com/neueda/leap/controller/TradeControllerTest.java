@@ -10,16 +10,18 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 
 import java.net.URI;
 import java.util.UUID;
 
-import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -35,7 +37,9 @@ class TradeControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(tradeController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(tradeController)
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .build();
     }
 
     @Test
@@ -44,6 +48,7 @@ class TradeControllerTest {
 
         mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
+                        .principal(authentication("user"))
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -61,21 +66,29 @@ class TradeControllerTest {
     void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() throws Exception {
         UUID accountId = UUID.randomUUID();
         URI location = URI.create("/api/accounts/%s/trades/tasks/42".formatted(accountId));
-        when(recipientService.publishOrder(any(TradeRequestDTO.class)))
+        TradeRequestDTO dto = new TradeRequestDTO(
+                accountId,
+                10L,
+                com.neueda.leap.enums.TradeSide.BUY,
+                new java.math.BigDecimal("25.5")
+        );
+        when(recipientService.publishOrder(dto, "user"))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
-        mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
-                        .contextPath("/api")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("""
-                                {
-                                  "accountId": "%s",
-                                  "instrumentId": 10,
-                                  "side": "BUY",
-                                  "quantity": 25.5
-                                }
-                                """.formatted(accountId)))
-                .andExpect(status().isAccepted())
-                .andExpect(header().string("Location", location.toString()));
+        Jwt jwt = mock(Jwt.class);
+        when(jwt.getSubject()).thenReturn("user");
+
+        ResponseEntity<Void> response = tradeController.submitOrder(jwt, accountId, dto);
+
+        org.junit.jupiter.api.Assertions.assertEquals(202, response.getStatusCode().value());
+        org.junit.jupiter.api.Assertions.assertEquals(location, response.getHeaders().getLocation());
+    }
+
+    private static JwtAuthenticationToken authentication(String username) {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", username)
+                .build();
+        return new JwtAuthenticationToken(jwt);
     }
 }
