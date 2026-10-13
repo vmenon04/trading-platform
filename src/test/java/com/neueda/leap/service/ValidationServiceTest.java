@@ -162,8 +162,7 @@ class ValidationServiceTest {
                 () -> assertEquals(TradeSide.BUY, validatedDTO.side()),
                 () -> assertEquals(new BigDecimal("5"), validatedDTO.quantity()),
                 () -> assertEquals(PRICE, validatedDTO.quote()),
-                () -> assertEquals(TASK_ID, validatedDTO.taskId()),
-                () -> assertEquals(EXTERNAL_TRADE_ID, validatedDTO.externalTradeId())
+                () -> assertEquals(TASK_ID, validatedDTO.taskId())
         );
     }
 }

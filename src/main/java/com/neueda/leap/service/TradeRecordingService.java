@@ -30,8 +30,13 @@ public class TradeRecordingService {
     public TradeRecordedDTO record(TradeValidatedDTO tradeValidatedDTO) {
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
         if (tradeId == null) {
-            tradeId = accountTradeMapper.findTradeIdByExternalTradeId(tradeValidatedDTO.externalTradeId());
-            LOGGER.info("Trade {} was already recorded with ID: {}", tradeValidatedDTO.externalTradeId(), tradeId);
+            LOGGER.info("Trade failed for task {}, account {} for instrument {}, side {}, quantity {}, quote {}.",
+                    tradeValidatedDTO.taskId(),
+                    tradeValidatedDTO.accountId(),
+                    tradeValidatedDTO.instrumentId(),
+                    tradeValidatedDTO.side(),
+                    tradeValidatedDTO.quantity(),
+                    tradeValidatedDTO.quote());
         } else {
             accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
             LOGGER.info("Created database entry for trade with ID: {}", tradeId);

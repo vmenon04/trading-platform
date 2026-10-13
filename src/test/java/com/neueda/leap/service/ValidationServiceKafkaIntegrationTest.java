@@ -134,8 +134,7 @@ class ValidationServiceKafkaIntegrationTest {
                 () -> assertEquals(TradeSide.BUY, validated.side()),
                 () -> assertEquals(new BigDecimal("5.25"), validated.quantity()),
                 () -> assertEquals(PRICE, validated.quote()),
-                () -> assertEquals(TASK_ID, validated.taskId()),
-                () -> assertEquals(EXTERNAL_TRADE_ID, validated.externalTradeId())
+                () -> assertEquals(TASK_ID, validated.taskId())
         );
     }
 

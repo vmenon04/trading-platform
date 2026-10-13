@@ -15,6 +15,5 @@ public record TradeValidatedDTO(
         @NotNull TradeSide side,
         @Positive BigDecimal quantity,
         @Positive BigDecimal quote,
-        @NotBlank Long taskId,
-        @NotNull UUID externalTradeId
+        @NotBlank Long taskId
 ){}
