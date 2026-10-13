@@ -87,39 +87,22 @@
                     </execution>
                 </executions>
             </plugin>
-            <!-- pinned so it matches the report plugins below: without a version Maven uses an old site plugin
-                 (Doxia 1) with the newest report plugins (Doxia 2), and the SCM report fails with NoSuchMethodError -->
+            <!-- static analysis, run by Jenkins with `mvn checkstyle:checkstyle spotbugs:spotbugs`.
+                 Each writes an XML file that the Jenkins Warnings plugin reads (see StaticAnalysis in the Jenkinsfile). -->
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-site-plugin</artifactId>
-                <version>3.21.0</version>
+                <artifactId>maven-checkstyle-plugin</artifactId>
+                <version>3.6.0</version>
+                <configuration>
+                    <configLocation>config/checkstyle.xml</configLocation>
+                    <consoleOutput>false</consoleOutput>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.github.spotbugs</groupId>
+                <artifactId>spotbugs-maven-plugin</artifactId>
+                <version>4.10.3.0</version>
             </plugin>
         </plugins>
     </build>
-     <reporting>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-project-info-reports-plugin</artifactId>
-          <version>3.9.0</version>
-        </plugin>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-checkstyle-plugin</artifactId>
-          <version>3.6.0</version>
-          <reportSets>
-            <reportSet>
-              <reports>
-                <report>checkstyle</report>
-              </reports>
-            </reportSet>
-          </reportSets>
-        </plugin>
-         <plugin>
-        <groupId>com.github.spotbugs</groupId>
-        <artifactId>spotbugs-maven-plugin</artifactId>
-        <version>4.10.3.0</version>
-      </plugin>
-      </plugins>
-    </reporting>
 </project>

@@ -1,7 +1,13 @@
 def CodeCoverage() {
-    sh 'mvn test jacoco:report'
-    junit 'target/surefire-reports/*.xml'
-    archiveArtifacts artifacts: 'target/site/jacoco/**/*', allowEmptyArchive: false
+    try {
+        sh 'mvn test jacoco:report'
+    } finally {
+        // publish the results even when tests fail, so Jenkins shows which ones
+        junit 'target/surefire-reports/*.xml'
+    }
+    // Coverage plugin: coverage per build and per source line, on the build page and as a trend
+    recordCoverage(tools: [[parser: 'JACOCO', pattern: 'target/site/jacoco/jacoco.xml']],
+                   sourceDirectories: [[path: 'src/main/java']])
 }
 
 def getSafeTag() {
@@ -46,7 +52,15 @@ def SmokeTest() {
 }
 
 def StaticAnalysis() {
-    sh 'mvn site'
+    // only the analysis tools, not the whole `mvn site`. SpotBugs reads the classes compiled in Build Image.
+    sh 'mvn -B checkstyle:checkstyle spotbugs:spotbugs'
+    // compare against the latest dev build, so "new" means issues this branch adds
+    discoverGitReferenceBuild(referenceJob: 'ftrade/dev')
+    // Warnings plugin: issues on the build page, linked to the source lines, with trends.
+    // The quality gate marks the build UNSTABLE (yellow), not failed, if it adds any new issue.
+    recordIssues(tools: [checkStyle(pattern: 'target/checkstyle-result.xml'),
+                         spotBugs(pattern: 'target/spotbugsXml.xml')],
+                 qualityGates: [[threshold: 1, type: 'NEW', criticality: 'UNSTABLE']])
 }
 
 def ReportingTests() {
