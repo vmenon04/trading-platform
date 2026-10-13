@@ -1,6 +1,6 @@
 openapi: 3.0.3
 info:
-  title: Account Trade Management Service
+  title: Order Management Service
   description: API for managing account trades, including creating and retrieving trade information.
   version: 1.0.0
   license:
