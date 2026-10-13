@@ -1,0 +1,58 @@
+# Kafka and Postgres for the trading platform
+#
+# All values come from .env (copy .env.example).
+
+name: trading-platform
+
+services:
+  kafka:
+    # 3.9.1 matches the kafka-clients version the app uses
+    image: apache/kafka:3.9.1
+    container_name: trading-kafka
+    ports:
+      # published only on the machine's private IP, like Postgres
+      - "${HOST_IP:?HOST_IP is not set}:9092:9092"
+    environment:
+      # a single node in KRaft mode: broker and controller in one process, no ZooKeeper
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # the address clients are told to reconnect to: must be reachable from the VM and Jenkins, never localhost
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${HOST_IP:?HOST_IP is not set}:9092
+      # one broker, so every internal topic has one replica
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 24
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: trading-postgres
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:5432:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # $$ so the variables are read inside the container, not by compose
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
