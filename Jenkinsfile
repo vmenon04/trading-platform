@@ -20,10 +20,16 @@ def SonarQube() {
     // there are any new critical issues, or if coverage drops below a threshold, etc.
     def scannerHome = tool 'Sonar'
     withSonarQubeEnv('SonarQube') {
-        sh "${scannerHome}/bin/sonar-scanner \
-            -Dsonar.projectKey=fintech-five \
-            -Dsonar.sources=src/main/java \
-            -Dsonar.tests=src/test/java"
+        sh """
+            "${scannerHome}/bin/sonar-scanner" \
+              -Dsonar.projectKey=fintech-five \
+              -Dsonar.projectName=fintech-five \
+              -Dsonar.sources=src/main/java \
+              -Dsonar.tests=src/test/java \
+              -Dsonar.java.binaries=target/classes \
+              -Dsonar.java.test.binaries=target/test-classes \
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        """
     }
 }
 
