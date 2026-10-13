@@ -54,10 +54,9 @@ def SmokeTest() {
 def StaticAnalysis() {
     // only the analysis tools, not the whole `mvn site`. SpotBugs reads the classes compiled in Build Image.
     sh 'mvn -B checkstyle:checkstyle spotbugs:spotbugs'
-    // compare against the latest dev build, so "new" means issues this branch adds
-    discoverGitReferenceBuild(referenceJob: 'ftrade/dev')
     // Warnings plugin: issues on the build page, linked to the source lines, with trends.
-    // The quality gate marks the build UNSTABLE (yellow), not failed, if it adds any new issue.
+    // "New" issues are ones that weren't in this branch's previous build; the quality gate marks the build
+    // UNSTABLE (yellow), not failed, if there are any.
     recordIssues(tools: [checkStyle(pattern: 'target/checkstyle-result.xml'),
                          spotBugs(pattern: 'target/spotbugsXml.xml')],
                  qualityGates: [[threshold: 1, type: 'NEW', criticality: 'UNSTABLE']])
