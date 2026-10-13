@@ -1,5 +1,6 @@
 package com.neueda.leap.dto;
 
+import com.neueda.leap.enums.ActivityStatus;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jakarta.validation.ConstraintViolation;
@@ -20,29 +21,30 @@ class AccountHoldingDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
     @DisplayName("Should create AccountHoldingDTO with valid data")
     void testValidAccountHoldingDTO() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(100), "ACTIVE");
+        AccountHoldingDTO dto = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
         
-        assertEquals(1, dto.getAccountId());
-        assertEquals(2, dto.getInstrumentId());
-        assertEquals("2026-09-25", dto.getAsOfDate());
-        assertEquals(BigDecimal.valueOf(100), dto.getQuantity());
-        assertEquals("ACTIVE", dto.getStatus());
+        assertEquals(1L, dto.accountId());
+        assertEquals(2L, dto.instrumentId());
+        assertEquals("2026-09-25", dto.asOfDate());
+        assertEquals(BigDecimal.valueOf(100), dto.quantity());
+        assertEquals(ActivityStatus.ACTIVE, dto.status());
     }
 
     @Test
     @DisplayName("Should validate positive accountId")
     void testValidateAccountId() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(-1, 2, "2026-09-25", BigDecimal.valueOf(100), "ACTIVE");
+        AccountHoldingDTO dto = new AccountHoldingDTO(invalidAccountId(), 2L, "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
         
         Set<ConstraintViolation<AccountHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -53,7 +55,7 @@ class AccountHoldingDTOTest {
     @Test
     @DisplayName("Should validate positive instrumentId")
     void testValidateInstrumentId() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(1, -2, "2026-09-25", BigDecimal.valueOf(100), "ACTIVE");
+        AccountHoldingDTO dto = new AccountHoldingDTO(1L, invalidInstrumentId(), "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
         
         Set<ConstraintViolation<AccountHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -64,7 +66,7 @@ class AccountHoldingDTOTest {
     @Test
     @DisplayName("Should validate non-blank asOfDate")
     void testValidateBlankAsOfDate() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(1, 2, "   ", BigDecimal.valueOf(100), "ACTIVE");
+        AccountHoldingDTO dto = new AccountHoldingDTO(1L, 2L, "   ", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
         
         Set<ConstraintViolation<AccountHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -75,7 +77,7 @@ class AccountHoldingDTOTest {
     @Test
     @DisplayName("Should validate positive quantity")
     void testValidateQuantity() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(-100), "ACTIVE");
+        AccountHoldingDTO dto = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(-100), ActivityStatus.ACTIVE);
         
         Set<ConstraintViolation<AccountHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -84,9 +86,9 @@ class AccountHoldingDTOTest {
     }
 
     @Test
-    @DisplayName("Should validate non-blank status")
-    void testValidateBlankStatus() {
-        AccountHoldingDTO dto = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(100), "");
+    @DisplayName("Should require a status")
+    void testValidateStatusRequired() {
+        AccountHoldingDTO dto = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(100), null);
         
         Set<ConstraintViolation<AccountHoldingDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -97,12 +99,20 @@ class AccountHoldingDTOTest {
     @Test
     @DisplayName("Should support record equality")
     void testRecordEquality() {
-        AccountHoldingDTO dto1 = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(100), "ACTIVE");
-        AccountHoldingDTO dto2 = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(100), "ACTIVE");
-        AccountHoldingDTO dto3 = new AccountHoldingDTO(1, 2, "2026-09-25", BigDecimal.valueOf(100), "INACTIVE");
+        AccountHoldingDTO dto1 = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
+        AccountHoldingDTO dto2 = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.ACTIVE);
+        AccountHoldingDTO dto3 = new AccountHoldingDTO(1L, 2L, "2026-09-25", BigDecimal.valueOf(100), ActivityStatus.INACTIVE);
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private Long invalidAccountId() {
+        return Long.parseLong("-1");
+    }
+
+    private Long invalidInstrumentId() {
+        return Long.parseLong("-2");
     }
 }
 

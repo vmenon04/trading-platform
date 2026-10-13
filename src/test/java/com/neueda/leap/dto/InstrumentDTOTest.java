@@ -17,49 +17,54 @@ class InstrumentDTOTest {
 
     @BeforeEach
     void setUp() {
-        ValidatorFactory factory = Validation.byDefaultProvider()
+        try (ValidatorFactory factory = Validation.byDefaultProvider()
             .configure()
             .messageInterpolator(new ParameterMessageInterpolator())
-            .buildValidatorFactory();
-        validator = factory.getValidator();
+            .buildValidatorFactory()) {
+            validator = factory.getValidator();
+        }
     }
 
     @Test
     void testValidInstrumentDTO() {
-        InstrumentDTO dto = new InstrumentDTO(1, "Apple", "AAPL");
-        assertEquals(1, dto.getInstrumentId());
-        assertEquals("Apple", dto.getName());
+        InstrumentDTO dto = new InstrumentDTO(1L, "Apple", "AAPL");
+        assertEquals(1L, dto.instrumentId());
+        assertEquals("Apple", dto.name());
     }
 
     @Test
     void testValidateInstrumentId() {
-        InstrumentDTO dto = new InstrumentDTO(-1, "Apple", "AAPL");
+        InstrumentDTO dto = new InstrumentDTO(invalidInstrumentId(), "Apple", "AAPL");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testValidateBlankName() {
-        InstrumentDTO dto = new InstrumentDTO(1, "   ", "AAPL");
+        InstrumentDTO dto = new InstrumentDTO(1L, "   ", "AAPL");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testValidateBlankTicker() {
-        InstrumentDTO dto = new InstrumentDTO(1, "Apple", "");
+        InstrumentDTO dto = new InstrumentDTO(1L, "Apple", "");
         Set<ConstraintViolation<InstrumentDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
     }
 
     @Test
     void testRecordEquality() {
-        InstrumentDTO dto1 = new InstrumentDTO(1, "Apple", "AAPL");
-        InstrumentDTO dto2 = new InstrumentDTO(1, "Apple", "AAPL");
-        InstrumentDTO dto3 = new InstrumentDTO(2, "Microsoft", "MSFT");
+        InstrumentDTO dto1 = new InstrumentDTO(1L, "Apple", "AAPL");
+        InstrumentDTO dto2 = new InstrumentDTO(1L, "Apple", "AAPL");
+        InstrumentDTO dto3 = new InstrumentDTO(2L, "Microsoft", "MSFT");
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);
+    }
+
+    private Long invalidInstrumentId() {
+        return Long.parseLong("-1");
     }
 }
 

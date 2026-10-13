@@ -1,0 +1,26 @@
+package com.neueda.leap.dto;
+
+import com.neueda.leap.enums.TradeSide;
+import java.math.BigDecimal;
+
+/**
+ * Message published to trade.finished with the outcome of a trade.
+ *
+ * @param tradeId identifier of the trade
+ * @param accountId account that placed the trade
+ * @param instrumentId instrument being traded
+ * @param side BUY or SELL
+ * @param quantity quantity traded
+ * @param price unit execution price, or null if the trade was rejected
+ * @param reason why the trade was rejected, or null if it was fulfilled
+ */
+public record TradeFinishedDTO(
+        Long tradeId,
+        Long accountId,
+        Long instrumentId,
+        TradeSide side,
+        BigDecimal quantity,
+        BigDecimal price,
+        String reason
+) {
+}

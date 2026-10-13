@@ -1,0 +1,100 @@
+openapi: 3.0.3
+info:
+  title: Order Management Service
+  description: API for managing account trades, including creating and retrieving trade information.
+  version: 1.0.0
+  license:
+    name: Internal use only # FIXME: Update license information as needed
+    url: https://example.com/license
+
+servers:
+  - url: /v1
+
+paths:
+  /accounts/{accountId}/trades:
+    post:
+      summary: Submit a new trade request
+      parameters:
+        - name: accountId
+          in: path
+          required: true
+          description: The ID of the account for which the trade is being submitted
+          schema:
+            type: integer
+      operationId: submitTrade
+      security:
+        - bearerAuth: [ ]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderRequest'
+            example:
+              account_id: 123
+              instrument_id: 1
+              side: "BUY"
+              quantity: 10
+              quote: 150.00
+      responses:
+        '202':
+          description: Order accepted for processing
+          headers:
+            Location:
+              description: URL of the newly created task resource for the order request
+              schema:
+                type: string
+                format: uri
+        '400':
+          description: Invalid order request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized access
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+
+
+components:
+  schemas:
+    OrderRequest:
+      type: object
+      required: ["account_id", "instrument_id", "side", "quantity", "quote"]
+      properties:
+        account_id:
+            type: integer
+        instrument_id:
+            type: integer
+        side:
+            type: string
+            enum: ["BUY", "SELL"]
+        quantity:
+            type: number
+            format: double
+            exclusiveMinimum: 0
+        quote:
+            type: number
+            format: double
+            exclusiveMinimum: 0
+    ErrorResponse:
+        type: object
+        required: ["error", "message"]
+        properties:
+            error:
+                type: string
+            message:
+                type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+
+

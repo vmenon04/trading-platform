@@ -28,10 +28,10 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should create OrderResponseDTO with valid data")
     void testValidOrderResponseDTO() {
-        OrderResponseDTO dto = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150.50), BigDecimal.valueOf(100.00), "Order executed");
         
-        assertEquals(1, dto.tradeId());
+        assertEquals(1L, dto.tradeId());
         assertEquals("EXECUTED", dto.status());
         assertEquals(BigDecimal.valueOf(150.50), dto.executedPrice());
         assertEquals(BigDecimal.valueOf(100.00), dto.executedQuantity());
@@ -41,8 +41,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate positive tradeId")
     void testValidateNegativeTradeId() {
-        OrderResponseDTO dto = new OrderResponseDTO(-1, "EXECUTED", 
-            BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
+        OrderResponseDTO dto = new OrderResponseDTO(-1L, "EXECUTED", BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -53,7 +52,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate zero tradeId is invalid")
     void testValidateZeroTradeId() {
-        OrderResponseDTO dto = new OrderResponseDTO(0, "EXECUTED", 
+        OrderResponseDTO dto = new OrderResponseDTO(0L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -63,7 +62,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate non-blank status")
     void testValidateBlankStatus() {
-        OrderResponseDTO dto = new OrderResponseDTO(1, "   ", 
+        OrderResponseDTO dto = new OrderResponseDTO(1L, "   ", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -75,7 +74,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate positive executedPrice")
     void testValidateNegativePrice() {
-        OrderResponseDTO dto = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(-150), BigDecimal.valueOf(100), "Success");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -87,7 +86,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate positive executedQuantity")
     void testValidateNegativeQuantity() {
-        OrderResponseDTO dto = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(-100), "Success");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -99,7 +98,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate non-blank reason")
     void testValidateBlankReason() {
-        OrderResponseDTO dto = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -111,7 +110,7 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should validate all fields when invalid")
     void testValidateAllFieldsInvalid() {
-        OrderResponseDTO dto = new OrderResponseDTO(-1, "   ", 
+        OrderResponseDTO dto = new OrderResponseDTO(-1L, "   ", 
             BigDecimal.valueOf(-150), BigDecimal.valueOf(-100), "");
         
         Set<ConstraintViolation<OrderResponseDTO>> violations = validator.validate(dto);
@@ -121,11 +120,11 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should support different order statuses")
     void testDifferentStatuses() {
-        OrderResponseDTO executed = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO executed = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Filled");
-        OrderResponseDTO pending = new OrderResponseDTO(2, "PENDING", 
+        OrderResponseDTO pending = new OrderResponseDTO(2L, "PENDING", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Awaiting");
-        OrderResponseDTO cancelled = new OrderResponseDTO(3, "CANCELLED", 
+        OrderResponseDTO cancelled = new OrderResponseDTO(3L, "CANCELLED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Cancelled");
         
         assertEquals("EXECUTED", executed.status());
@@ -136,11 +135,11 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should support record equality")
     void testRecordEquality() {
-        OrderResponseDTO dto1 = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto1 = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
-        OrderResponseDTO dto2 = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto2 = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
-        OrderResponseDTO dto3 = new OrderResponseDTO(2, "CANCELLED", 
+        OrderResponseDTO dto3 = new OrderResponseDTO(2L, "CANCELLED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Cancelled");
         
         assertEquals(dto1, dto2);
@@ -150,9 +149,9 @@ class OrderResponseDTOTest {
     @Test
     @DisplayName("Should support record hashCode")
     void testRecordHashCode() {
-        OrderResponseDTO dto1 = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto1 = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
-        OrderResponseDTO dto2 = new OrderResponseDTO(1, "EXECUTED", 
+        OrderResponseDTO dto2 = new OrderResponseDTO(1L, "EXECUTED", 
             BigDecimal.valueOf(150), BigDecimal.valueOf(100), "Success");
         
         assertEquals(dto1.hashCode(), dto2.hashCode());

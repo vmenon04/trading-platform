@@ -1,35 +1,50 @@
 package com.neueda.leap.entity;
 
-import com.neueda.leap.entity.Instrument.InstrumentType;
+import com.neueda.leap.enums.InstrumentType;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-    @BeforeEach
-    void setUp() {
-        instrument = new Instrument("Apple Inc.", "AAPL", InstrumentType.STOCK);
-    }
+class InstrumentTest {
 
     @Test
-    void testEquityInstrumentCanBeCreated() {
-        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.STOCK);
-        assertEquals("MSFT", equity.getTicker());
-        assertEquals(InstrumentType.STOCK, equity.getInstrumentType());
+    void noArgsConstructorLeavesFieldsAtDefaults() {
+        Instrument instrument = new Instrument();
+
+        assertAll(
+                () -> assertNull(instrument.getInstrumentId()),
+                () -> assertNull(instrument.getName()),
+                () -> assertNull(instrument.getTicker()),
+                () -> assertNull(instrument.getInstrumentType())
+        );
     }
 
     @Test
     void parameterizedConstructorSetsProvidedValues() {
-        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.EQUITY);
+        Instrument equity = new Instrument("Microsoft", "MSFT", InstrumentType.STOCK);
 
-    @Test
-    void testInstrumentCannotHaveNullTicker() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new Instrument("Invalid", null, InstrumentType.STOCK));
+        assertAll(
+                () -> assertNull(equity.getInstrumentId()),
+                () -> assertEquals("Microsoft", equity.getName()),
+                () -> assertEquals("MSFT", equity.getTicker()),
+                () -> assertEquals(InstrumentType.STOCK, equity.getInstrumentType())
+        );
     }
 
     @Test
-    void testInstrumentCannotHaveEmptyName() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new Instrument("", "", InstrumentType.STOCK));
+    void settersUpdateAllMutableFields() {
+        Instrument instrument = new Instrument();
+
+        instrument.setInstrumentId(9L);
+        instrument.setName("Bitcoin");
+        instrument.setTicker("BTC");
+        instrument.setInstrumentType(InstrumentType.CRYPTO);
+
+        assertAll(
+                () -> assertEquals(9L, instrument.getInstrumentId()),
+                () -> assertEquals("Bitcoin", instrument.getName()),
+                () -> assertEquals("BTC", instrument.getTicker()),
+                () -> assertEquals(InstrumentType.CRYPTO, instrument.getInstrumentType())
+        );
     }
 }

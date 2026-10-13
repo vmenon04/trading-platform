@@ -1,0 +1,54 @@
+<h2>Platform performance</h2>
+<p class="lead">Trends across the whole platform: how much is traded, and how orders turn out.</p>
+
+<form class="filters" (submit)="$event.preventDefault()">
+  <app-date-range [(start)]="dates.start" [(end)]="dates.end" [(grain)]="dates.grain" />
+  <label>Asset class
+    <select (change)="pickClass($event)">
+      <option value="">All classes</option>
+      @for (name of classes.hasValue() ? classes.value() : []; track name) {
+        <option [value]="name">{{ name }}</option>
+      }
+    </select>
+  </label>
+  <app-top-n [(value)]="topN" label="Top N" />
+</form>
+
+@if (problem(); as message) {
+  <p class="problem">{{ message }}</p>
+}
+
+<app-tiles [tiles]="tiles()" />
+
+<main class="grid">
+  <figure class="card">
+    <figcaption>Traded value over time</figcaption>
+    <app-chart [config]="volumeChart()" />
+  </figure>
+  <figure class="card">
+    <figcaption>Fill rate and rejection rate</figcaption>
+    <app-chart [config]="ratesChart()" />
+  </figure>
+  <figure class="card">
+    <figcaption>Orders placed, by outcome</figcaption>
+    <app-chart [config]="outcomesChart()" />
+  </figure>
+  <figure class="card">
+    <figcaption>Buy vs sell</figcaption>
+    <app-chart [config]="buySellChart()" />
+  </figure>
+  @if (!assetClass()) {
+    <figure class="card">
+      <figcaption>Traded value by asset class</figcaption>
+      <app-chart [config]="classChart()" />
+    </figure>
+  }
+  <figure class="card">
+    <figcaption>Top {{ instrumentCount() }} {{ assetClass() ?? '' }} instruments by traded value</figcaption>
+    <app-chart [config]="instrumentChart()" [height]="rankingHeight(instrumentCount())" />
+  </figure>
+  <figure class="card">
+    <figcaption>Top {{ clientCount() }} clients by traded value</figcaption>
+    <app-chart [config]="clientChart()" [height]="rankingHeight(clientCount())" />
+  </figure>
+</main>
