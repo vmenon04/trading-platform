@@ -53,8 +53,9 @@ public interface AccountTradeMapper {
     // The INSERT ... RETURNING goes through @Select so MyBatis returns the trade_id rather than the row count;
     // flushCache stops MyBatis from answering a repeat of the same insert from its cache.
     // Returns null if a trade with this external_trade_id was already recorded (a redelivered message).
+    // MyBatis has no UUID type handler; ObjectTypeHandler hands the UUID to the Postgres driver, which maps it to uuid.
     @Select("INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (#{externalTradeId}, #{accountId}, #{instrumentId}, #{side}, #{quantity}) "
+            + "VALUES (#{externalTradeId, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}, #{accountId}, #{instrumentId}, #{side}, #{quantity}) "
             + "ON CONFLICT (external_trade_id) DO NOTHING "
             + "RETURNING trade_id")
     @Options(flushCache = Options.FlushCachePolicy.TRUE)
