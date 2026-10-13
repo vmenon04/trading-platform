@@ -149,9 +149,6 @@ pipeline {
                         script {
                             StaticAnalysis()
                         }
-                        script {
-                            SonarQube()
-                        }
                     }
                 }
 
@@ -170,6 +167,14 @@ pipeline {
                             ReportingTests()
                         }
                     }
+                }
+            }
+        }
+        stage('SonarQube') {
+            steps {
+                echo "Starting SonarQube Analysis"
+                script {
+                    SonarQube()
                 }
             }
         }
