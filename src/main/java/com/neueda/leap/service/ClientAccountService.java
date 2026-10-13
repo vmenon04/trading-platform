@@ -6,11 +6,11 @@ import org.springframework.stereotype.Service;
 import java.util.List;
 
 @Service
-public class ClientAccountsService {
+public class ClientAccountService {
 
     private final ClientAccountMapper clientAccountMapper;
 
-    public ClientAccountsService(ClientAccountMapper clientAccountMapper) {
+    public ClientAccountService(ClientAccountMapper clientAccountMapper) {
         this.clientAccountMapper = clientAccountMapper;
     }
 

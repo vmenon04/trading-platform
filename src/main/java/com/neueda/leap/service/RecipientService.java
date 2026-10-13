@@ -7,6 +7,7 @@ import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
+import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.net.URI;
@@ -19,16 +20,23 @@ public class RecipientService {
     private final TradeEventProducer tradeEventProducer;
     private final InstrumentService instrumentService;
     private final MarketDataClient marketDataClient;
+    private final TradeAuthorizationService tradeAuthorizationService;
 
     public RecipientService(TradeEventProducer tradeEventProducer,
                             InstrumentService instrumentService,
-                            MarketDataClient marketDataClient) {
+                            MarketDataClient marketDataClient,
+                            TradeAuthorizationService tradeAuthorizationService) {
         this.tradeEventProducer = tradeEventProducer;
         this.instrumentService = instrumentService;
         this.marketDataClient = marketDataClient;
+        this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
-    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto) {
+    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto, String username) throws AccessDeniedException {
+        if (!tradeAuthorizationService.isValidUsername(dto, username)) {
+            throw new AccessDeniedException("You are not authorized to perform this action.");
+        }
+
         long taskId = JOB_ID_GENERATOR.getAndIncrement();
 
         String ticker = instrumentService.getInstrumentById(dto.instrumentId()).getTicker();

@@ -9,14 +9,14 @@ import org.springframework.stereotype.Service;
 public class TradeAuthorizationService {
 
     private final AccountService accountService;
-    private final ClientAccountsService clientAccountsService;
+    private final ClientAccountService clientAccountsService;
     private final UserService userService;
 
     public TradeAuthorizationService(AccountService accountService,
-                                     ClientAccountsService clientAccountsService,
+                                     ClientAccountService clientAccountService,
                                      UserService userService) {
         this.accountService = accountService;
-        this.clientAccountsService = clientAccountsService;
+        this.clientAccountsService = clientAccountService;
         this.userService = userService;
     }
 
