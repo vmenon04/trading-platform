@@ -39,7 +39,8 @@ services:
     image: postgres:16-alpine
     container_name: trading-postgres
     ports:
-      - "${HOST_IP:?HOST_IP is not set}:5432:5432"
+      # the host port is configurable because only some ports are open between the machines
+      - "${HOST_IP:?HOST_IP is not set}:${POSTGRES_PORT:?POSTGRES_PORT is not set}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
