@@ -1,13 +1,15 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink, Router } from '@angular/router';
 
 @Component({
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   selector: 'app-login',
   styleUrl: './login.css',
   templateUrl: './login.html',
 })
 export class Login {
+  private router = inject(Router);
   username = '';
   password = '';
   message = '';
@@ -28,5 +30,6 @@ export class Login {
     this.username = '';
     this.password = '';
     this.submitted = false;
+    this.router.navigate(['/dashboard']);
   }
 }
