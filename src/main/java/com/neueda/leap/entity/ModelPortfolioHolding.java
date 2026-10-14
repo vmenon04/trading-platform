@@ -1,7 +1,6 @@
 package com.neueda.leap.entity;
 
 import com.neueda.leap.enums.ActivityStatus;
-import com.neueda.leap.enums.TradeStatus;
 
 import java.math.BigDecimal;
 
@@ -14,9 +13,6 @@ public class ModelPortfolioHolding {
     private LocalDate effectiveDate;
     private BigDecimal targetWeightPct;
     private ActivityStatus status;
-
-    public ModelPortfolioHolding() {
-    }
 
     public ModelPortfolioHolding(Long modelPortfolioId, Long instrumentId, LocalDate effectiveDate, BigDecimal targetWeightPct) {
         this.modelPortfolioId = modelPortfolioId;

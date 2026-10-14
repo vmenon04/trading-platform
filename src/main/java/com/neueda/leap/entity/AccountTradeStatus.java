@@ -3,6 +3,7 @@ package com.neueda.leap.entity;
 import com.neueda.leap.enums.TradeStatus;
 
 import java.time.OffsetDateTime;
+import java.time.ZoneId;
 
 public class AccountTradeStatus {
 
@@ -15,7 +16,7 @@ public class AccountTradeStatus {
 
     public void setTradeStatus(TradeStatus tradeStatus) {
         this.tradeStatus = tradeStatus;
-        this.tradeTime = OffsetDateTime.now();
+        this.tradeTime = OffsetDateTime.now(ZoneId.of("GMT")); // Set tradeTime to current time in GMT when tradeStatus is set
     }
 
     public OffsetDateTime getTradeTime() {
