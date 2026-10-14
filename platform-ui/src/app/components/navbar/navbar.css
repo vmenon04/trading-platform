@@ -32,6 +32,10 @@
   height: auto;
 }
 
+app-account-selector {
+  margin-bottom: 10px;
+}
+
 .navbar a {
   padding: 12px 14px;
   border-radius: 4px;

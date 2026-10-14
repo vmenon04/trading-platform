@@ -1,0 +1,104 @@
+:host {
+  display: block;
+  position: relative;
+  z-index: 2;
+}
+
+.account-selector {
+  position: relative;
+}
+
+.account-trigger,
+.account-option {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  border: 1px solid #2c5648;
+  color: #ffffff;
+  text-align: left;
+}
+
+.account-trigger {
+  padding: 10px;
+  border-radius: 10px;
+  background: #153a2f;
+  cursor: pointer;
+}
+
+.account-trigger:hover,
+.account-trigger:focus-visible,
+.account-option:hover,
+.account-option.selected {
+  background: #1d493b;
+}
+
+.account-icon {
+  display: grid;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border-radius: 8px;
+  background: #245443;
+  color: #9be3c7;
+  font-size: 0.78rem;
+}
+
+.account-copy {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  gap: 3px;
+}
+
+.account-copy strong {
+  overflow: hidden;
+  font-size: 0.67rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-copy small {
+  color: #8eaaa0;
+  font-size: 0.52rem;
+}
+
+.account-chevron {
+  color: #8eaaa0;
+  font-size: 1rem;
+  transition: transform 160ms ease;
+}
+
+.account-chevron.open {
+  transform: rotate(180deg);
+}
+
+.account-menu {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  left: 0;
+  display: grid;
+  gap: 3px;
+  padding: 5px;
+  border: 1px solid #2c5648;
+  border-radius: 10px;
+  background: #153a2f;
+  box-shadow: 0 10px 24px #06130f55;
+}
+
+.account-option {
+  padding: 8px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  cursor: pointer;
+}
+
+.account-option .account-icon {
+  flex-basis: 26px;
+  width: 26px;
+  height: 26px;
+  font-size: 0.68rem;
+}

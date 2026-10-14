@@ -1,0 +1,21 @@
+<section class="account-selector">
+  <button type="button" class="account-trigger" (click)="toggle()" [attr.aria-expanded]="isOpen" aria-haspopup="listbox">
+    <span class="account-icon">▥</span>
+    <span class="account-copy">
+      <strong>{{ selectedAccount.name }}</strong>
+      <small>{{ selectedAccount.brokerage }} · {{ selectedAccount.accountNumber }}</small>
+    </span>
+    <span class="account-chevron" [class.open]="isOpen" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (isOpen) {
+    <div class="account-menu" role="listbox" aria-label="Investment accounts">
+      @for (account of accounts; track account.accountNumber) {
+        <button type="button" class="account-option" [class.selected]="account === selectedAccount" (click)="selectAccount(account)" role="option" [attr.aria-selected]="account === selectedAccount">
+          <span class="account-icon">▥</span>
+          <span class="account-copy"><strong>{{ account.name }}</strong><small>{{ account.brokerage }} · {{ account.accountNumber }}</small></span>
+        </button>
+      }
+    </div>
+  }
+</section>
