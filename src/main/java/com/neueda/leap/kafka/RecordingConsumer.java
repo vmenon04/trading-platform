@@ -32,7 +32,7 @@ public class RecordingConsumer {
     public void onTradeValidated(TradeValidatedDTO trade) throws InterruptedException, ExecutionException {
         LOGGER.info("Received validated trade event. Task ID: {}", trade.taskId());
 
-        TradeRecordedDTO recorded = tradeRecordingService.record(trade);
+        TradeRecordedDTO recorded = tradeRecordingService.recordTrade(trade);
         tradeEventProducer.publishTradeRecorded(recorded).get();
         LOGGER.info("Published trade recorded event to {}", KafkaTopics.TRADE_RECORDED);
     }

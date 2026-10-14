@@ -46,7 +46,7 @@ class RecordingConsumerTest {
 
     @Test
     void recordsTradeAndPublishesIt() throws Exception {
-        when(tradeRecordingService.record(trade)).thenReturn(recorded);
+        when(tradeRecordingService.recordTrade(trade)).thenReturn(recorded);
         when(tradeEventProducer.publishTradeRecorded(recorded)).thenReturn(CompletableFuture.completedFuture(null));
 
         recordingConsumer.onTradeValidated(trade);
@@ -56,7 +56,7 @@ class RecordingConsumerTest {
 
     @Test
     void failedPublishFailsTheListenerSoTheMessageIsRedelivered() {
-        when(tradeRecordingService.record(trade)).thenReturn(recorded);
+        when(tradeRecordingService.recordTrade(trade)).thenReturn(recorded);
         when(tradeEventProducer.publishTradeRecorded(recorded))
                 .thenReturn(CompletableFuture.failedFuture(new TimeoutException("Broker unavailable")));
 
@@ -65,7 +65,7 @@ class RecordingConsumerTest {
 
     @Test
     void failedRecordingPropagatesWithoutPublishing() {
-        when(tradeRecordingService.record(trade)).thenThrow(new DataAccessResourceFailureException("Database down"));
+        when(tradeRecordingService.recordTrade(trade)).thenThrow(new DataAccessResourceFailureException("Database down"));
 
         assertThrows(DataAccessResourceFailureException.class, () -> recordingConsumer.onTradeValidated(trade));
         verifyNoInteractions(tradeEventProducer);
