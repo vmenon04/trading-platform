@@ -1,5 +1,5 @@
 <nav class="navbar" aria-label="Primary navigation">
-  <a class="navbar-brand" routerLink="/dashboard" aria-label="F-trade dashboard">
+  <a class="navbar-brand" routerLink="/dashboard" aria-label="F-trade dashboard" (click)="onLogoClick()">
     <img src="assets/nav-bar-logo.png" alt="F-trade logo">
   </a>
 
@@ -15,3 +15,7 @@
     <span class="profile-arrow" aria-hidden="true">↗</span>
   </button>
 </nav>
+
+@if (showEasterEgg()) {
+  <div class="easter-egg" role="status" (click)="showEasterEgg.set(false)">Made with ❤️ by Annie's Amphibians 🐸</div>
+}
