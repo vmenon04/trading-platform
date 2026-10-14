@@ -19,6 +19,7 @@
 .holdings-table { font-size: 0.72rem; }
 .holding-row { display: grid; grid-template-columns: minmax(180px, 2fr) repeat(4, 1fr); align-items: center; gap: 14px; min-height: 56px; padding: 0 18px; border-bottom: 1px solid var(--line); }
 .holding-row:last-child { border-bottom: 0; }
+.holding-row > span:not(.asset), .holding-row > strong { font-family: var(--font-numeric); font-weight: 500; }
 .table-head { min-height: 34px; color: var(--muted); background: #fbfcfb; text-transform: uppercase; font-size: 0.58rem; }
 .asset { display: flex; align-items: center; gap: 10px; }
 .asset b { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: var(--green-soft); color: var(--green); }
