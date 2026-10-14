@@ -1,5 +1,5 @@
 .order-card { display: grid; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.instrument-list { display: grid; gap: 7px; max-height: 230px; overflow-y: auto; }
+.instrument-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; }
 .empty-state, .selection-hint { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: 0.68rem; text-align: center; }
 .segmented, .stepper { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 8px; background: #eef3f0; }
 .segmented button, .stepper button { min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }

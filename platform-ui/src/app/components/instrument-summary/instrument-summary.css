@@ -1,6 +1,10 @@
-.instrument-option, .selected-summary { display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); text-align: left; }
-.instrument-option { cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
+.instrument-option, .selected-summary { display: flex; align-items: center; gap: 7px; width: 100%; padding: 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); text-align: left; }
+.instrument-option { aspect-ratio: 1; flex-direction: column; justify-content: center; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease; }
 .instrument-option:hover { border-color: var(--green); background: var(--green-soft); }
-.instrument-icon { display: grid; flex: 0 0 30px; width: 30px; height: 30px; place-items: center; border-radius: 8px; background: #e8f0ff; color: #4775ce; font-weight: 700; }
-.instrument-copy { display: grid; flex: 1; gap: 3px; }.instrument-copy small, .option-price small, .market-price small { color: var(--muted); font-size: 0.58rem; }.option-price, .market-price { display: grid; gap: 3px; text-align: right; }.option-price small, .market-price small { color: var(--green); }.negative { color: var(--red) !important; }.owned { color: var(--muted); font-size: 0.58rem; }.selected-summary .market-price { margin-left: auto; }.selected-summary .market-price strong { font-size: 1.1rem; }
+.instrument-icon { display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 6px; background: #e8f0ff; color: #4775ce; font-size: 0.7rem; font-weight: 700; }
+.instrument-copy { display: grid; flex: 0 1 auto; gap: 2px; text-align: center; }.instrument-copy strong, .option-price strong { font-size: 0.68rem; }.instrument-copy small, .option-price small, .market-price small { color: var(--muted); font-size: 0.5rem; }.option-price, .market-price { display: grid; gap: 2px; text-align: center; }.option-price small, .market-price small { color: var(--green); }.negative { color: var(--red) !important; }.owned { color: var(--muted); font-size: 0.5rem; }.selected-summary .market-price { margin-left: auto; text-align: right; }.selected-summary .market-price strong { font-size: 1.1rem; }
 .option-price strong, .market-price strong { font-family: var(--font-numeric); font-weight: 600; }
+
+@media (max-width: 720px) {
+	.instrument-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
