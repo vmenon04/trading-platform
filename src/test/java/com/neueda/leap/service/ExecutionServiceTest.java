@@ -124,7 +124,7 @@ class ExecutionServiceTest {
                 accountTradeStatusMapper, transactionManager);
         inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
         inOrder.verify(accountHoldingService).addQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
-        inOrder.verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, 100.0, 500.0);
+        inOrder.verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, new BigDecimal("100.0"), new BigDecimal("500.0"));
         inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         inOrder.verify(transactionManager).commit(any());
         verify(transactionManager, never()).rollback(any());
@@ -148,7 +148,7 @@ class ExecutionServiceTest {
         InOrder inOrder = inOrder(accountHoldingService, accountService);
         inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
         inOrder.verify(accountService).sell(eq(ACCOUNT_ID), amountEqualTo("500"));
-        verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, 100.0, 500.0);
+        verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, new BigDecimal("100.0"), new BigDecimal("500.0"));
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         verify(transactionManager).commit(any());
         assertEquals(0, outcome.price().compareTo(PRICE));
@@ -244,7 +244,7 @@ class ExecutionServiceTest {
     @Test
     void redeliveredFulfilledTradeReturnsStoredPrice() {
         when(accountTradeStatusMapper.getTradeStatusByTradeId(TRADE_ID)).thenReturn(TradeStatus.FULFILLED);
-        when(accountTradePriceMapper.getTradePriceByTradeId(TRADE_ID)).thenReturn(100.0);
+        when(accountTradePriceMapper.getTradePriceByTradeId(TRADE_ID)).thenReturn(new BigDecimal("100.0"));
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.BUY, "5"));
 
