@@ -1,0 +1,109 @@
+* {
+	box-sizing: border-box;
+}
+
+:host {
+	display: block;
+	min-height: 100vh;
+	background: #f3f6f4;
+}
+
+#logo {
+	width: 120px;
+	height: auto;
+}
+
+header {
+	background: #0a2c24;
+	padding: 16px 24px;
+}
+
+main {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	min-height: calc(100vh - 88px);
+	padding: 24px;
+}
+
+form {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 360px;
+	padding: 32px;
+	background: white;
+	border: 1px solid #ddd;
+	border-radius: 8px;
+}
+
+form h2 {
+	margin: 0 0 8px;
+}
+
+.field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.field label {
+	color: #333;
+	font-size: 0.875rem;
+	font-weight: 600;
+}
+
+.field input {
+	padding: 10px 12px;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 1rem;
+}
+
+.field input.invalid {
+	border-color: #c0392b;
+}
+
+button {
+	padding: 12px;
+	background: #174d3c;
+	color: white;
+	border: 0;
+	border-radius: 4px;
+	font-size: 1rem;
+	cursor: pointer;
+}
+
+.message {
+	margin: 0;
+	padding: 10px 12px;
+	border-radius: 4px;
+	font-size: 0.875rem;
+}
+
+.message.hidden {
+	display: none;
+}
+
+.message.error {
+	background: #fdecea;
+	color: #c0392b;
+}
+
+.message.success {
+	background: #e8f5e9;
+	color: #1e7d32;
+}
+
+@media (max-width: 480px) {
+	main {
+		padding: 0;
+	}
+
+	form {
+		max-width: none;
+		border: 0;
+		border-radius: 0;
+	}
+}

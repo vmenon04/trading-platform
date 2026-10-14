@@ -1,1 +1,101 @@
-<p>registration works!</p>
+
+  <main>
+    <form (ngSubmit)="submit()" novalidate>
+      <h2>Register</h2>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          minlength="3"
+          autocomplete="username"
+          [(ngModel)]="username"
+          #usernameField="ngModel"
+          [class.invalid]="submitted && usernameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          minlength="8"
+          autocomplete="current-password"
+          [(ngModel)]="password"
+          #passwordField="ngModel"
+          [class.invalid]="submitted && passwordField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="first-name">First Name</label>
+        <input
+          type="text"
+          id="first-name"
+          name="first-name"
+          required
+          minlength="2"
+          [(ngModel)]="firstName"
+          name="firstName"
+          #firstNameField="ngModel"
+          [class.invalid]="submitted && firstNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="last-name">Last Name</label>
+        <input
+          type="text"
+          id="last-name"
+          name="last-name"
+          required
+          minlength="2"
+          [(ngModel)]="lastName"
+          name="lastName"
+          #lastNameField="ngModel"
+          [class.invalid]="submitted && lastNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          minlength="2"
+          [(ngModel)]="email"
+          #emailField="ngModel"
+          [class.invalid]="submitted && emailField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="dob">Birth Date</label>
+        <input
+          type="date"
+          id="dob"
+          name="dob"
+          required
+          [(ngModel)]="dob"
+          #dobField="ngModel"
+          [class.invalid]="submitted && dobField.invalid"
+          />
+      </div>
+
+      
+
+      <p class="message" [class.hidden]="!message" [class.error]="messageKind === 'error'" [class.success]="messageKind === 'success'">{{ message }}</p>
+
+      <button type="submit">Register</button>
+    </form>
+  </main>
+
+

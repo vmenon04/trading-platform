@@ -1,1 +1,42 @@
-<p>login works!</p>
+  <main>
+    <form (ngSubmit)="submit()" novalidate>
+      <h2>Log In</h2>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          minlength="3"
+          autocomplete="username"
+          [(ngModel)]="username"
+          #usernameField="ngModel"
+          [class.invalid]="submitted && usernameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <input
+          type="password"
+          id="password"
+          name="password"
+          required
+          minlength="8"
+          autocomplete="current-password"
+          [(ngModel)]="password"
+          #passwordField="ngModel"
+          [class.invalid]="submitted && passwordField.invalid"
+        />
+      </div>
+
+      <p class="message" [class.hidden]="!message" [class.error]="messageKind === 'error'" [class.success]="messageKind === 'success'">{{ message }}</p>
+
+      <button type="submit">Log In</button>
+    </form>
+  </main>
+
+
+
