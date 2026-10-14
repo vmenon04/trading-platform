@@ -2,7 +2,7 @@ package com.neueda.leap.config;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.support.converter.JsonMessageConverter;
+import org.springframework.kafka.support.converter.JacksonJsonMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 
 @Configuration
@@ -13,6 +13,6 @@ public class KafkaConsumerConfig {
     // A message that can't be converted is logged and skipped rather than retried.
     @Bean
     public RecordMessageConverter messageConverter() {
-        return new JsonMessageConverter();
+        return new JacksonJsonMessageConverter();
     }
 }
