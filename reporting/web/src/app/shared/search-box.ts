@@ -8,7 +8,8 @@ let nextId = 0;
 /**
  * A type-ahead box. Suggestions come from the API; picking one sets `selected`
  * to its id. Options end in "(#123)", which is how a pick is told apart from typing.
- * Setting `selected` to null from outside empties the box.
+ * Setting `selected` to null from outside empties the box. To pick from outside, set
+ * `pickedText` to what the box should show, then `selected` to the id.
  */
 @Component({
   selector: 'app-search-box',
@@ -40,6 +41,7 @@ export class SearchBoxComponent<T> {
   readonly params = input<Record<string, string | null>>({});
   readonly describe = input.required<(match: T) => string>();
   readonly selected = model<number | null>(null);
+  readonly pickedText = input<string | null>(null);
 
   protected readonly listId = `search-${nextId++}`;
   protected readonly text = signal('');
@@ -51,6 +53,10 @@ export class SearchBoxComponent<T> {
   constructor() {
     effect(() => {
       if (this.selected() === null) this.text.set('');
+    });
+    effect(() => {
+      const shown = this.pickedText();
+      if (shown) this.text.set(shown);
     });
     inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
   }
