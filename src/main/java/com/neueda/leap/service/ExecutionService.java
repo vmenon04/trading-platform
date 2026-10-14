@@ -1,6 +1,5 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.enums.TradeSide;
@@ -10,7 +9,6 @@ import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 
@@ -46,20 +44,6 @@ public class ExecutionService {
         this.accountTradeStatusMapper = accountTradeStatusMapper;
         this.accountTradePriceMapper = accountTradePriceMapper;
         this.transactionTemplate = transactionTemplate;
-    }
-
-    /**
-     * Executes a validated order as a single transaction.
-     *
-     * @param order order request to execute
-     * @param price execution price used to calculate the total consideration
-     * @throws IllegalArgumentException if the order side is unsupported
-     * @throws RuntimeException if underlying balance or holding updates fail
-     */
-    @Transactional
-    public void execute(TradeRequestDTO order, BigDecimal price) {
-        Long accountId = accountService.getAccountIdByExternalAccountId(order.accountId());
-        applyTrade(accountId, order.instrumentId(), order.side(), order.quantity(), price.multiply(order.quantity()));
     }
 
     /**
