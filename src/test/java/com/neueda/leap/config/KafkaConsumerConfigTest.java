@@ -1,6 +1,6 @@
 package com.neueda.leap.config;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
+import tools.jackson.databind.ObjectMapper;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
