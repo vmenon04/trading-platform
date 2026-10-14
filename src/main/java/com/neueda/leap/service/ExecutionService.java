@@ -58,8 +58,7 @@ public class ExecutionService {
      */
     @Transactional
     public void execute(TradeRequestDTO order, BigDecimal price) {
-//        Long accountId = order.accountId();
-        Long accountId = 1L;
+        Long accountId = accountService.getAccountIdByExternalAccountId(order.accountId());
         applyTrade(accountId, order.instrumentId(), order.side(), order.quantity(), price.multiply(order.quantity()));
     }
 
@@ -79,8 +78,8 @@ public class ExecutionService {
         // a redelivered message: report the outcome again rather than trading twice
         TradeStatus status = accountTradeStatusMapper.getTradeStatusByTradeId(tradeId);
         if (status == TradeStatus.FULFILLED || status == TradeStatus.REJECTED) {
-            Double storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
-            return outcome(trade, storedPrice == null ? null : BigDecimal.valueOf(storedPrice), null);
+            BigDecimal storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
+            return outcome(trade, storedPrice, null);
         }
 
         try {
@@ -89,8 +88,7 @@ public class ExecutionService {
 
             transactionTemplate.executeWithoutResult(transaction -> {
                 applyTrade(trade.accountId(), trade.instrumentId(), trade.side(), trade.quantity(), total);
-                // the price mapper takes Doubles for now
-                accountTradePriceMapper.insertTradePrice(tradeId, price.doubleValue(), total.doubleValue());
+                accountTradePriceMapper.insertTradePrice(tradeId, price, total);
                 accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.FULFILLED);
             });
             return outcome(trade, price, null);
