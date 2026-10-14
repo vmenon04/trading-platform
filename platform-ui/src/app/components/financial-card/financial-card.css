@@ -1,0 +1,25 @@
+.metric-card {
+	display: grid;
+	gap: 8px;
+	min-height: 112px;
+	padding: 18px;
+	border: 1px solid var(--line);
+	border-radius: var(--radius);
+	background: var(--surface);
+}
+
+.metric-label {
+	color: var(--muted);
+	font-size: 0.72rem;
+}
+
+.metric-card strong {
+	color: var(--ink);
+	font-size: 1.5rem;
+	letter-spacing: -0.03em;
+}
+
+.metric-change {
+	color: var(--green);
+	font-size: 0.72rem;
+}

@@ -1,0 +1,14 @@
+@if (variant() === 'selected') {
+	<section class="selected-summary">
+		<div class="instrument-icon">{{ instrument().symbol[0] }}</div>
+		<div class="instrument-copy"><strong>{{ instrument().name }}</strong><small>{{ instrument().symbol }} · {{ instrument().exchange }}</small></div>
+		<div class="market-price"><strong>{{ instrument().price }}</strong><small [class.negative]="instrument().change.startsWith('-')">{{ instrument().change }}</small></div>
+	</section>
+} @else {
+	<button class="instrument-option" type="button" (click)="choose()">
+		<span class="instrument-icon">{{ instrument().symbol[0] }}</span>
+		<span class="instrument-copy"><strong>{{ instrument().name }}</strong><small>{{ instrument().symbol }} · {{ instrument().exchange }}</small></span>
+		@if (instrument().shares !== undefined) { <small class="owned">{{ instrument().shares }} shares owned</small> }
+		<span class="option-price"><strong>{{ instrument().price }}</strong><small [class.negative]="instrument().change.startsWith('-')">{{ instrument().change }}</small></span>
+	</button>
+}

@@ -1,0 +1,8 @@
+<div class="order-row" role="row">
+	<div class="order-identity"><b>{{ order().symbol[0] }}</b><span><strong>{{ order().symbol }}</strong><small>{{ order().reference }} · {{ order().date }}</small></span></div>
+	<span><em [class.sell]="order().side === 'Sell'">{{ order().side }}</em></span>
+	<span>{{ order().quantity }}</span>
+	<strong>{{ order().price }}</strong>
+	<span><em class="status">● {{ order().status }}</em></span>
+	<span class="chevron" aria-hidden="true">›</span>
+</div>

@@ -1,0 +1,21 @@
+<section class="holdings-card">
+	<div class="section-heading">
+		<div>
+			<h2>Your holdings</h2>
+			<span>Top positions by market value</span>
+		</div>
+		<a href="#">View portfolio <span aria-hidden="true">›</span></a>
+	</div>
+
+	<div class="holdings-table" role="table" aria-label="Portfolio holdings">
+		<div class="holding-row table-head" role="row">
+			<span>Asset</span><span>Shares</span><span>Price</span><span>Today</span><span>Market value</span>
+		</div>
+		@for (holding of holdings; track holding.symbol) {
+			<div class="holding-row" role="row">
+				<span class="asset"><b>{{ holding.symbol[0] }}</b><span>{{ holding.symbol }}<small>{{ holding.name }}</small></span></span>
+				<span>{{ holding.shares }}</span><span>{{ holding.price }}</span><span class="positive">{{ holding.change }}</span><strong>{{ holding.value }}</strong>
+			</div>
+		}
+	</div>
+</section>

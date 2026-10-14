@@ -1,0 +1,20 @@
+<section class="order-card">
+	<div class="segmented"><button type="button" [class.selected]="mode === 'buy'" (click)="setMode('buy')">↓ Buy</button><button type="button" [class.selected]="mode === 'sell'" (click)="setMode('sell')">↑ Sell</button></div>
+	<label class="eyebrow" for="investment">{{ mode === 'buy' ? 'Search an investment' : 'Your investments' }}</label>
+	<input id="investment" class="search" [(ngModel)]="search" placeholder="⌕  Search by company name or ticker">
+	<div class="instrument-list">
+		@for (instrument of visibleInstruments; track instrument.symbol) {
+			<app-instrument-summary [instrument]="instrument" (selected)="selectInstrument($event)"></app-instrument-summary>
+		} @empty { <p class="empty-state">No instruments match your search.</p> }
+	</div>
+	@if (selectedInstrument; as instrument) {
+		<label class="eyebrow" for="quantity">Selected instrument · market price</label>
+		<app-instrument-summary [instrument]="instrument" variant="selected"></app-instrument-summary>
+		<label class="eyebrow" for="quantity">Quantity</label>
+		<div class="stepper"><button type="button" (click)="adjustQuantity(-1)">−</button><input id="quantity" type="number" min="1" [(ngModel)]="quantity"><button type="button" (click)="adjustQuantity(1)">+</button></div>
+		<div class="estimate"><span>Estimated total<small>{{ quantity }} shares at current market price</small></span><strong>{{ total }}</strong></div>
+		<div class="allocation"><span>▣ Cash allocation <small>76.7% invested</small></span><i></i></div>
+		<button type="button" class="submit-order">{{ mode === 'buy' ? 'Buy' : 'Sell' }} {{ quantity }} shares of {{ instrument.symbol }}</button>
+	} @else { <p class="selection-hint">Select an instrument to see its current market price and place an order.</p> }
+	<small class="disclaimer">Orders placed during market hours typically execute within seconds.</small>
+</section>
