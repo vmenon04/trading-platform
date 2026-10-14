@@ -22,6 +22,8 @@ public class ModelPortfolioHolding {
         this.status = ActivityStatus.ACTIVE;
     }
 
+    public ModelPortfolioHolding() {}
+
     public Long getModelPortfolioId() {
         return modelPortfolioId;
     }
