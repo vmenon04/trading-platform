@@ -29,7 +29,7 @@ from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 
 import transform as tf
-from config import REPORTING_DIR, get_analytics_engine
+from database_connection import REPORTING_DIR, get_analytics_engine
 
 MAX_ROWS = 50                      # the most rows any endpoint returns at once
 SYNC_EVERY = timedelta(hours=1)    # how often sync.py is expected to run
@@ -147,11 +147,6 @@ def buy_sell(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.volume_by_trade_type(engine, filters, period))
 
 
-@app.get("/api/analyst/status-mix")
-def status_mix(filters=Depends(chart_filters), period: Period = "month"):
-    return to_json(tf.status_by_period(engine, filters, period))
-
-
 @app.get("/api/analyst/price")
 def price(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.price_by_period(engine, filters, period))
@@ -170,6 +165,33 @@ def top_clients(filters=Depends(chart_filters), limit: int = 10):
 @app.get("/api/analyst/top-instruments")
 def top_instruments(filters=Depends(chart_filters), limit: int = 10):
     return to_json(tf.top_instruments(engine, filters, cap(limit)))
+
+
+@app.get("/api/analyst/portfolios")
+def portfolios(
+    client_id: int | None = None,
+    min_value: float | None = Query(default=None, ge=0),
+    max_value: float | None = Query(default=None, ge=0),
+    quartile: int | None = Query(default=None, ge=1, le=4),
+    page: int = Query(default=1, ge=1),
+    page_size: int = MAX_ROWS,
+):
+    # No date range here: portfolio value is what clients hold right now.
+    filters = {"client_id": client_id, "min_value": min_value, "max_value": max_value, "quartile": quartile}
+    page_size = cap(page_size)
+    summary, df = tf.client_portfolios(engine, filters, page, page_size)
+    return {
+        **summary,
+        "page": page,
+        "page_size": page_size,
+        "pages": max(1, math.ceil(summary["total"] / page_size)),
+        "rows": to_json(df),
+    }
+
+
+@app.get("/api/analyst/portfolio-tiers")
+def portfolio_tiers():
+    return to_json(tf.portfolio_tiers(engine))
 
 
 @app.get("/api/analyst/trades")
