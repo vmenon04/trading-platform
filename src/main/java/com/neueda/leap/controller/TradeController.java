@@ -13,7 +13,7 @@ import java.util.UUID;
 // off when trade.stage.api.enabled=false, so a container can run only some stages; on when unset
 @ConditionalOnProperty(name = "trade.stage.api.enabled", havingValue = "true", matchIfMissing = true)
 @RestController
-@RequestMapping("/accounts/{accountId}/trades")
+@RequestMapping("/v1/accounts/{accountId}/trades")
 public class TradeController {
 
     private final RecipientService recipientService;
