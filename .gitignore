@@ -31,3 +31,7 @@ __pycache__/
 # Reporting tests in Jenkins
 .venv-reporting/
 pytest-results.xml
+
+auth-service/node_modules/
+auth-service/dist/
+auth-service/.env

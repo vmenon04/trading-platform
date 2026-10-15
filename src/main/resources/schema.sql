@@ -21,7 +21,7 @@ DROP TABLE IF EXISTS client_trades CASCADE;
 -- clients
 CREATE TABLE clients (
     client_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_client_id UUID,
+    external_client_id UUID UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -32,7 +32,7 @@ CREATE TABLE clients (
 -- users: login accounts. a CLIENT user is linked to a client; what each user may do is in roles
 CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_user_id UUID,
+    external_user_id UUID UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     client_id BIGINT REFERENCES clients(client_id),
@@ -46,9 +46,18 @@ CREATE TABLE roles (
     PRIMARY KEY (user_id, role)
 );
 
+CREATE TABLE refresh_tokens (
+    token_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT REFERENCES users(user_id),
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE accounts (
     account_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_account_id UUID,
+    external_account_id UUID UNIQUE NOT NULL,
     balance NUMERIC(14, 4) NOT NULL
 );
 

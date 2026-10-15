@@ -117,7 +117,7 @@ export class TokenRepository implements OnModuleDestroy {
 		expiresAt: Date,
 	): Promise<RefreshTokenRecord> {
 		return this.withTransaction(async (client) => {
-			await client.query(
+			const revokeResult = await client.query(
 				`UPDATE refresh_tokens
 				 SET revoked_at = CURRENT_TIMESTAMP
 				 WHERE user_id = $1
@@ -125,6 +125,10 @@ export class TokenRepository implements OnModuleDestroy {
 				   AND revoked_at IS NULL`,
 				[userId, oldTokenHash],
 			);
+
+			if ((revokeResult.rowCount ?? 0) === 0) {
+				throw new Error("failed to revoke old refresh token");
+			}
 
 			const inserted = await client.query<RefreshTokenRow>(
 				`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
