@@ -40,17 +40,13 @@ const ALLOWED_ROLES: readonly UserRole[] = ["ADMIN", "CLIENT", "ANALYST"];
 @Injectable()
 export class UserRepository implements OnModuleDestroy {
 	private readonly pool: Pool;
-	private readonly ownsPool: boolean;
 
-	constructor(pool?: Pool) {
-		this.ownsPool = pool === undefined;
-		this.pool = pool ?? new Pool({ connectionString: process.env.DATABASE_URL });
+	constructor() {
+		this.pool = new Pool({ connectionString: process.env.DATABASE_URL });
 	}
 
 	async onModuleDestroy(): Promise<void> {
-		if (this.ownsPool) {
-			await this.pool.end();
-		}
+		await this.pool.end();
 	}
 
 	async findById(userId: number): Promise<UserRecord | null> {
