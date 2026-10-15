@@ -4,8 +4,8 @@
 import { Chart, ChartConfiguration, ChartDataset, TooltipItem, registerables } from 'chart.js';
 import { signal } from '@angular/core';
 
-import { count, money, moneyExact, partialPeriods, percent, periodLabels, Range } from '../core/format';
-import { AssetClassRow, BuySellRow, OrderStatus, StatusMixRow } from '../core/models';
+import { count, money, moneyExact, partialPeriods, periodLabels, Range } from '../core/format';
+import { AssetClassRow, BuySellRow } from '../core/models';
 
 Chart.register(...registerables);
 
@@ -110,47 +110,6 @@ export function periodLine<T extends { period: string }>(
   };
 }
 
-/** Fill rate and rejection rate over time, as percentages on one axis. */
-export function rates(rows: StatusMixRow[], range: Range): Config {
-  const partial = partialPeriods(rows, range);
-  const percentFormat = { format: (value: number) => `${percent.format(value)}%` };
-  const config = options({ legend: true, format: percentFormat });
-  config!.interaction = { mode: 'index', intersect: false };
-  config!.plugins!.tooltip!.callbacks!.afterBody = (items) => {
-    const row = rows[items[0].dataIndex];
-    return `${count.format(row.orders)} orders placed`;
-  };
-  return {
-    type: 'line',
-    data: {
-      labels: periodLabels(rows, range),
-      datasets: [
-        line('Fill rate', rows.map((row) => row.fill_rate), css('--series-1'), partial),
-        line('Rejection rate', rows.map((row) => row.reject_rate), css('--series-2'), partial),
-      ],
-    },
-    options: config,
-  };
-}
-
-/** Orders placed per period, stacked by their current status. */
-export function outcomes(rows: StatusMixRow[], range: Range): Config {
-  const series: [OrderStatus, string, string][] = [
-    ['FULFILLED', 'Fulfilled', '--series-1'],
-    ['REJECTED', 'Rejected', '--series-2'],
-    ['ACCEPTED', 'Accepted', '--series-3'],
-    ['PENDING', 'Pending', '--series-4'],
-  ];
-  return {
-    type: 'bar',
-    data: {
-      labels: periodLabels(rows, range),
-      datasets: series.map(([status, label, color]) => bars(label, rows.map((row) => row[status]), css(color), true)),
-    },
-    options: options({ legend: true, stacked: true, format: count }),
-  };
-}
-
 export function buySell(rows: BuySellRow[], range: Range): Config {
   return {
     type: 'bar',
@@ -168,14 +127,16 @@ export function buySell(rows: BuySellRow[], range: Range): Config {
 /** A ranking as horizontal bars, biggest first. */
 export function ranking<T>(
   rows: T[],
-  { label, value, afterLabel }: { label: (row: T) => string; value: (row: T) => number; afterLabel?: (row: T) => string },
+  { label, value, afterLabel, measure = 'Traded value' }: {
+    label: (row: T) => string; value: (row: T) => number; afterLabel?: (row: T) => string; measure?: string;
+  },
 ): Config {
   const config = options({ horizontal: true });
-  config!.plugins!.tooltip!.callbacks!.label = (item) => ` Traded value: ${moneyExact.format(item.raw as number)}`;
+  config!.plugins!.tooltip!.callbacks!.label = (item) => ` ${measure}: ${moneyExact.format(item.raw as number)}`;
   if (afterLabel) config!.plugins!.tooltip!.callbacks!.afterLabel = (item) => afterLabel(rows[item.dataIndex]);
   return {
     type: 'bar',
-    data: { labels: rows.map(label), datasets: [bars('Traded value', rows.map(value), css('--series-1'))] },
+    data: { labels: rows.map(label), datasets: [bars(measure, rows.map(value), css('--series-1'))] },
     options: config,
   };
 }

@@ -1,11 +1,11 @@
-"""Settings shared by every script: folder paths and the two database connections."""
+"""The two database connections (trading and analytics), plus the folder paths every script shares."""
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 from sqlalchemy import create_engine
 
-# This file is reporting/scripts/config.py, so two .parent steps up is the reporting/ folder.
+# This file is reporting/scripts/database_connection.py, so two .parent steps up is the reporting/ folder.
 REPORTING_DIR = Path(__file__).resolve().parent.parent
 REPORTS_DIR = REPORTING_DIR / "reports"
 
