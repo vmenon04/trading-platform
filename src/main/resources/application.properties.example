@@ -16,3 +16,10 @@ spring.sql.init.data-locations=classpath:sample-data.sql
 # Market data (Fauxnance)
 market.data.base-url=<fauxnance-base-url>
 market.data.api-key=<fauxnance-api-key>
+
+# Which parts of the app run in this process. Set false to leave a stage out, e.g. a container that only executes
+# trades. A property that isn't set counts as true, so an app without these lines runs every stage.
+trade.stage.api.enabled=true
+trade.stage.validation.enabled=true
+trade.stage.recording.enabled=true
+trade.stage.execution.enabled=true

@@ -1,8 +1,40 @@
-# Kafka and Postgres for the trading platform
+# Kafka, Postgres and the app for the trading platform
 #
-# All values come from .env (copy .env.example).
+# All values come from .env (copy .env.example). The app is one image run as four services, one per stage of the
+# trade pipeline. Scale a stage on its own with e.g. `docker compose up -d --scale execution=4`; at most
+# KafkaTopicConfig.PARTITIONS containers of a stage get work, the rest wait as standbys.
 
 name: trading-platform
+
+# shared by the four app services: each one only switches its own stage on
+x-app: &app
+  build: .
+  image: trading-platform-app
+  depends_on:
+    kafka:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+    interval: 5s
+    timeout: 5s
+    retries: 24
+    start_period: 20s
+  restart: unless-stopped
+
+x-app-environment: &app-environment
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER is not set}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
+  # Postgres creates the tables once (see the postgres service): schema.sql starts with DROP TABLE, so the app
+  # must never run it, or every container start would wipe the database
+  SPRING_SQL_INIT_MODE: never
+  # Postgres allows 100 connections; 5 per container leaves room to scale
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+  MARKET_DATA_BASE_URL: ${MARKET_DATA_BASE_URL:?MARKET_DATA_BASE_URL is not set}
+  MARKET_DATA_API_KEY: ${MARKET_DATA_API_KEY:?MARKET_DATA_API_KEY is not set}
 
 services:
   kafka:
@@ -47,6 +79,9 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
     volumes:
       - postgres-data:/var/lib/postgresql/data
+      # run once, only when the data volume is empty (a new database)
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+      - ./src/main/resources/sample-data.sql:/docker-entrypoint-initdb.d/2-sample-data.sql:ro
     healthcheck:
       # $$ so the variables are read inside the container, not by compose
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -54,6 +89,48 @@ services:
       timeout: 5s
       retries: 24
     restart: unless-stopped
+
+  # receives POST /accounts/{accountId}/trades and publishes to trade.submitted
+  api:
+    <<: *app
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${API_PORT:?API_PORT is not set}:8080"
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "true"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.submitted -> trade.validated
+  validation:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "true"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.validated -> trade.recorded
+  recording:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "true"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.recorded -> trade.finished
+  execution:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "true"
 
 volumes:
   postgres-data:

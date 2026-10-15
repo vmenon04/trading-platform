@@ -7,12 +7,15 @@ import com.neueda.leap.service.TradeRecordingService;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Consumes validated trades, records them as PENDING and publishes them to trade.recorded.
+ * Runs unless trade.stage.recording.enabled=false, so a container can run only some of the stages.
  */
+@ConditionalOnProperty(name = "trade.stage.recording.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class RecordingConsumer {
 
