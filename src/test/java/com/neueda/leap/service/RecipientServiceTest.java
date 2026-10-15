@@ -16,10 +16,8 @@ import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.lang.reflect.Field;
 import java.math.BigDecimal;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -35,9 +33,7 @@ class RecipientServiceTest {
     private RecipientService recipientService;
 
     @BeforeEach
-    void setUp() throws Exception {
-        resetJobIdGenerator();
-
+    void setUp() {
         MockHttpServletRequest request = new MockHttpServletRequest("POST", "/api/accounts/123/trades");
         request.setScheme("http");
         request.setServerName("localhost");
@@ -50,7 +46,7 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_returnsAcceptedWithTaskLocation() {
+    void publishOrder_returnsAcceptedWithTradeLocation() {
         TradeRequestDTO dto = new TradeRequestDTO(
                 UUID.randomUUID(),
                 10L,
@@ -62,7 +58,10 @@ class RecipientServiceTest {
 
         assertEquals(202, response.getStatusCode().value());
         assertNotNull(response.getHeaders().getLocation());
-        assertEquals("/api/accounts/123/trades/tasks/1", response.getHeaders().getLocation().getPath());
+        ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
+        verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
+        assertEquals("/api/accounts/123/trades/" + captor.getValue().externalTradeId(),
+                response.getHeaders().getLocation().getPath());
     }
 
     @Test
@@ -85,14 +84,6 @@ class RecipientServiceTest {
         assertEquals(accountId, submitted.accountId());
         assertEquals(TradeSide.SELL, submitted.side());
         assertEquals(0, submitted.quantity().compareTo(new BigDecimal("7")));
-        assertEquals(1L, submitted.taskId());
         assertNotNull(submitted.externalTradeId());
-    }
-
-    private static void resetJobIdGenerator() throws Exception {
-        Field field = RecipientService.class.getDeclaredField("JOB_ID_GENERATOR");
-        field.setAccessible(true);
-        AtomicLong generator = (AtomicLong) field.get(null);
-        generator.set(1L);
     }
 }

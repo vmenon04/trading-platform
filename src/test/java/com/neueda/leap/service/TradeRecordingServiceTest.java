@@ -39,7 +39,6 @@ class TradeRecordingServiceTest {
             TradeSide.BUY,
             new BigDecimal("100"),
             new BigDecimal("10.0"),
-            3L,
             EXTERNAL_TRADE_ID);
 
     @BeforeEach
@@ -62,7 +61,6 @@ class TradeRecordingServiceTest {
         assertEquals(TradeSide.BUY, tradeRecordedDTO.side());
         assertEquals(new BigDecimal("100"), tradeRecordedDTO.quantity());
         assertEquals(new BigDecimal("10.0"), tradeRecordedDTO.quote());
-        assertEquals(3L, tradeRecordedDTO.taskId());
         assertEquals(4L, tradeRecordedDTO.tradeId());
     }
 
