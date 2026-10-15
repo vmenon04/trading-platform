@@ -14,6 +14,25 @@ def getSafeTag() {
     return env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9_.-]', '-')
 }
 
+def SonarQube() {
+// SonarQube plugin: code quality and security issues, with trends and a quality gate.}
+    // The quality gate is configured in the SonarQube server, not here. It can be set to fail the build if
+    // there are any new critical issues, or if coverage drops below a threshold, etc.
+    def scannerHome = tool 'Sonar'
+    withSonarQubeEnv('SonarQube') {
+        sh """
+            "${scannerHome}/bin/sonar-scanner" \
+              -Dsonar.projectKey=fintech-five \
+              -Dsonar.projectName=fintech-five \
+              -Dsonar.sources=src/main/java \
+              -Dsonar.tests=src/test/java \
+              -Dsonar.java.binaries=target/classes \
+              -Dsonar.java.test.binaries=target/test-classes \
+              -Dsonar.coverage.jacoco.xmlReportPaths=target/site/jacoco/jacoco.xml
+        """
+    }
+}
+
 def SmokeTest() {
     // starts the image and waits for /actuator/health to report UP. application.properties isn't in git, so the
     // settings are passed as environment variables. The database is a throwaway Postgres container, never the shared
@@ -148,6 +167,14 @@ pipeline {
                             ReportingTests()
                         }
                     }
+                }
+            }
+        }
+        stage('SonarQube') {
+            steps {
+                echo "Starting SonarQube Analysis"
+                script {
+                    SonarQube()
                 }
             }
         }

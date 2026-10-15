@@ -3,11 +3,14 @@ package com.neueda.leap.entity;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class ClientTest {
+
+    Month month = Month.JANUARY;
 
     @Test
     void noArgsConstructorInitializesClientAccounts() {
@@ -25,7 +28,7 @@ class ClientTest {
 
     @Test
     void parameterizedConstructorSetsProvidedValues() {
-        LocalDate birthDate = LocalDate.of(1990, 5, 15);
+        LocalDate birthDate = LocalDate.of(1990, month, 15);
         Client client = new Client("John", "Doe", birthDate);
 
         assertAll(
@@ -41,7 +44,7 @@ class ClientTest {
     @Test
     void settersUpdateAllMutableFields() {
         Client client = new Client();
-        LocalDate birthDate = LocalDate.of(1988, 3, 20);
+        LocalDate birthDate = LocalDate.of(1988, month, 20);
         ArrayList<Account> accounts = new ArrayList<>();
 
         client.setClientId(5L);

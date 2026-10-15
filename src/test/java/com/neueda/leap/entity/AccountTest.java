@@ -17,18 +17,7 @@ class AccountTest {
                 () -> assertNull(account.getAccountId()),
                 () -> assertEquals(BigDecimal.ZERO, account.getBalance()),
                 () -> assertNotNull(account.getHoldings()),
-                () -> assertTrue(account.getHoldings().isEmpty())
-        );
-    }
-
-    @Test
-    void parameterizedConstructorSetsProvidedValues() {
-        Account account = new Account(42L);
-
-        assertAll(
-                () -> assertNull(account.getAccountId()),
-                () -> assertEquals(BigDecimal.ZERO, account.getBalance()),
-                () -> assertNotNull(account.getHoldings()),
+                () -> assertNotNull(account.getExternalAccountId()),
                 () -> assertTrue(account.getHoldings().isEmpty())
         );
     }

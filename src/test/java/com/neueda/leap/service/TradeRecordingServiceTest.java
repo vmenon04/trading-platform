@@ -53,7 +53,7 @@ class TradeRecordingServiceTest {
     void recordsTradeAsPendingAndReturnsIt() {
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(4L);
 
-        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.record(validatedDTO);
+        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.recordTrade(validatedDTO);
 
         verify(accountTradeMapper).insert(validatedDTO);
         verify(accountTradeStatusMapper).insertTradeStatus(4L, TradeStatus.PENDING);
@@ -71,7 +71,7 @@ class TradeRecordingServiceTest {
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(null);
         when(accountTradeMapper.findTradeIdByExternalTradeId(EXTERNAL_TRADE_ID)).thenReturn(4L);
 
-        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.record(validatedDTO);
+        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.recordTrade(validatedDTO);
 
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertEquals(4L, tradeRecordedDTO.tradeId());

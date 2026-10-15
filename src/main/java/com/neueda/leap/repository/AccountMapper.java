@@ -22,8 +22,8 @@ public interface AccountMapper {
     // (accounts has no client_id column, so clientId is not filled here; the link is in client_accounts)
     String COLUMNS = "account_id AS accountId, balance";
 
-    @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{account_Id}")
-    Account findById(Long account_Id);
+    @Select("SELECT " + COLUMNS + " FROM accounts WHERE account_id = #{accountId}")
+    Account findById(@Param("accountId") Long accountId);
 
     @Select("SELECT " + COLUMNS + " FROM accounts")
     List<Account> findAll();
@@ -39,13 +39,13 @@ public interface AccountMapper {
     @Update("UPDATE accounts SET balance = #{balance} WHERE account_id = #{accountId}")
     void update(Account account);
 
-    @Delete("DELETE FROM accounts WHERE account_id = #{account_Id}")
-    void delete(Long account_Id);
+    @Delete("DELETE FROM accounts WHERE account_id = #{accountId}")
+    void delete(@Param("accountId") Long accountId);
 
     // Vasu's additions for accountmapper
 
     @Select("SELECT balance FROM accounts WHERE account_id = #{accountId}")
-    BigDecimal findBalance(Long accountId);
+    BigDecimal findBalance(@Param("accountId") Long accountId);
 
     //returns rows updated: 0 = no such account
     @Update("UPDATE accounts SET balance = balance + #{amount} WHERE account_id = #{accountId}")

@@ -2,6 +2,7 @@ package com.neueda.leap.entity;
 
 import java.time.LocalDate;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.UUID;
 
 public class Client {
@@ -11,7 +12,7 @@ public class Client {
     private String lastName;
     private String email;
     private LocalDate birthDate;
-    private ArrayList<Account> clientAccounts;
+    private List<Account> clientAccounts;
 
     public Client() {
         this.clientAccounts = new ArrayList<>();
@@ -77,11 +78,11 @@ public class Client {
         this.birthDate = birthDate;
     }
 
-    public ArrayList<Account> getClientAccounts() {
+    public List<Account> getClientAccounts() {
         return clientAccounts;
     }
 
-    public void setClientAccounts(ArrayList<Account> clientAccounts) {
+    public void setClientAccounts(List<Account> clientAccounts) {
         this.clientAccounts = clientAccounts;
     }
 }
