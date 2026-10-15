@@ -122,4 +122,12 @@ class HttpMarketDataClientTest {
 
         assertEquals(0, new BigDecimal("64250.12").compareTo(client.getPrice("X:BTC-USD")));
     }
+
+    @Test
+    void returnsNullForEmptyResponse() {
+        server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
+                .andRespond(withSuccess());
+
+        assertNull(client.getPrice("AAPL"));
+    }
 }

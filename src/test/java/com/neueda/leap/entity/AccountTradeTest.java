@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -66,6 +67,21 @@ class AccountTradeTest {
                 () -> assertEquals(BigDecimal.valueOf(4.5), trade.getQuantity()),
                 () -> assertEquals(BigDecimal.valueOf(6.75), trade.getPrice()),
                 () -> assertEquals(TradeStatus.ACCEPTED, trade.getStatus())
+        );
+    }
+
+    @Test
+    void settersUpdateExternalTradeIdAndTradeTime() {
+        AccountTrade trade = new AccountTrade();
+        UUID externalTradeId = UUID.randomUUID();
+        OffsetDateTime tradeTime = OffsetDateTime.parse("2026-08-26T16:13:24Z");
+
+        trade.setExternalTradeId(externalTradeId);
+        trade.setTradeTime(tradeTime);
+
+        assertAll(
+                () -> assertEquals(externalTradeId, trade.getExternalTradeId()),
+                () -> assertEquals(tradeTime, trade.getTradeTime())
         );
     }
 }

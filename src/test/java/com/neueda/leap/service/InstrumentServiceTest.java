@@ -116,4 +116,10 @@ class InstrumentServiceTest {
         when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("189.25"));
         assertEquals(new BigDecimal("189.25"), instrumentService.getCurrentPrice(1L));
     }
+
+    @Test
+    void getInstrumentByTickerRejectsNullTicker() {
+        assertThrows(IllegalArgumentException.class, () -> instrumentService.getInstrumentByTicker(null));
+        verifyNoInteractions(instrumentMapper);
+    }
 }

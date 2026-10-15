@@ -228,4 +228,17 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertNull(outcome.price());
     }
+
+    @Test
+    void recordedTradeWithoutASideIsRejected() {
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(PRICE);
+
+        TradeFinishedDTO outcome = executionService.execute(recorded(null, "5"));
+
+        verifyNoInteractions(accountService, accountHoldingService);
+        verify(transactionManager).rollback(any());
+        verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
+        assertNull(outcome.price());
+        assertEquals("Side must be BUY or SELL, got null", outcome.reason());
+    }
 }
