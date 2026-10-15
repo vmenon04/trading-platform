@@ -122,4 +122,13 @@ class AccountHoldingServiceTest {
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("-5")));
         verifyNoInteractions(accountHoldingMapper);
     }
+
+    @Test
+    void rejectsNullQuantity() {
+        assertThrows(IllegalArgumentException.class,
+                () -> accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, null));
+        assertThrows(IllegalArgumentException.class,
+                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, null));
+        verifyNoInteractions(accountHoldingMapper);
+    }
 }

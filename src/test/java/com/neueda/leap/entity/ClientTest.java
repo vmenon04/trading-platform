@@ -5,6 +5,7 @@ import org.junit.jupiter.api.Test;
 import java.time.LocalDate;
 import java.time.Month;
 import java.util.ArrayList;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -62,4 +63,30 @@ class ClientTest {
         );
     }
 
+    @Test
+    void constructorWithEmailSetsEmail() {
+        LocalDate birthDate = LocalDate.of(1990, month, 15);
+        Client client = new Client("John", "Doe", "john.doe@example.com", birthDate);
+
+        assertAll(
+                () -> assertEquals("John", client.getFirstName()),
+                () -> assertEquals("Doe", client.getLastName()),
+                () -> assertEquals("john.doe@example.com", client.getEmail()),
+                () -> assertEquals(birthDate, client.getBirthDate())
+        );
+    }
+
+    @Test
+    void settersUpdateEmailAndExternalAccountId() {
+        Client client = new Client();
+        UUID externalAccountId = UUID.randomUUID();
+
+        client.setEmail("jane.smith@example.com");
+        client.setExternalAccountId(externalAccountId);
+
+        assertAll(
+                () -> assertEquals("jane.smith@example.com", client.getEmail()),
+                () -> assertEquals(externalAccountId, client.getExternalAccountId())
+        );
+    }
 }

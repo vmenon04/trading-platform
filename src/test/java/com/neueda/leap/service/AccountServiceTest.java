@@ -3,6 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.repository.AccountMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -133,5 +134,27 @@ class AccountServiceTest {
     void sellThrowsWhenAccountNotFound() {
         when(accountMapper.increaseBalance(eq(99L), any())).thenReturn(0);
         assertThrows(NoSuchElementException.class, () -> accountService.sell(99L, new BigDecimal("100")));
+    }
+
+    @Test
+    void getAccountIdByExternalAccountIdReturnsIdFromMapper() {
+        UUID externalAccountId = UUID.randomUUID();
+        when(accountMapper.findAccountIdByExternalAccountId(externalAccountId)).thenReturn(1L);
+        assertEquals(1L, accountService.getAccountIdByExternalAccountId(externalAccountId));
+    }
+
+    @Test
+    void getAccountIdByExternalAccountIdThrowsWhenAccountNotFound() {
+        UUID externalAccountId = UUID.randomUUID();
+        when(accountMapper.findAccountIdByExternalAccountId(externalAccountId)).thenReturn(null);
+        assertThrows(NoSuchElementException.class,
+                () -> accountService.getAccountIdByExternalAccountId(externalAccountId));
+    }
+
+    @Test
+    void rejectsNullAmount() {
+        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, null));
+        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, null));
+        verifyNoInteractions(accountMapper);
     }
 }
