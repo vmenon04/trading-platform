@@ -1,3 +1,6 @@
+# SpringBoot Server
+server.port=8081
+
 # Kafka
 spring.kafka.bootstrap-servers=<kafka-host>:9092
 

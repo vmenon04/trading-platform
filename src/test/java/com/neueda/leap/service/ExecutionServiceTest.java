@@ -79,6 +79,7 @@ class ExecutionServiceTest {
                 accountTradeStatusMapper, transactionManager);
         inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
         inOrder.verify(accountHoldingService).addQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
+        inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         inOrder.verify(accountTradePriceMapper).insertTradePrice(eq(TRADE_ID), amountEqualTo("100"), amountEqualTo("500"));
         inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         inOrder.verify(transactionManager).commit(any());
@@ -100,9 +101,10 @@ class ExecutionServiceTest {
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.SELL, "5"));
 
-        InOrder inOrder = inOrder(accountHoldingService, accountService);
+        InOrder inOrder = inOrder(accountHoldingService, accountTradeStatusMapper, accountService);
         inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
         inOrder.verify(accountService).sell(eq(ACCOUNT_ID), amountEqualTo("500"));
+        inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         verify(accountTradePriceMapper).insertTradePrice(eq(TRADE_ID), amountEqualTo("100"), amountEqualTo("500"));
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         verify(transactionManager).commit(any());
@@ -120,6 +122,7 @@ class ExecutionServiceTest {
 
         verifyNoInteractions(accountHoldingService);
         verify(accountTradePriceMapper, never()).insertTradePrice(any(), any(), any());
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
@@ -137,6 +140,7 @@ class ExecutionServiceTest {
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.SELL, "5"));
 
         verifyNoInteractions(accountService);
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         verify(transactionManager).rollback(any());
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
@@ -193,7 +197,9 @@ class ExecutionServiceTest {
 
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
-        verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
+        // ACCEPTED was written inside the transaction that rolled back
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
     }
 
     @Test
