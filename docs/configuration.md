@@ -2,7 +2,7 @@
 
 ## Machines and ports
 
-Only ports **9092** and **8080–8100** on the Linux machine are reachable from the VM (AWS security group).
+Only ports **9092** and **8080–8100** on the Linux machine are reachable from the VM.
 
 | Machine | Port | What |
 |---|---|---|
@@ -28,7 +28,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 
 All four app services use the one image built from `Dockerfile`; each switches on only its own stage. Scale one with `docker compose up -d --scale execution=3` (at most 8 per stage get work, one per partition). Reset the database with `docker compose down -v`.
 
-### `.env` (copy `.env.example`; read by compose and the reporting scripts)
+### `.env` (read by compose and the reporting scripts)
 
 | Variable | Used for |
 |---|---|
@@ -53,7 +53,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 
 ## `application.properties` (running the app outside Docker)
 
-Gitignored; copy `src/main/resources/application.properties.example`. Every property can also be set as an environment variable (`spring.kafka.bootstrap-servers` → `SPRING_KAFKA_BOOTSTRAP_SERVERS`).
+Note that every property can also be set as an environment variable (`spring.kafka.bootstrap-servers` → `SPRING_KAFKA_BOOTSTRAP_SERVERS`).
 
 | Property | Meaning |
 |---|---|
