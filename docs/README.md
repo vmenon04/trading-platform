@@ -10,7 +10,7 @@
 
 | File | Covers |
 |---|---|
-| `account-trade-management-service.yaml` | Accounts, tasks, holdings, order history |
+| `account-trade-management-service.yaml` | Accounts, trades, holdings, order history |
 | `auth-service.yaml` | Register, login, token refresh, logout |
 | `clients-service.yaml` | Client information |
 | `instruments-service.yaml` | Instruments and current prices |

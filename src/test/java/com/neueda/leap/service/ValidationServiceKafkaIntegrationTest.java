@@ -56,7 +56,6 @@ class ValidationServiceKafkaIntegrationTest {
     private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100.50");
-    private static final long TASK_ID = 88L;
     private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Autowired
@@ -118,7 +117,6 @@ class ValidationServiceKafkaIntegrationTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.BUY,
                 new BigDecimal("5.25"),
-                TASK_ID,
                 EXTERNAL_TRADE_ID
         );
 
@@ -135,7 +133,6 @@ class ValidationServiceKafkaIntegrationTest {
                 () -> assertEquals(TradeSide.BUY, validated.side()),
                 () -> assertEquals(new BigDecimal("5.25"), validated.quantity()),
                 () -> assertEquals(PRICE, validated.quote()),
-                () -> assertEquals(TASK_ID, validated.taskId()),
                 () -> assertEquals(EXTERNAL_TRADE_ID, validated.externalTradeId())
         );
     }

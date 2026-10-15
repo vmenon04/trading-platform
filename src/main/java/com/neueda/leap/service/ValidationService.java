@@ -31,7 +31,6 @@ public class ValidationService {
                 tradeSubmittedDTO.side(),
                 tradeSubmittedDTO.quantity(),
                 instrumentService.getCurrentPrice(tradeSubmittedDTO.instrumentId()),
-                tradeSubmittedDTO.taskId(),
                 tradeSubmittedDTO.externalTradeId()
         );
     }

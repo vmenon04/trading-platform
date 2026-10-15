@@ -32,7 +32,7 @@ public class ValidationConsumer {
     // waits for the send so a failed publish fails the listener and the message is redelivered
     @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
     public void onTradeSubmitted(TradeSubmittedDTO trade) throws InterruptedException, ExecutionException {
-        LOGGER.info("Received submitted trade event. Task ID: {}", trade.taskId());
+        LOGGER.info("Received submitted trade event. Trade ID: {}", trade.externalTradeId());
 
         TradeValidatedDTO validated = validationService.validateSubmittedTrade(trade);
         tradeEventProducer.publishTradeValidated(validated).get();

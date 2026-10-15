@@ -33,7 +33,7 @@ public class RecordingConsumer {
     // If the publish fails the message is redelivered, and record() returns the same trade rather than a new one.
     @KafkaListener(topics = KafkaTopics.TRADE_VALIDATED, groupId = "recording-service")
     public void onTradeValidated(TradeValidatedDTO trade) throws InterruptedException, ExecutionException {
-        LOGGER.info("Received validated trade event. Task ID: {}", trade.taskId());
+        LOGGER.info("Received validated trade event. Trade ID: {}", trade.externalTradeId());
 
         TradeRecordedDTO recorded = tradeRecordingService.recordTrade(trade);
         tradeEventProducer.publishTradeRecorded(recorded).get();

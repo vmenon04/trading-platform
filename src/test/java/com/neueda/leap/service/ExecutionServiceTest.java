@@ -65,7 +65,7 @@ class ExecutionServiceTest {
 
     private static TradeRecordedDTO recorded(TradeSide side, String quantity) {
         return new TradeRecordedDTO(INSTRUMENT_ID, ACCOUNT_ID, side, new BigDecimal(quantity),
-                new BigDecimal("99"), 3L, TRADE_ID);
+                new BigDecimal("99"), TRADE_ID);
     }
 
     @Test

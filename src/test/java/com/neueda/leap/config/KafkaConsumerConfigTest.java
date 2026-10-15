@@ -26,7 +26,7 @@ class KafkaConsumerConfigTest {
     @Test
     void convertsJsonToTheListenerParameterType() {
         String json = "{\"instrumentId\":10,\"accountId\":1,\"side\":\"BUY\",\"quantity\":5,"
-                + "\"quote\":100.25,\"taskId\":3,\"tradeId\":42}";
+                + "\"quote\":100.25,\"tradeId\":42}";
 
         Message<?> message = converter.toMessage(consumerRecord(json), null, null, TradeRecordedDTO.class);
 
@@ -37,14 +37,13 @@ class KafkaConsumerConfigTest {
         assertEquals(TradeSide.BUY, trade.side());
         assertEquals(0, trade.quantity().compareTo(new BigDecimal("5")));
         assertEquals(0, trade.quote().compareTo(new BigDecimal("100.25")));
-        assertEquals(3L, trade.taskId());
     }
 
     // what KafkaProducerConfig's JsonSerializer writes must convert back for the listener on the other side
     @Test
     void readsWhatTheProducerWrites() {
         TradeRecordedDTO sent = new TradeRecordedDTO(10L, 1L, TradeSide.BUY, new BigDecimal("5"),
-                new BigDecimal("100.25"), 3L, 42L);
+                new BigDecimal("100.25"), 42L);
 
         Message<?> message = converter.toMessage(consumerRecord(produce(sent)), null, null, TradeRecordedDTO.class);
 
@@ -55,7 +54,7 @@ class KafkaConsumerConfigTest {
     @Test
     void rejectsADoubleEncodedMessage() throws Exception {
         TradeRecordedDTO sent = new TradeRecordedDTO(10L, 1L, TradeSide.BUY, new BigDecimal("5"),
-                new BigDecimal("100.25"), 3L, 42L);
+                new BigDecimal("100.25"), 42L);
         String doubleEncoded = produce(new ObjectMapper().writeValueAsString(sent));
 
         assertThrows(ConversionException.class,

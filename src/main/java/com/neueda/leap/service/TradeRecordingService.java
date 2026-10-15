@@ -46,7 +46,6 @@ public class TradeRecordingService {
                 tradeValidatedDTO.side(),
                 tradeValidatedDTO.quantity(),
                 tradeValidatedDTO.quote(),
-                tradeValidatedDTO.taskId(),
                 tradeId);
     }
 }
