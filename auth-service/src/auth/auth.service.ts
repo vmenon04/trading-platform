@@ -2,7 +2,7 @@ import { Injectable, UnauthorizedException, ConflictException } from "@nestjs/co
 import * as bcrypt from "bcrypt";
 import * as jwt from "jsonwebtoken";
 import { randomBytes } from "crypto";
-import { logAuthEvent } from "./logger";
+import { logAuthEvent } from "../logger";
 
 interface StoredUser {
     passwordHash: string;
@@ -12,19 +12,13 @@ interface StoredUser {
 
 const SALT_ROUNDS = 10;
 
-// Sprint 6's real auth-stub reads this from process.env.JWT_SECRET, with
-// this exact string as its fallback. Exported so the Jest suite can verify
-// tokens the same way a real client of this service would.
-export const JWT_SECRET = process.env.JWT_SECRET || "mission-control-shared-secret-key-32-bytes-minimum";
+export const JWT_SECRET = "";
 
 @Injectable()
 export class AuthService {
     private readonly users = new Map<string, StoredUser>();
 
-    constructor() {
-        // alice/mission123/MISSION_OPERATOR - matches Sprint 6's auth-stub.
-        void this.register("alice", "mission123", ["MISSION_OPERATOR"]);
-    }
+    constructor() {}
 
     async register(
         username: string,
