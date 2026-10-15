@@ -1,7 +1,8 @@
 # Kafka, Postgres and the app for the trading platform
 #
-# All values come from .env (copy .env.example). The app is one image run as four services, one per stage of the
-# trade pipeline. Scale a stage on its own with e.g. `docker compose up -d --scale execution=4`; at most
+# All values come from .env 
+# The app is one image run as four services, one per stage of the trade pipeline. 
+# Scale a stage on its own with e.g. `docker compose up -d --scale execution=4`; at most
 # KafkaTopicConfig.PARTITIONS containers of a stage get work, the rest wait as standbys.
 
 name: trading-platform
