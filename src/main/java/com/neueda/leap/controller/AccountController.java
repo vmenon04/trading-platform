@@ -2,7 +2,6 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.AccountHoldingResponseDTO;
 import com.neueda.leap.dto.AccountSummaryResponseDTO;
-import com.neueda.leap.dto.TaskStatusResponseDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
@@ -28,7 +27,6 @@ import java.util.UUID;
 public class AccountController {
 
     private final AccountService accountService;
-    private final AccountMapper accountMapper;
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
@@ -37,7 +35,6 @@ public class AccountController {
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
                              InstrumentService instrumentService) {
         this.accountService = accountService;
-        this.accountMapper = accountMapper;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
@@ -57,7 +54,7 @@ public class AccountController {
     public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
-                .map(holding -> new AccountHoldingResponseDTO(accountId, holding.getInstrumentId(),
+                .map(holding -> new AccountHoldingResponseDTO(accountId, instrumentService.getInstrumentById(holding.getInstrumentId()).getName(),
                         instrumentService.getInstrumentById(holding.getInstrumentId()).getTicker(), holding.getQuantity(),
                         instrumentService.getCurrentPrice(holding.getInstrumentId())))
                 .toList();
@@ -75,18 +72,32 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/{accountId}/tasks/{taskId}")
-    public ResponseEntity<TaskStatusResponseDTO> getTask(@PathVariable UUID accountId,
-                                                          @PathVariable Long taskId) {
+    @GetMapping("/{accountId}/tasks/{externalTradeId}")
+    public ResponseEntity<TradeResponseDTO> getTask(@PathVariable UUID accountId,
+                                                          @PathVariable Long externalTradeId) {
         accountService.getAccountIdByExternalAccountId(accountId);
-        AccountTrade trade = accountTradeMapper.findById(taskId);
+        AccountTrade trade = accountTradeMapper.findById(externalTradeId);
         if (trade == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(new TaskStatusResponseDTO(taskId, trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getQuantity(),
-                trade.getTradeSide().name(), trade.getPrice(), trade.getStatus().name(), null));
+        return ResponseEntity.ok(new TradeResponseDTO(trade.getInstrumentId(),
+                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), externalTradeId, trade.getTradeSide().name(), 
+                trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null));
     }
+
+    @GetMapping("/{accountId}/trades/{externalTradeId}")
+    public ResponseEntity<TradeResponseDTO> getTrade(@PathVariable UUID accountId,
+                                                          @PathVariable Long externalTradeId) {
+        accountService.getAccountIdByExternalAccountId(accountId);
+        AccountTrade trade = accountTradeMapper.findById(externalTradeId);
+        if (trade == null) {
+            return ResponseEntity.notFound().build();
+        }
+        return ResponseEntity.ok(new TradeResponseDTO(trade.getInstrumentId(),
+                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), externalTradeId, trade.getTradeSide().name(), 
+                trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null));
+    }
+
 
     private List<AccountHolding> activeHoldings(Long accountId) {
         return accountHoldingMapper.findByAccountId(accountId).stream()
