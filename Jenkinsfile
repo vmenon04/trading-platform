@@ -20,7 +20,7 @@ def SonarQube() {
     // there are any new critical issues, or if coverage drops below a threshold, etc.
     withSonarQubeEnv('SonarQube') {
         sh """
-            mvn clean verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            mvn -B org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
               -Dsonar.projectKey=fintech-five \
               -Dsonar.projectName=fintech-five \
               -Dsonar.sources=src/main/java \
