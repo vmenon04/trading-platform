@@ -11,6 +11,8 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
+
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -76,24 +78,38 @@ public class AccountController {
     public ResponseEntity<TradeResponseDTO> getTask(@PathVariable UUID accountId,
                                                           @PathVariable UUID externalTradeId) {
 
-        
-        Long internalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
-        AccountTrade trade = accountTradeMapper.findById(internalId);
-        if (trade == null) {
+        Long taskInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
+        AccountTrade task = accountTradeMapper.findById(taskInternalId);
+
+        if (task == null) {
             return ResponseEntity.notFound().build();
         }
-        TradeResponseDTO responseDTO = toTradeResponse(trade);
+
+        Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
+        
+        if (!accountInternalId.equals(task.getAccountId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+        TradeResponseDTO responseDTO = toTradeResponse(task);
         return ResponseEntity.ok(responseDTO);
     }
 
     @GetMapping("/{accountId}/trades/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTrade(@PathVariable UUID accountId,
                                                           @PathVariable UUID externalTradeId) {
-       
-        Long internalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
-        AccountTrade trade = accountTradeMapper.findById(internalId);
+
+        
+        Long tradeInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
+        AccountTrade trade = accountTradeMapper.findById(tradeInternalId);
+
         if (trade == null) {
             return ResponseEntity.notFound().build();
+        }
+
+        Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
+        
+        if (!accountInternalId.equals(trade.getAccountId())) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
         TradeResponseDTO responseDTO = toTradeResponse(trade);
         return ResponseEntity.ok(responseDTO);
