@@ -162,4 +162,37 @@ class ValidationServiceTest {
                 () -> assertEquals(EXTERNAL_TRADE_ID, validatedDTO.externalTradeId())
         );
     }
+
+    @Test
+    void rejectsNullQuantity() {
+        TradeSubmittedDTO invalidOrder = new TradeSubmittedDTO(
+                INSTRUMENT_ID,
+                EXTERNAL_ACCOUNT_ID,
+                TradeSide.BUY,
+                null,
+                EXTERNAL_TRADE_ID
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(invalidOrder));
+        verifyNoInteractions(instrumentService, accountService, accountHoldingService);
+    }
+
+    private void givenInstrumentBalanceAndQuote(BigDecimal quote) {
+        when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(quote);
+    }
+
+    @Test
+    void rejectsMissingQuote() {
+        givenInstrumentBalanceAndQuote(null);
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
+    }
+
+    @Test
+    void rejectsNonPositiveQuote() {
+        givenInstrumentBalanceAndQuote(BigDecimal.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
+        verifyNoInteractions(accountHoldingService);
+    }
 }

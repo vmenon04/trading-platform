@@ -4,6 +4,7 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.util.HashMap;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -36,5 +37,15 @@ class AccountTest {
                 () -> assertEquals(BigDecimal.valueOf(99.5), account.getBalance()),
                 () -> assertSame(holdings, account.getHoldings())
         );
+    }
+
+    @Test
+    void setExternalAccountIdReplacesGeneratedId() {
+        Account account = new Account();
+        UUID externalAccountId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+
+        account.setExternalAccountId(externalAccountId);
+
+        assertEquals(externalAccountId, account.getExternalAccountId());
     }
 }
