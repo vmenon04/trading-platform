@@ -32,7 +32,6 @@ class ValidationServiceTest {
     private static final long TASK_ID = 77L;
     private static final String BALANCE = "1000";
     private static final String TICKER = "AAPL";
-    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private InstrumentService instrumentService;
@@ -52,8 +51,7 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.valueOf(side),
                 new BigDecimal(quantity),
-                TASK_ID,
-                EXTERNAL_TRADE_ID
+                TASK_ID
         );
     }
 
@@ -104,8 +102,7 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 null,
                 new BigDecimal("5"),
-                TASK_ID,
-                EXTERNAL_TRADE_ID
+                TASK_ID
         );
 
         assertThrows(IllegalArgumentException.class, () -> validationService.validate(invalidOrder));

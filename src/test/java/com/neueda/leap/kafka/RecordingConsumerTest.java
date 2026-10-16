@@ -34,7 +34,7 @@ class RecordingConsumerTest {
     private RecordingConsumer recordingConsumer;
 
     private final TradeValidatedDTO trade = new TradeValidatedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 3L, UUID.randomUUID());
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 3L);
 
     private final TradeRecordedDTO recorded = new TradeRecordedDTO(
             10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 3L, 42L);

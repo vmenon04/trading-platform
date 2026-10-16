@@ -69,14 +69,14 @@ class RecipientServiceTest {
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
-        when(tradeAuthorizationService.isValidUsername(dto, "user1")).thenReturn(true);
+        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
 
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
         when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
         when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
 
-        ResponseEntity<Void> response = recipientService.publishOrder(dto, "user1");
+        ResponseEntity<Void> response = recipientService.publishOrder(dto, 1L);
 
         assertEquals(202, response.getStatusCode().value());
         assertNotNull(response.getHeaders().getLocation());
@@ -92,14 +92,14 @@ class RecipientServiceTest {
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
-        when(tradeAuthorizationService.isValidUsername(dto, "user2")).thenReturn(true);
+        when(tradeAuthorizationService.isValidUserId(dto, 2L)).thenReturn(true);
 
         Instrument instrument = new Instrument();
         instrument.setTicker("MSFT");
         when(instrumentService.getInstrumentById(44L)).thenReturn(instrument);
         when(marketDataClient.getPrice("MSFT")).thenReturn(new BigDecimal("91.10"));
 
-        recipientService.publishOrder(dto, "user2");
+        recipientService.publishOrder(dto, 2L);
 
         ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
         verify(tradeEventProducer).publishTradeSubmitted(captor.capture());

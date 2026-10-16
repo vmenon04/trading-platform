@@ -23,24 +23,24 @@ class UserServiceTest {
     private UserService userService;
 
     @Test
-    void getUsernameByClientIdDelegatesToMapper() {
-        when(userMapper.findUsernameByClientId(42L)).thenReturn("alice");
+    void getUserIdByClientIdDelegatesToMapper() {
+        when(userMapper.findUserIdByClientId(42L)).thenReturn(1001L);
 
-        String result = userService.getUsernameByClientId(42L);
+        Long result = userService.getUserIdByClientId(42L);
 
-        assertEquals("alice", result);
-        verify(userMapper).findUsernameByClientId(42L);
+        assertEquals(1001L, result);
+        verify(userMapper).findUserIdByClientId(42L);
         verifyNoMoreInteractions(userMapper);
     }
 
     @Test
-    void getUsernameByClientIdPassesNullThroughToMapper() {
-        when(userMapper.findUsernameByClientId(null)).thenReturn(null);
+    void getUserIdByClientIdPassesNullThroughToMapper() {
+        when(userMapper.findUserIdByClientId(null)).thenReturn(null);
 
-        String result = userService.getUsernameByClientId(null);
+        Long result = userService.getUserIdByClientId(null);
 
         assertNull(result);
-        verify(userMapper).findUsernameByClientId(null);
+        verify(userMapper).findUserIdByClientId(null);
         verifyNoMoreInteractions(userMapper);
     }
 }

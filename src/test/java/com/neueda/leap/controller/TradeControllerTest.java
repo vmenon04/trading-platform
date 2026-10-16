@@ -48,7 +48,7 @@ class TradeControllerTest {
 
         mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
-                        .principal(authentication("user"))
+                        .principal(authentication())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -63,7 +63,7 @@ class TradeControllerTest {
     }
 
     @Test
-    void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() throws Exception {
+    void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() {
         UUID accountId = UUID.randomUUID();
         URI location = URI.create("/api/accounts/%s/trades/tasks/42".formatted(accountId));
         TradeRequestDTO dto = new TradeRequestDTO(
@@ -72,11 +72,11 @@ class TradeControllerTest {
                 com.neueda.leap.enums.TradeSide.BUY,
                 new java.math.BigDecimal("25.5")
         );
-        when(recipientService.publishOrder(dto, "user"))
+        when(recipientService.publishOrder(dto, 1L))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
         Jwt jwt = mock(Jwt.class);
-        when(jwt.getSubject()).thenReturn("user");
+        when(jwt.getSubject()).thenReturn("1");
 
         ResponseEntity<Void> response = tradeController.submitOrder(jwt, accountId, dto);
 
@@ -84,10 +84,10 @@ class TradeControllerTest {
         org.junit.jupiter.api.Assertions.assertEquals(location, response.getHeaders().getLocation());
     }
 
-    private static JwtAuthenticationToken authentication(String username) {
+    private static JwtAuthenticationToken authentication() {
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
-                .claim("sub", username)
+                .claim("sub", "1")
                 .build();
         return new JwtAuthenticationToken(jwt);
     }

@@ -39,8 +39,7 @@ class TradeRecordingServiceTest {
             TradeSide.BUY,
             new BigDecimal("100"),
             new BigDecimal("10.0"),
-            3L,
-            EXTERNAL_TRADE_ID);
+            3L);
 
     @BeforeEach
     void setUp() {
