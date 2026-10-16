@@ -49,6 +49,8 @@ public class AccountController {
                 .map(holding -> holding.getQuantity().multiply(instrumentService.getCurrentPrice(holding.getInstrumentId())))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cashBalance = accountService.getBalance(internalId);
+        
+        // TODO: calculate cost basis and investment value 
         return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, investmentValue));
     }
 

@@ -20,6 +20,8 @@ public class InstrumentController {
         this.instrumentService = instrumentService;
     }
 
+    // TODO: Add pagination 
+
     @GetMapping
     public ResponseEntity<List<InstrumentResponseDTO>> getInstruments() {
         List<InstrumentResponseDTO> response = instrumentService.getAllInstruments().stream()
