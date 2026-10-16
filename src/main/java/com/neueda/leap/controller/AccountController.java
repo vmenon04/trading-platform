@@ -74,28 +74,29 @@ public class AccountController {
 
     @GetMapping("/{accountId}/tasks/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTask(@PathVariable UUID accountId,
-                                                          @PathVariable Long externalTradeId) {
-        accountService.getAccountIdByExternalAccountId(accountId);
-        AccountTrade trade = accountTradeMapper.findById(externalTradeId);
+                                                          @PathVariable UUID externalTradeId) {
+
+        
+        Long internalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
+        AccountTrade trade = accountTradeMapper.findById(internalId);
         if (trade == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), externalTradeId, trade.getTradeSide().name(), 
-                trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null));
+        TradeResponseDTO responseDTO = toTradeResponse(trade);
+        return ResponseEntity.ok(responseDTO);
     }
 
     @GetMapping("/{accountId}/trades/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTrade(@PathVariable UUID accountId,
-                                                          @PathVariable Long externalTradeId) {
-        accountService.getAccountIdByExternalAccountId(accountId);
-        AccountTrade trade = accountTradeMapper.findById(externalTradeId);
+                                                          @PathVariable UUID externalTradeId) {
+       
+        Long internalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
+        AccountTrade trade = accountTradeMapper.findById(internalId);
         if (trade == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), externalTradeId, trade.getTradeSide().name(), 
-                trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null));
+        TradeResponseDTO responseDTO = toTradeResponse(trade);
+        return ResponseEntity.ok(responseDTO);
     }
 
 
@@ -107,7 +108,7 @@ public class AccountController {
 
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
         return new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getTradeId(),
+                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
                 trade.getTradeSide().name(), trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null);
     }
 }
