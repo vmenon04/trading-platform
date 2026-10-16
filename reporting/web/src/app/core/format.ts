@@ -7,7 +7,6 @@ export const money = new Intl.NumberFormat('en-US', {
 });
 export const moneyExact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 export const count = new Intl.NumberFormat('en-US');
-export const percent = new Intl.NumberFormat('en-US', { maximumFractionDigits: 1 });
 
 /** "2025-10-01T00:00:00.000" -> a local Date, without the UTC shift new Date() would add. */
 export function day(iso: string): Date {

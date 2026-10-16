@@ -17,10 +17,10 @@ public interface ModelPortfolioHoldingMapper {
     String COLUMNS = "model_portfolio_id AS modelPortfolioId, instrument_id AS instrumentId, effective_date AS effectiveDate, "
             + "target_weight_pct AS targetWeightPct, status";
 
-    @Select("SELECT " + COLUMNS + " FROM model_portfolio_holdings WHERE model_portfolio_id = #{model_Portfolio_Id} AND instrument_id = #{instrument_Id} AND effective_date = #{effective_Date}")
-    ModelPortfolioHolding findByIdAndInstrumentAndEffectiveDate(@Param("model_Portfolio_Id") Long model_Portfolio_Id,
-                                                                @Param("instrument_Id") Long instrument_Id,
-                                                                @Param("effective_Date") LocalDate effective_Date);
+    @Select("SELECT " + COLUMNS + " FROM model_portfolio_holdings WHERE model_portfolio_id = #{modelPortfolioId} AND instrument_id = #{instrumentId} AND effective_date = #{effectiveDate}")
+    ModelPortfolioHolding findByIdAndInstrumentAndEffectiveDate(@Param("modelPortfolioId") Long modelPortfolioId,
+                                                                @Param("instrumentId") Long instrumentId,
+                                                                @Param("effectiveDate") LocalDate effectiveDate);
 
     @Select("SELECT " + COLUMNS + " FROM model_portfolio_holdings")
     List<ModelPortfolioHolding> findAll();
@@ -32,7 +32,7 @@ public interface ModelPortfolioHoldingMapper {
     @Update("UPDATE model_portfolio_holdings SET target_weight_pct = #{targetWeightPct}, status = #{status} WHERE model_portfolio_id = #{modelPortfolioId} AND instrument_id = #{instrumentId} AND effective_date = #{effectiveDate}")
     void update(ModelPortfolioHolding modelPortfolioHolding);
 
-    @Delete("DELETE FROM model_portfolio_holdings WHERE model_portfolio_id = #{model_Portfolio_Id} AND instrument_id = #{instrument_Id} AND effective_date = #{effective_Date}")
-    void delete(@Param("model_Portfolio_Id") Long model_Portfolio_Id, @Param("instrument_Id") Long instrument_Id,
-                @Param("effective_Date") LocalDate effective_Date);
+    @Delete("DELETE FROM model_portfolio_holdings WHERE model_portfolio_id = #{modelPortfolioId} AND instrument_id = #{instrumentId} AND effective_date = #{effectiveDate}")
+    void delete(@Param("modelPortfolioId") Long modelPortfolioId, @Param("instrumentId") Long instrumentId,
+                @Param("effectiveDate") LocalDate effectiveDate);
 }

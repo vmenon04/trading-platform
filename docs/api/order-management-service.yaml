@@ -41,7 +41,7 @@ paths:
           description: Order accepted for processing
           headers:
             Location:
-              description: URL of the newly created task resource for the order request
+              description: URL of the submitted trade, ending in its trade ID (a UUID)
               schema:
                 type: string
                 format: uri

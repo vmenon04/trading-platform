@@ -7,10 +7,10 @@ import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.kafka.ValidationConsumer;
 import java.math.BigDecimal;
-import java.time.Duration;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
@@ -32,13 +32,13 @@ import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
 import org.springframework.kafka.core.DefaultKafkaProducerFactory;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.kafka.core.ProducerFactory;
-import org.springframework.kafka.support.serializer.JsonDeserializer;
-import org.springframework.kafka.support.serializer.JsonSerializer;
 import org.springframework.kafka.test.EmbeddedKafkaBroker;
 import org.springframework.kafka.test.context.EmbeddedKafka;
 import org.springframework.kafka.test.utils.KafkaTestUtils;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.context.TestPropertySource;
+import org.springframework.kafka.support.serializer.JacksonJsonDeserializer;
+import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,7 +56,6 @@ class ValidationServiceKafkaIntegrationTest {
     private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100.50");
-    private static final long TASK_ID = 88L;
     private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Autowired
@@ -87,18 +86,19 @@ class ValidationServiceKafkaIntegrationTest {
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
 
         Map<String, Object> consumerProps = new HashMap<>(KafkaTestUtils.consumerProps(
+                embeddedKafkaBroker,
                 "validation-it-assert-group",
-                "true",
-                embeddedKafkaBroker));
+                true
+                ));
         consumerProps.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-        consumerProps.put(JsonDeserializer.TRUSTED_PACKAGES, "com.neueda.leap.dto,com.neueda.leap.enums,java.util,java.math");
-        consumerProps.put(JsonDeserializer.VALUE_DEFAULT_TYPE, TradeValidatedDTO.class.getName());
-        consumerProps.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+        consumerProps.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.neueda.leap.dto,com.neueda.leap.enums,java.util,java.math");
+        consumerProps.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, TradeValidatedDTO.class.getName());
+        consumerProps.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, false);
 
         validatedConsumer = new DefaultKafkaConsumerFactory<>(
                 consumerProps,
                 new StringDeserializer(),
-                new JsonDeserializer<>(TradeValidatedDTO.class)
+                new JacksonJsonDeserializer<>(TradeValidatedDTO.class)
         ).createConsumer();
         embeddedKafkaBroker.consumeFromAnEmbeddedTopic(validatedConsumer, "trade.validated");
     }
@@ -106,7 +106,7 @@ class ValidationServiceKafkaIntegrationTest {
     @AfterEach
     void tearDown() {
         if (validatedConsumer != null) {
-            validatedConsumer.close(Duration.ofSeconds(1));
+            validatedConsumer.close();
         }
     }
 
@@ -117,16 +117,15 @@ class ValidationServiceKafkaIntegrationTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.BUY,
                 new BigDecimal("5.25"),
-                TASK_ID,
                 EXTERNAL_TRADE_ID
         );
 
         kafkaTemplate.send("trade.submitted", EXTERNAL_ACCOUNT_ID.toString(), submitted);
         kafkaTemplate.flush();
 
-        ConsumerRecord<String, TradeValidatedDTO> record =
+        ConsumerRecord<String, TradeValidatedDTO> consumerRecord =
                 KafkaTestUtils.getSingleRecord(validatedConsumer, "trade.validated");
-        TradeValidatedDTO validated = record.value();
+        TradeValidatedDTO validated = consumerRecord.value();
 
         assertAll(
                 () -> assertEquals(INSTRUMENT_ID, validated.instrumentId()),
@@ -134,7 +133,6 @@ class ValidationServiceKafkaIntegrationTest {
                 () -> assertEquals(TradeSide.BUY, validated.side()),
                 () -> assertEquals(new BigDecimal("5.25"), validated.quantity()),
                 () -> assertEquals(PRICE, validated.quote()),
-                () -> assertEquals(TASK_ID, validated.taskId()),
                 () -> assertEquals(EXTERNAL_TRADE_ID, validated.externalTradeId())
         );
     }
@@ -172,7 +170,7 @@ class ValidationServiceKafkaIntegrationTest {
             Map<String, Object> config = new HashMap<>();
             config.put(org.apache.kafka.clients.producer.ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             config.put(org.apache.kafka.clients.producer.ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-            config.put(org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JsonSerializer.class);
+            config.put(org.apache.kafka.clients.producer.ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, JacksonJsonSerializer.class);
             return new DefaultKafkaProducerFactory<>(config);
         }
 
@@ -184,10 +182,10 @@ class ValidationServiceKafkaIntegrationTest {
             config.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
             config.put(ConsumerConfig.GROUP_ID_CONFIG, groupId);
             config.put(ConsumerConfig.AUTO_OFFSET_RESET_CONFIG, "earliest");
-            config.put(JsonDeserializer.TRUSTED_PACKAGES, "com.neueda.leap.dto,com.neueda.leap.enums,java.util,java.math");
-            config.put(JsonDeserializer.VALUE_DEFAULT_TYPE, TradeSubmittedDTO.class.getName());
-            config.put(JsonDeserializer.USE_TYPE_INFO_HEADERS, false);
-            return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JsonDeserializer<>(TradeSubmittedDTO.class));
+            config.put(JacksonJsonDeserializer.TRUSTED_PACKAGES, "com.neueda.leap.dto,com.neueda.leap.enums,java.util,java.math");
+            config.put(JacksonJsonDeserializer.VALUE_DEFAULT_TYPE, TradeSubmittedDTO.class.getName());
+            config.put(JacksonJsonDeserializer.USE_TYPE_INFO_HEADERS, false);
+            return new DefaultKafkaConsumerFactory<>(config, new StringDeserializer(), new JacksonJsonDeserializer<>(TradeSubmittedDTO.class));
         }
 
         @Bean

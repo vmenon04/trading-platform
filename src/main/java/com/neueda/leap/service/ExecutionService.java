@@ -1,6 +1,5 @@
 package com.neueda.leap.service;
 
-import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.enums.TradeSide;
@@ -10,7 +9,6 @@ import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 import org.springframework.web.client.RestClientException;
 
@@ -49,24 +47,9 @@ public class ExecutionService {
     }
 
     /**
-     * Executes a validated order as a single transaction.
-     *
-     * @param order order request to execute
-     * @param price execution price used to calculate the total consideration
-     * @throws IllegalArgumentException if the order side is unsupported
-     * @throws RuntimeException if underlying balance or holding updates fail
-     */
-    @Transactional
-    public void execute(TradeRequestDTO order, BigDecimal price) {
-//        Long accountId = order.accountId();
-        Long accountId = 1L;
-        applyTrade(accountId, order.instrumentId(), order.side(), order.quantity(), price.multiply(order.quantity()));
-    }
-
-    /**
-     * Executes a recorded trade at the current market price. The balance, holding, price and FULFILLED status
-     * updates commit together; if the trade can't be priced or settled, none of them are applied and the trade
-     * is marked REJECTED instead. A trade that already finished is not executed again, its stored outcome is
+     * Executes a recorded trade at the current market price. The balance, holding, price, ACCEPTED and FULFILLED
+     * status updates commit together; if the trade can't be priced or settled, none of them are applied and the
+     * trade is marked REJECTED instead. A trade that already finished is not executed again, its stored outcome is
      * returned so it can be republished.
      *
      * @param trade recorded trade to execute
@@ -79,8 +62,8 @@ public class ExecutionService {
         // a redelivered message: report the outcome again rather than trading twice
         TradeStatus status = accountTradeStatusMapper.getTradeStatusByTradeId(tradeId);
         if (status == TradeStatus.FULFILLED || status == TradeStatus.REJECTED) {
-            Double storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
-            return outcome(trade, storedPrice == null ? null : BigDecimal.valueOf(storedPrice), null);
+            BigDecimal storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
+            return outcome(trade, storedPrice, null);
         }
 
         try {
@@ -89,8 +72,9 @@ public class ExecutionService {
 
             transactionTemplate.executeWithoutResult(transaction -> {
                 applyTrade(trade.accountId(), trade.instrumentId(), trade.side(), trade.quantity(), total);
-                // the price mapper takes Doubles for now
-                accountTradePriceMapper.insertTradePrice(tradeId, price.doubleValue(), total.doubleValue());
+                // applyTrade fails if the account can't afford the trade, so after it the trade is accepted
+                accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.ACCEPTED);
+                accountTradePriceMapper.insertTradePrice(tradeId, price, total);
                 accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.FULFILLED);
             });
             return outcome(trade, price, null);

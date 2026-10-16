@@ -4,10 +4,13 @@ import com.neueda.leap.enums.ActivityStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class AccountSubscriptionTest {
+
+    Month month = Month.JANUARY;
 
     @Test
     void noArgsConstructorLeavesFieldsAtDefaults() {
@@ -23,7 +26,7 @@ class AccountSubscriptionTest {
 
     @Test
     void parameterizedConstructorSetsIdsAndDateAndDefaultsStatusToActive() {
-        LocalDate date = LocalDate.of(2026, 9, 25);
+        LocalDate date = LocalDate.of(2026, month, 25);
         AccountSubscription subscription = new AccountSubscription(101L, 7L, date);
 
         assertAll(
@@ -37,7 +40,7 @@ class AccountSubscriptionTest {
     @Test
     void settersUpdateAllMutableFields() {
         AccountSubscription subscription = new AccountSubscription();
-        LocalDate date = LocalDate.of(2025, 6, 30);
+        LocalDate date = LocalDate.of(2025, month, 30);
 
         subscription.setAccountId(11L);
         subscription.setModelPortfolioId(22L);

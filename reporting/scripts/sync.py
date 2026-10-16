@@ -20,7 +20,7 @@ from datetime import datetime, timedelta, timezone
 import pandas as pd
 from sqlalchemy import text
 
-from config import REPORTING_DIR, get_analytics_engine, get_source_engine
+from database_connection import REPORTING_DIR, get_analytics_engine, get_source_engine
 
 OVERLAP = timedelta(minutes=5)
 BEGINNING_OF_TIME = datetime(1970, 1, 1, tzinfo=timezone.utc)
@@ -88,6 +88,22 @@ def replace_trade_rows(analytics, table, rows):
     rows.to_sql(table, analytics, if_exists="append", index=False)
 
 
+def keep_reject_reasons(analytics, trades):
+    """Copy the reject_reason consumer.py saved onto the trades about to be replaced.
+
+    The trading database has no rejection reason (only the Kafka message carries it),
+    so without this, deleting and re-inserting a trade would wipe it.
+    """
+    if trades.empty:
+        return trades
+    saved = pd.read_sql(
+        text("SELECT trade_id, reject_reason FROM trades WHERE trade_id = ANY(:trade_ids) AND reject_reason IS NOT NULL"),
+        analytics,
+        params={"trade_ids": trades["trade_id"].unique().tolist()},
+    )
+    return trades.merge(saved, on="trade_id", how="left")
+
+
 def main():
     full = "--full" in sys.argv
     started_at = datetime.now(timezone.utc)
@@ -110,6 +126,7 @@ def main():
 
         trades = pd.read_sql(CHANGED_TRADES, source, params={"since": since})
         history = pd.read_sql(CHANGED_STATUS_HISTORY, source, params={"since": since})
+        trades = keep_reject_reasons(analytics, trades)
         replace_trade_rows(analytics, "trades", trades)
         replace_trade_rows(analytics, "trade_status_history", history)
         print(f"  {'trades':<22} {len(trades):>7,} rows changed")

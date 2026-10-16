@@ -16,8 +16,8 @@ public interface InstrumentMapper {
     // (asset_class holds the InstrumentType name, e.g. 'STOCK')
     String COLUMNS = "instrument_id AS instrumentId, name, ticker, asset_class AS instrumentType";
 
-    @Select("SELECT " + COLUMNS + " FROM instruments WHERE instrument_id = #{instrument_Id}")
-    Instrument findById(Long instrument_Id);
+    @Select("SELECT " + COLUMNS + " FROM instruments WHERE instrument_id = #{instrumentId}")
+    Instrument findById(Long instrumentId);
 
     @Select("SELECT " + COLUMNS + " FROM instruments")
     List<Instrument> findAll();
@@ -32,6 +32,6 @@ public interface InstrumentMapper {
     @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{instrumentType} WHERE instrument_id = #{instrumentId}")
     void update(Instrument instrument);
 
-    @Delete("DELETE FROM instruments WHERE instrument_id = #{instrument_Id}")
-    void delete(Long instrument_Id);
+    @Delete("DELETE FROM instruments WHERE instrument_id = #{instrumentId}")
+    void delete(Long instrumentId);
 }

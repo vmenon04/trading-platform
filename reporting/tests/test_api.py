@@ -30,6 +30,8 @@ DATES = "start=2026-01-01&end=2026-02-01"   # given in full so the API doesn't a
     f"/api/analyst/volume?{DATES}&client_id=abc",
     "/api/analyst/volume?start=not-a-date&end=2026-02-01",
     "/api/clients",                             # q is required
+    "/api/analyst/portfolios?quartile=5",       # quartiles are 1-4
+    "/api/analyst/portfolios?min_value=-1",
 ])
 def test_bad_input_returns_422(url):
     response = client.get(url)
@@ -49,6 +51,24 @@ def test_limit_is_capped_at_max_rows(monkeypatch):
 
     client.get(f"/api/analyst/top-clients?{DATES}&limit=999")
     assert received["top_n"] == api.MAX_ROWS
+
+
+def test_portfolios_pass_filters_and_work_out_pages(monkeypatch):
+    received = {}
+
+    def fake_client_portfolios(engine, filters, page, page_size):
+        received.update(filters=filters, page=page, page_size=page_size)
+        rows = pd.DataFrame({"client_id": [7], "portfolio_value": [1500.0], "quartile": [4]})
+        return {"total": 101, "total_value": 9e6}, rows
+
+    monkeypatch.setattr(api.tf, "client_portfolios", fake_client_portfolios)
+
+    body = client.get("/api/analyst/portfolios?min_value=1000000&quartile=4&page=2&page_size=999").json()
+    assert received["filters"] == {"client_id": None, "min_value": 1000000, "max_value": None, "quartile": 4}
+    assert received["page_size"] == api.MAX_ROWS
+    assert body["pages"] == 3                     # 50 + 50 + 1
+    assert body["total_value"] == 9e6
+    assert body["rows"] == [{"client_id": 7, "portfolio_value": 1500.0, "quartile": 4}]
 
 
 def test_search_text_is_passed_as_plain_text(monkeypatch):

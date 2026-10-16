@@ -20,7 +20,7 @@ public interface AccountTradeMapper {
 
     // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
     // (the status column goes into the tradeStatus field)
-    String TRADE_COLUMNS = "trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
+    String TRADE_COLUMNS = "account_trades.trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
             + "trade_side AS tradeSide, quantity";
 
     String STATUS_COLUMNS = "status, trade_time AS tradeTime";
@@ -31,31 +31,32 @@ public interface AccountTradeMapper {
     @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
-            "WHERE trade_id = #{trade_Id} ORDER BY account_trade_status.trade_time DESC LIMIT 1")
-    AccountTrade findById(Long trade_Id);
+            "WHERE account_trades.trade_id = #{tradeId} ORDER BY account_trade_status.trade_time DESC LIMIT 1")
+    AccountTrade findById(@Param("tradeId") Long tradeId);
 
     // current state of each of the account's trades (one row per trade)
-    @Select("SELECT DISTINCT ON (trade_id) " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT DISTINCT ON (account_trades.trade_id) " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
-            "WHERE account_id = #{account_Id} " +
-            "ORDER BY trade_id, trade_time DESC")
-    List<AccountTrade> findByAccountId(Long account_Id);
+            "WHERE account_trades.account_id = #{accountId} " +
+            "ORDER BY account_trades.trade_id, account_trade_status.trade_time DESC")
+    List<AccountTrade> findByAccountId(@Param("accountId") Long accountId);
 
     // every status a trade went through, oldest first
     @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
-            "WHERE trade_id = #{trade_Id} ORDER BY trade_time")
-    List<AccountTrade> findHistoryById(Long trade_Id);
+            "WHERE account_trades.trade_id = #{tradeId} ORDER BY account_trade_status.trade_time")
+    List<AccountTrade> findHistoryById(@Param("tradeId") Long tradeId);
 
     // Inserts the trade and returns its generated trade_id. #{...} are TradeValidatedDTO fields.
-    // The INSERT ... RETURNING goes through @Select so MyBatis returns the trade_id rather than the row count;
+    // The insert ... returning goes through @Select so MyBatis returns the trade_id rather than the row count;
     // flushCache stops MyBatis from answering a repeat of the same insert from its cache.
     // Returns null if a trade with this external_trade_id was already recorded (a redelivered message).
     // MyBatis has no UUID type handler; ObjectTypeHandler hands the UUID to the Postgres driver, which maps it to uuid.
     @Select("INSERT INTO account_trades (external_trade_id, account_id, instrument_id, trade_side, quantity) "
-            + "VALUES (#{externalTradeId, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}, #{accountId}, #{instrumentId}, #{side}, #{quantity}) "
+            + "VALUES (#{externalTradeId, typeHandler=org.apache.ibatis.type.ObjectTypeHandler}, #{accountId}, "
+            + "#{instrumentId}, #{side}, #{quantity}) "
             + "ON CONFLICT (external_trade_id) DO NOTHING "
             + "RETURNING trade_id")
     @Options(flushCache = Options.FlushCachePolicy.TRUE)
@@ -68,8 +69,7 @@ public interface AccountTradeMapper {
     @Insert("INSERT INTO account_trade_status "
             + "(trade_id, trade_time, status) "
             + "SELECT trade_id, clock_timestamp(), #{status} "
-            + "FROM account_trades WHERE trade_id = #{tradeId} "
-            + "ORDER BY trade_time DESC LIMIT 1")
+            + "FROM account_trades WHERE trade_id = #{tradeId} ")
     void insertStatus(@Param("tradeId") Long tradeId, @Param("status") TradeStatus status);
 }
 

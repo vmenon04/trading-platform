@@ -7,12 +7,15 @@ import com.neueda.leap.service.TradeRecordingService;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Consumes validated trades, records them as PENDING and publishes them to trade.recorded.
+ * Runs unless trade.stage.recording.enabled=false, so a container can run only some of the stages.
  */
+@ConditionalOnProperty(name = "trade.stage.recording.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class RecordingConsumer {
 
@@ -30,9 +33,9 @@ public class RecordingConsumer {
     // If the publish fails the message is redelivered, and record() returns the same trade rather than a new one.
     @KafkaListener(topics = KafkaTopics.TRADE_VALIDATED, groupId = "recording-service")
     public void onTradeValidated(TradeValidatedDTO trade) throws InterruptedException, ExecutionException {
-        LOGGER.info("Received validated trade event. Task ID: {}", trade.taskId());
+        LOGGER.info("Received validated trade event. Trade ID: {}", trade.externalTradeId());
 
-        TradeRecordedDTO recorded = tradeRecordingService.record(trade);
+        TradeRecordedDTO recorded = tradeRecordingService.recordTrade(trade);
         tradeEventProducer.publishTradeRecorded(recorded).get();
         LOGGER.info("Published trade recorded event to {}", KafkaTopics.TRADE_RECORDED);
     }
