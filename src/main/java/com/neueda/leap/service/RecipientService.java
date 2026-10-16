@@ -32,8 +32,8 @@ public class RecipientService {
         this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
-    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto, String username) throws AccessDeniedException {
-        if (!tradeAuthorizationService.isValidUsername(dto, username)) {
+    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto, Long userId) throws AccessDeniedException {
+        if (!tradeAuthorizationService.isValidUserId(dto, userId)) {
             throw new AccessDeniedException("You are not authorized to perform this action.");
         }
 

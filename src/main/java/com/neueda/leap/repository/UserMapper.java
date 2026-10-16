@@ -6,6 +6,6 @@ import org.apache.ibatis.annotations.Select;
 @Mapper
 public interface UserMapper {
 
-    @Select("SELECT username FROM users WHERE client_id = #{clientId}")
-    String findUsernameByClientId(Long clientId);
+    @Select("SELECT user_id FROM users WHERE client_id = #{clientId}")
+    Long findUserIdByClientId(Long clientId);
 }

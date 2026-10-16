@@ -20,13 +20,13 @@ public class TradeAuthorizationService {
         this.userService = userService;
     }
 
-    public boolean isValidUsername(TradeRequestDTO dto, String username) {
+    public boolean isValidUserId(TradeRequestDTO dto, Long userId) {
         Long accountId = accountService.getAccountIdByExternalAccountId(dto.accountId());
         List<Long> clientIds = clientAccountsService.getClientIdByAccountId(accountId);
 
         for (Long clientId : clientIds) {
-            String dtoUsername = userService.getUsernameByClientId(clientId);
-            if (Objects.equals(dtoUsername, username)) {
+            Long dtoUserId = userService.getUserIdByClientId(clientId);
+            if (Objects.equals(dtoUserId, userId)) {
                 return true;
             }
         }

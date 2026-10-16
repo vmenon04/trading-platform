@@ -27,8 +27,9 @@ public class TradeController {
         @PathVariable UUID accountId,
             @Valid @RequestBody TradeRequestDTO dto) {
         
-        String username = jwt.getSubject();
-        return recipientService.publishOrder(dto, username);
+        String userIdString = jwt.getSubject();
+        Long userId = Long.parseLong(userIdString);
+        return recipientService.publishOrder(dto, userId);
     }
 
 }
