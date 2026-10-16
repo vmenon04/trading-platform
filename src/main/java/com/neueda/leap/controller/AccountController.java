@@ -45,13 +45,13 @@ public class AccountController {
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        BigDecimal investmentValue = activeHoldings(internalId).stream()
-                .map(holding -> holding.getQuantity().multiply(instrumentService.getCurrentPrice(holding.getInstrumentId())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // BigDecimal investmentValue = activeHoldings(internalId).stream()
+        //         .map(holding -> holding.getQuantity().multiply(instrumentService.getCurrentPrice(holding.getInstrumentId())))
+        //         .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cashBalance = accountService.getBalance(internalId);
         
         // TODO: calculate cost basis and investment value 
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, investmentValue));
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, new BigDecimal(0), cashBalance, new BigDecimal(0)));
     }
 
     @GetMapping("/{accountId}/holdings")
