@@ -60,8 +60,9 @@ public class AccountController {
         List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
                 .map(holding -> new AccountHoldingResponseDTO(accountId, instrumentService.getInstrumentById(holding.getInstrumentId()).getName(),
                         instrumentService.getInstrumentById(holding.getInstrumentId()).getTicker(), holding.getQuantity(),
-                        instrumentService.getCurrentPrice(holding.getInstrumentId())))
+                        0))
                 .toList();
+                // TODO: add market price
         return ResponseEntity.ok(response);
     }
 
