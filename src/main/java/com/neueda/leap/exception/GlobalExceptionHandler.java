@@ -1,7 +1,6 @@
 package com.neueda.leap.exception;
 
 import com.neueda.leap.dto.ErrorResponseDTO;
-import jakarta.servlet.http.HttpServletRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -20,8 +19,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ErrorResponseDTO> handleValidation(MethodArgumentNotValidException ex,
-                                                             HttpServletRequest request) {
+    public ResponseEntity<ErrorResponseDTO> handleValidation(MethodArgumentNotValidException ex) {
         List<ErrorResponseDTO.FieldError> fieldErrors = ex.getBindingResult().getFieldErrors().stream()
                 .map(fe -> new ErrorResponseDTO.FieldError(fe.getField(), fe.getDefaultMessage()))
                 .toList();
@@ -32,7 +30,7 @@ public class GlobalExceptionHandler {
 
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ErrorResponseDTO> handleUnexpected(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<ErrorResponseDTO> handleUnexpected(Exception ex, jakarta.servlet.http.HttpServletRequest request) {
         LOGGER.error("Unhandled exception for {} {}", request.getMethod(), request.getRequestURI(), ex);
         ErrorResponseDTO body = ErrorResponseDTO.of(
                 HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "an unexpected error occurred");
@@ -40,10 +38,18 @@ public class GlobalExceptionHandler {
     }
 
     @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex,
-                                                               HttpServletRequest request) {
+    public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex) {
         ErrorResponseDTO body = ErrorResponseDTO.of(
-                HttpStatus.FORBIDDEN, "Forbidden", "You are not authorized to perform this action.");
+                HttpStatus.FORBIDDEN, "Forbidden", ex.getMessage());
         return ResponseEntity.status(HttpStatus.FORBIDDEN).body(body);
+    }
+
+    @ExceptionHandler(InvalidTradeException.class)
+    public ResponseEntity<ErrorResponseDTO> handleInvalidTrade(InvalidTradeException ex,
+                                                               jakarta.servlet.http.HttpServletRequest request) {
+        LOGGER.warn("Invalid trade for {} {}: {}", request.getMethod(), request.getRequestURI(), ex.getMessage());
+        ErrorResponseDTO body = ErrorResponseDTO.of(
+                HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+        return ResponseEntity.badRequest().body(body);
     }
 }

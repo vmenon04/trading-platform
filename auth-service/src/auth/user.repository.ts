@@ -5,11 +5,11 @@ import { Pool, PoolClient } from "pg";
 export type UserRole = "ADMIN" | "CLIENT" | "ANALYST";
 
 export interface UserRecord {
-	userId: number;
+	userId: bigint;
 	externalUserId: string;
 	username: string;
 	passwordHash: string;
-	clientId: number | null;
+	clientId: bigint | null;
 	roles: UserRole[];
 	createdAt: Date;
 }
@@ -17,7 +17,7 @@ export interface UserRecord {
 export interface CreateUserInput {
 	username: string;
 	passwordHash: string;
-	clientId?: number | null;
+	clientId?: bigint | null;
 	externalUserId?: string;
 	roles?: UserRole[];
 }
@@ -49,7 +49,7 @@ export class UserRepository implements OnModuleDestroy {
 		await this.pool.end();
 	}
 
-	async findById(userId: number): Promise<UserRecord | null> {
+	async findById(userId: bigint): Promise<UserRecord | null> {
 		const user = await this.queryOne<UserRow>(
 			`SELECT user_id, external_user_id, username, password_hash, client_id, created_at
 			 FROM users
@@ -76,7 +76,7 @@ export class UserRepository implements OnModuleDestroy {
 			return null;
 		}
 
-		return this.mapUser(user, await this.findRolesByUserId(Number(user.user_id)));
+		return this.mapUser(user, await this.findRolesByUserId(BigInt(user.user_id)));
 	}
 
 	async existsByUsername(username: string): Promise<boolean> {
@@ -101,7 +101,7 @@ export class UserRepository implements OnModuleDestroy {
 				`INSERT INTO users (external_user_id, username, password_hash, client_id)
 				 VALUES ($1, $2, $3, $4)
 				 RETURNING user_id, external_user_id, username, password_hash, client_id, created_at`,
-				[userExternalId, input.username, input.passwordHash, input.clientId ?? null],
+							[userExternalId, input.username, input.passwordHash, input.clientId ?? null],
 			);
 
 			const user = inserted.rows[0];
@@ -110,14 +110,14 @@ export class UserRepository implements OnModuleDestroy {
 			}
 
 			if (roles.length > 0) {
-				await this.insertRoles(client, Number(user.user_id), roles);
+				await this.insertRoles(client, BigInt(user.user_id), roles);
 			}
 
 			return this.mapUser(user, roles);
 		});
 	}
 
-	async updatePasswordHash(userId: number, passwordHash: string): Promise<void> {
+	async updatePasswordHash(userId: bigint, passwordHash: string): Promise<void> {
 		await this.pool.query(
 			`UPDATE users
 			 SET password_hash = $2
@@ -126,7 +126,7 @@ export class UserRepository implements OnModuleDestroy {
 		);
 	}
 
-	async updateClientId(userId: number, clientId: number | null): Promise<void> {
+	async updateClientId(userId: bigint, clientId: bigint | null): Promise<void> {
 		await this.pool.query(
 			`UPDATE users
 			 SET client_id = $2
@@ -135,7 +135,7 @@ export class UserRepository implements OnModuleDestroy {
 		);
 	}
 
-	async replaceRoles(userId: number, roles: UserRole[]): Promise<UserRecord | null> {
+	async replaceRoles(userId: bigint, roles: UserRole[]): Promise<UserRecord | null> {
 		const normalized = this.normalizeRoles(roles);
 
 		await this.withTransaction(async (client) => {
@@ -148,7 +148,7 @@ export class UserRepository implements OnModuleDestroy {
 		return this.findById(userId);
 	}
 
-	async addRole(userId: number, role: UserRole): Promise<void> {
+	async addRole(userId: bigint, role: UserRole): Promise<void> {
 		this.assertValidRole(role);
 		await this.pool.query(
 			`INSERT INTO roles (user_id, role)
@@ -158,7 +158,7 @@ export class UserRepository implements OnModuleDestroy {
 		);
 	}
 
-	async removeRole(userId: number, role: UserRole): Promise<void> {
+	async removeRole(userId: bigint, role: UserRole): Promise<void> {
 		await this.pool.query(
 			`DELETE FROM roles
 			 WHERE user_id = $1 AND role = $2`,
@@ -166,7 +166,7 @@ export class UserRepository implements OnModuleDestroy {
 		);
 	}
 
-	private async findRolesByUserId(userId: number): Promise<UserRole[]> {
+	private async findRolesByUserId(userId: bigint): Promise<UserRole[]> {
 		const result = await this.pool.query<RoleRow>(
 			`SELECT role
 			 FROM roles
@@ -178,7 +178,7 @@ export class UserRepository implements OnModuleDestroy {
 		return result.rows.map((row) => row.role);
 	}
 
-	private async insertRoles(client: PoolClient, userId: number, roles: UserRole[]): Promise<void> {
+	private async insertRoles(client: PoolClient, userId: bigint, roles: UserRole[]): Promise<void> {
 		await client.query(
 			`INSERT INTO roles (user_id, role)
 			 SELECT $1, UNNEST($2::text[])`,
@@ -188,11 +188,11 @@ export class UserRepository implements OnModuleDestroy {
 
 	private mapUser(user: UserRow, roles: UserRole[]): UserRecord {
 		return {
-			userId: Number(user.user_id),
+			userId: BigInt(user.user_id),
 			externalUserId: user.external_user_id,
 			username: user.username,
 			passwordHash: user.password_hash,
-			clientId: user.client_id === null ? null : Number(user.client_id),
+			clientId: user.client_id === null ? null : BigInt(user.client_id),
 			roles,
 			createdAt: user.created_at instanceof Date ? user.created_at : new Date(user.created_at ?? Date.now()),
 		};

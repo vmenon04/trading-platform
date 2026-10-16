@@ -24,9 +24,8 @@ public class TradeController {
     @PostMapping
     public ResponseEntity<Void> submitOrder(
         @AuthenticationPrincipal Jwt jwt,
-        @PathVariable UUID accountId,
             @Valid @RequestBody TradeRequestDTO dto) {
-        
+
         String userIdString = jwt.getSubject();
         Long userId = Long.parseLong(userIdString);
         return recipientService.publishOrder(dto, userId);

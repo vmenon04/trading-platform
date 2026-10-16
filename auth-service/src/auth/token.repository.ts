@@ -3,7 +3,7 @@ import { Pool, PoolClient } from "pg";
 
 export interface RefreshTokenRecord {
 	tokenId: number;
-	userId: number;
+	userId: bigint;
 	tokenHash: string;
 	expiresAt: Date;
 	revokedAt: Date | null;
@@ -31,7 +31,7 @@ export class TokenRepository implements OnModuleDestroy {
 		await this.pool.end();
 	}
 
-	async createRefreshToken(userId: number, tokenHash: string, expiresAt: Date): Promise<RefreshTokenRecord> {
+	async createRefreshToken(userId: bigint, tokenHash: string, expiresAt: Date): Promise<RefreshTokenRecord> {
 		const row = await this.queryOne<RefreshTokenRow>(
 			`INSERT INTO refresh_tokens (user_id, token_hash, expires_at)
 			 VALUES ($1, $2, $3)
@@ -94,7 +94,7 @@ export class TokenRepository implements OnModuleDestroy {
 		return (result.rowCount ?? 0) > 0;
 	}
 
-	async revokeAllForUser(userId: number): Promise<number> {
+	async revokeAllForUser(userId: bigint): Promise<number> {
 		const result = await this.pool.query(
 			`UPDATE refresh_tokens
 			 SET revoked_at = CURRENT_TIMESTAMP
@@ -107,7 +107,7 @@ export class TokenRepository implements OnModuleDestroy {
 	}
 
 	async replaceToken(
-		userId: number,
+		userId: bigint,
 		oldTokenHash: string,
 		newTokenHash: string,
 		expiresAt: Date,
@@ -165,7 +165,7 @@ export class TokenRepository implements OnModuleDestroy {
 	private mapRow(row: RefreshTokenRow): RefreshTokenRecord {
 		return {
 			tokenId: Number(row.token_id),
-			userId: Number(row.user_id),
+			userId: BigInt(row.user_id),
 			tokenHash: row.token_hash,
 			expiresAt: row.expires_at instanceof Date ? row.expires_at : new Date(row.expires_at),
 			revokedAt: row.revoked_at === null ? null : row.revoked_at instanceof Date ? row.revoked_at : new Date(row.revoked_at),

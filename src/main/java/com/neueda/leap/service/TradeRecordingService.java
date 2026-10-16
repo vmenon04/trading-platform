@@ -3,6 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import org.slf4j.Logger;
@@ -30,17 +31,17 @@ public class TradeRecordingService {
     public TradeRecordedDTO record(TradeValidatedDTO tradeValidatedDTO) {
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
         if (tradeId == null) {
-            LOGGER.info("Trade failed for task {}, account {} for instrument {}, side {}, quantity {}, quote {}.",
+            LOGGER.warn("Trade failed for task {}, account {} for instrument {}, side {}, quantity {}, quote {}.",
                     tradeValidatedDTO.taskId(),
                     tradeValidatedDTO.accountId(),
                     tradeValidatedDTO.instrumentId(),
                     tradeValidatedDTO.side(),
                     tradeValidatedDTO.quantity(),
                     tradeValidatedDTO.quote());
-        } else {
-            accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
-            LOGGER.info("Created database entry for trade with ID: {}", tradeId);
+            throw new InvalidTradeException("Failed to record trade");
         }
+        accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.PENDING);
+        LOGGER.info("Created database entry for trade with ID: {}", tradeId);
         return createTradeRecordedDTO(tradeValidatedDTO, tradeId);
     }
 

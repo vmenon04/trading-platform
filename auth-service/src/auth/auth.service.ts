@@ -8,6 +8,12 @@ import {TokenRepository} from "./token.repository";
 import {createHash} from "node:crypto";
 
 const SALT_ROUNDS = 10;
+const REFRESH_TOKEN_TTL_MS = 6 * 7 * 24 * 60 * 60 * 1000;
+
+interface TokenPair {
+    accessToken: string;
+    refreshToken: string;
+}
 
 
 @Injectable()
@@ -31,40 +37,66 @@ export class AuthService {
         return { username, registered: true };
     }
 
-    async login(username: string, password: string): Promise<{ accessToken: string; refreshToken: string }> {
+    async login(username: string, password: string): Promise<TokenPair> {
         const user = await this.userRepository.findByUsername(username);
         const passwordMatches = user ? await bcrypt.compare(password, user.passwordHash) : false;
         if (!user || !passwordMatches) {
             throw new UnauthorizedException("invalid username or password");
         }
-        const accessToken = this.issueAccessToken(user.username, user.roles);
-        const refreshToken = randomBytes(32).toString("hex");
-        const hashedRefreshToken = this.hashRefreshToken(refreshToken);
-        await this.tokenRepository.createRefreshToken(user.userId, hashedRefreshToken, new Date(Date.now() + 6 * 7 * 24 * 60 * 60 * 1000));
         logAuthEvent("login_success", user.username);
-        return { accessToken, refreshToken };
+        return this.issueTokenPair(user);
     }
 
-    async refresh(refreshToken: string): Promise<{ refreshToken: string, accessToken: string }> {
-        const entry = await this.findByRefreshToken(refreshToken);
-        if (!entry) {
+    async refresh(refreshToken: string): Promise<TokenPair> {
+        const user = await this.findByRefreshToken(refreshToken);
+        if (!user) {
             throw new UnauthorizedException("invalid or expired refresh token");
         }
-        const user = entry;
-        const newRefreshToken = randomBytes(32).toString("hex");
-        const newHashedRefreshToken = this.hashRefreshToken(newRefreshToken);
-        await this.tokenRepository.replaceToken(user.userId, this.hashRefreshToken(refreshToken), newHashedRefreshToken, new Date(Date.now() + 6 * 7 * 24 * 60 * 60 * 1000));
-        return {
-            refreshToken: newRefreshToken,
-            accessToken: this.issueAccessToken(user.username, user.roles)
-        };
+        return this.rotateTokenPair(user, refreshToken);
     }
 
-    private issueAccessToken(username: string, roles: string[]): string {
-        return jwt.sign({ sub: username, roles }, this.getJwtSecret(), {
+    private issueAccessToken(userId: bigint, roles: string[]): string {
+        return jwt.sign({ sub: userId.toString(), roles }, this.getJwtSecret(), {
             algorithm: "HS256",
             expiresIn: "15m",
         });
+    }
+
+    private async issueTokenPair(user: UserRecord): Promise<TokenPair> {
+        const refreshToken = this.generateRefreshToken();
+        await this.tokenRepository.createRefreshToken(
+                user.userId,
+                this.hashRefreshToken(refreshToken),
+                this.getRefreshTokenExpiryDate(),
+        );
+
+        return {
+            accessToken: this.issueAccessToken(user.userId, user.roles),
+            refreshToken,
+        };
+    }
+
+    private async rotateTokenPair(user: UserRecord, refreshToken: string): Promise<TokenPair> {
+        const newRefreshToken = this.generateRefreshToken();
+        await this.tokenRepository.replaceToken(
+                user.userId,
+                this.hashRefreshToken(refreshToken),
+                this.hashRefreshToken(newRefreshToken),
+                this.getRefreshTokenExpiryDate(),
+        );
+
+        return {
+            accessToken: this.issueAccessToken(user.userId, user.roles),
+            refreshToken: newRefreshToken,
+        };
+    }
+
+    private generateRefreshToken(): string {
+        return randomBytes(32).toString("hex");
+    }
+
+    private getRefreshTokenExpiryDate(): Date {
+        return new Date(Date.now() + REFRESH_TOKEN_TTL_MS);
     }
 
     private hashRefreshToken(token: string): string {

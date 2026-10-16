@@ -4,10 +4,10 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
-import java.util.UUID;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -23,7 +24,6 @@ import static org.mockito.Mockito.when;
 @ExtendWith(MockitoExtension.class)
 class TradeRecordingServiceTest {
 
-    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private AccountTradeMapper accountTradeMapper;
@@ -66,13 +66,11 @@ class TradeRecordingServiceTest {
     }
 
     @Test
-    void alreadyRecordedTradeReturnsExistingTradeWithoutRecordingAgain() {
+    void nullTradeIdThrowsInvalidTradeException() {
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(null);
-        when(accountTradeMapper.findTradeIdByExternalTradeId(EXTERNAL_TRADE_ID)).thenReturn(4L);
 
-        TradeRecordedDTO tradeRecordedDTO = tradeRecordingService.record(validatedDTO);
+        assertThrows(InvalidTradeException.class, () -> tradeRecordingService.record(validatedDTO));
 
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
-        assertEquals(4L, tradeRecordedDTO.tradeId());
     }
 }

@@ -78,7 +78,7 @@ class TradeControllerTest {
         Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("1");
 
-        ResponseEntity<Void> response = tradeController.submitOrder(jwt, accountId, dto);
+        ResponseEntity<Void> response = tradeController.submitOrder(jwt, dto);
 
         org.junit.jupiter.api.Assertions.assertEquals(202, response.getStatusCode().value());
         org.junit.jupiter.api.Assertions.assertEquals(location, response.getHeaders().getLocation());
