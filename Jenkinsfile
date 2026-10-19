@@ -54,6 +54,8 @@ def SmokeTest() {
             -e SPRING_KAFKA_LISTENER_AUTO_STARTUP=false \\
             -e MARKET_DATA_BASE_URL=http://localhost:1 \\
             -e MARKET_DATA_API_KEY=smoke-test \\
+            -e MARKET_DATA_CACHE_TTL=5m \\
+            -e MANAGEMENT_HEALTH_REDIS_ENABLED=false \\
             fintech-five:${safeTag}"""
         // stops as soon as the app container exits (it failed to start), rather than waiting out the timeout
         sh """for i in \$(seq 45); do
