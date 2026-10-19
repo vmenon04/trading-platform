@@ -4,7 +4,6 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.springframework.http.HttpStatus;
 
-import java.time.Instant;
 import java.util.List;
 
 public record ErrorResponseDTO(

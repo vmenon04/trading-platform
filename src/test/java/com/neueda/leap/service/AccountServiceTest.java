@@ -49,15 +49,17 @@ class AccountServiceTest {
 
     @Test
     void depositRejectsNonPositiveAmount() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.deposit(1L, negative));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void depositThrowsWhenAccountNotFound() {
         when(accountMapper.increaseBalance(eq(99L), any())).thenReturn(0);
-        assertThrows(NoSuchElementException.class, () -> accountService.deposit(99L, new BigDecimal("100")));
+        BigDecimal amount = new BigDecimal("100");
+        assertThrows(NoSuchElementException.class, () -> accountService.deposit(99L, amount));
     }
 
     @Test
@@ -69,8 +71,9 @@ class AccountServiceTest {
 
     @Test
     void withdrawRejectsNonPositiveAmount() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.withdraw(1L, negative));
         verifyNoInteractions(accountMapper);
     }
 
@@ -78,14 +81,16 @@ class AccountServiceTest {
     void withdrawThrowsWhenInsufficientFunds() {
         when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
         when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
-        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1L, new BigDecimal("1000.01")));
+        BigDecimal amount = new BigDecimal("1000.01");
+        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1L, amount));
     }
 
     @Test
     void withdrawThrowsWhenAccountNotFound() {
         when(accountMapper.reduceBalance(eq(99L), any())).thenReturn(0);
         when(accountMapper.findBalance(99L)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> accountService.withdraw(99L, new BigDecimal("100")));
+        BigDecimal amount = new BigDecimal("100");
+        assertThrows(NoSuchElementException.class, () -> accountService.withdraw(99L, amount));
     }
 
     @Test
@@ -97,8 +102,9 @@ class AccountServiceTest {
 
     @Test
     void purchaseRejectsNonPositiveAmount() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1L, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1L, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.purchase(1L, negative));
         verifyNoInteractions(accountMapper);
     }
 
@@ -106,14 +112,16 @@ class AccountServiceTest {
     void purchaseThrowsWhenInsufficientFunds() {
         when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
         when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
-        assertThrows(IllegalStateException.class, () -> accountService.purchase(1L, new BigDecimal("1000.01")));
+        BigDecimal amount = new BigDecimal("1000.01");
+        assertThrows(IllegalStateException.class, () -> accountService.purchase(1L, amount));
     }
 
     @Test
     void purchaseThrowsWhenAccountNotFound() {
         when(accountMapper.reduceBalance(eq(99L), any())).thenReturn(0);
         when(accountMapper.findBalance(99L)).thenReturn(null);
-        assertThrows(NoSuchElementException.class, () -> accountService.purchase(99L, new BigDecimal("100")));
+        BigDecimal amount = new BigDecimal("100");
+        assertThrows(NoSuchElementException.class, () -> accountService.purchase(99L, amount));
     }
 
     @Test
@@ -125,15 +133,17 @@ class AccountServiceTest {
 
     @Test
     void sellRejectsNonPositiveAmount() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class, () -> accountService.sell(1L, BigDecimal.ZERO));
-        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1L, new BigDecimal("-5")));
+        assertThrows(IllegalArgumentException.class, () -> accountService.sell(1L, negative));
         verifyNoInteractions(accountMapper);
     }
 
     @Test
     void sellThrowsWhenAccountNotFound() {
         when(accountMapper.increaseBalance(eq(99L), any())).thenReturn(0);
-        assertThrows(NoSuchElementException.class, () -> accountService.sell(99L, new BigDecimal("100")));
+        BigDecimal amount = new BigDecimal("100");
+        assertThrows(NoSuchElementException.class, () -> accountService.sell(99L, amount));
     }
 
     @Test

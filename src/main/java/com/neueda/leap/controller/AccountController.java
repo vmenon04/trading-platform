@@ -7,7 +7,6 @@ import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
-import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
@@ -33,7 +32,7 @@ public class AccountController {
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
 
-    public AccountController(AccountService accountService, AccountMapper accountMapper,
+    public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
                              InstrumentService instrumentService) {
         this.accountService = accountService;
@@ -45,9 +44,6 @@ public class AccountController {
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        // BigDecimal investmentValue = activeHoldings(internalId).stream()
-        //         .map(holding -> holding.getQuantity().multiply(instrumentService.getCurrentPrice(holding.getInstrumentId())))
-        //         .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cashBalance = accountService.getBalance(internalId);
         
         // TODO: calculate cost basis and investment value 
