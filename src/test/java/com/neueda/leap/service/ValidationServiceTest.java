@@ -10,6 +10,8 @@ import java.util.NoSuchElementException;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -63,36 +65,36 @@ class ValidationServiceTest {
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
     }
 
-    @Test
-    void validBuyPasses() {
+    // 10 is exactly the cash available; 0.12345678 has the maximum 8 decimals
+    @ParameterizedTest
+    @ValueSource(strings = {"5", "10", "0.12345678"})
+    void validBuyPasses(String quantity) {
         givenInstrumentAndBalance();
-        assertDoesNotThrow(() -> validationService.validate(order("BUY", "5")));
-    }
-
-    @Test
-    void buyWithExactCashPasses() {
-        givenInstrumentAndBalance();
-        assertDoesNotThrow(() -> validationService.validate(order("BUY", "10")));
+        TradeSubmittedDTO buy = order("BUY", quantity);
+        assertDoesNotThrow(() -> validationService.validate(buy));
     }
 
     @Test
     void buyRejectsInsufficientCash() {
         givenInstrumentAndBalance();
-        assertThrows(IllegalStateException.class, () -> validationService.validate(order("BUY", "11")));
+        TradeSubmittedDTO buy = order("BUY", "11");
+        assertThrows(IllegalStateException.class, () -> validationService.validate(buy));
     }
 
     @Test
     void validSellPasses() {
         givenInstrumentAndBalance();
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
-        assertDoesNotThrow(() -> validationService.validate(order("SELL", "5")));
+        TradeSubmittedDTO sell = order("SELL", "5");
+        assertDoesNotThrow(() -> validationService.validate(sell));
     }
 
     @Test
     void sellRejectsInsufficientHoldings() {
         givenInstrumentAndBalance();
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
-        assertThrows(IllegalStateException.class, () -> validationService.validate(order("SELL", "11")));
+        TradeSubmittedDTO sell = order("SELL", "11");
+        assertThrows(IllegalStateException.class, () -> validationService.validate(sell));
     }
 
     @Test
@@ -111,21 +113,18 @@ class ValidationServiceTest {
 
     @Test
     void rejectsNonPositiveQuantity() {
-        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "0")));
-        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "-5")));
+        TradeSubmittedDTO zero = order("BUY", "0");
+        TradeSubmittedDTO negative = order("BUY", "-5");
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(zero));
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(negative));
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
     }
 
     @Test
     void rejectsQuantityWithMoreThanEightDecimals() {
-        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "0.000000001")));
+        TradeSubmittedDTO buy = order("BUY", "0.000000001");
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(buy));
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
-    }
-
-    @Test
-    void acceptsQuantityWithEightDecimals() {
-        givenInstrumentAndBalance();
-        assertDoesNotThrow(() -> validationService.validate(order("BUY", "0.12345678")));
     }
 
     @Test
@@ -138,13 +137,15 @@ class ValidationServiceTest {
     void rejectsUnknownInstrument() {
         when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
         when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenThrow(new NoSuchElementException());
-        assertThrows(NoSuchElementException.class, () -> validationService.validate(order("BUY", "5")));
+        TradeSubmittedDTO buy = order("BUY", "5");
+        assertThrows(NoSuchElementException.class, () -> validationService.validate(buy));
     }
 
     @Test
     void rejectsUnknownAccount() {
         when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenThrow(new NoSuchElementException());
-        assertThrows(NoSuchElementException.class, () -> validationService.validate(order("BUY", "5")));
+        TradeSubmittedDTO buy = order("BUY", "5");
+        assertThrows(NoSuchElementException.class, () -> validationService.validate(buy));
     }
 
     @Test
@@ -177,22 +178,13 @@ class ValidationServiceTest {
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
     }
 
-    private void givenInstrumentBalanceAndQuote(BigDecimal quote) {
+    @Test
+    void rejectsWhenNoPriceAvailable() {
         when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(quote);
-    }
-
-    @Test
-    void rejectsMissingQuote() {
-        givenInstrumentBalanceAndQuote(null);
-        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
-    }
-
-    @Test
-    void rejectsNonPositiveQuote() {
-        givenInstrumentBalanceAndQuote(BigDecimal.ZERO);
-        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price"));
+        TradeSubmittedDTO buy = order("BUY", "5");
+        assertThrows(IllegalStateException.class, () -> validationService.validate(buy));
         verifyNoInteractions(accountHoldingService);
     }
 }
