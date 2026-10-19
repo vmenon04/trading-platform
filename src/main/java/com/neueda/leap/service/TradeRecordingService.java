@@ -31,8 +31,7 @@ public class TradeRecordingService {
     public TradeRecordedDTO recordTrade(TradeValidatedDTO tradeValidatedDTO) {
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
         if (tradeId == null) {
-            LOGGER.warn("Trade failed for task {}, account {} for instrument {}, side {}, quantity {}, quote {}.",
-                    tradeValidatedDTO.taskId(),
+            LOGGER.warn("Trade failed for account {} for instrument {}, side {}, quantity {}, quote {}.",
                     tradeValidatedDTO.accountId(),
                     tradeValidatedDTO.instrumentId(),
                     tradeValidatedDTO.side(),
