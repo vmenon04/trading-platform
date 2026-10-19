@@ -8,7 +8,7 @@ import { AccountHolding, AccountSummary, Trade, TradeSide } from '../models/acco
 export class AccountService {
   // the account being viewed; every resource below re-fetches when it changes
   // TODO: set from login / AccountSelector instead of a sample-data account
-  readonly accountId = signal('7f524097-8e4e-4c1d-9d6f-2e043f886b9d');
+  readonly accountId = signal('00000000-0000-0000-0000-000000000001');
 
   // null = all orders
   readonly orderSide = signal<TradeSide | null>(null);
