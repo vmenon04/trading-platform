@@ -27,7 +27,7 @@ public class TradeRecordingService {
     // commits before the caller publishes, so trade.recorded only ever carries a trade that is in the database.
     // A redelivered message finds the trade by its external_trade_id and returns it again instead of inserting it twice.
     @Transactional
-    public TradeRecordedDTO record(TradeValidatedDTO tradeValidatedDTO) {
+    public TradeRecordedDTO recordTrade(TradeValidatedDTO tradeValidatedDTO) {
         Long tradeId = accountTradeMapper.insert(tradeValidatedDTO);
         if (tradeId == null) {
             tradeId = accountTradeMapper.findTradeIdByExternalTradeId(tradeValidatedDTO.externalTradeId());
@@ -46,7 +46,6 @@ public class TradeRecordingService {
                 tradeValidatedDTO.side(),
                 tradeValidatedDTO.quantity(),
                 tradeValidatedDTO.quote(),
-                tradeValidatedDTO.taskId(),
                 tradeId);
     }
 }

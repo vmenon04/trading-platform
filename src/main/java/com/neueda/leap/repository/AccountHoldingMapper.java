@@ -19,25 +19,22 @@ public interface AccountHoldingMapper {
     // columns aliased to the AccountHolding field names, so MyBatis fills the right fields
     String COLUMNS = "account_id AS accountId, instrument_id AS instrumentId, as_of_date AS asOfDate, quantity, status";
 
-    @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
-    AccountHolding findByAccountInstrumentAndDate(@Param("account_Id") Long account_Id,
-                                                  @Param("instrument_Id") Long instrument_Id,
-                                                  @Param("as_Of_Date") LocalDateTime as_Of_Date);
+    @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND as_of_date = #{asOfDate}")
+    AccountHolding findByAccountInstrumentAndDate(@Param("accountId") Long accountId,
+                                                  @Param("instrumentId") Long instrumentId,
+                                                  @Param("asOfDate") LocalDateTime asOfDate);
 
     // every snapshot for the account, including INACTIVE history rows
-    @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{account_Id}")
-    List<AccountHolding> findByAccountId(Long account_Id);
-
-//     @Insert("INSERT INTO account_holdings(account_id, instrument_id, quantity, as_of_date, status) VALUES(#{account_Id}, #{instrument_Id}, #{quantity}, #{as_Of_Date}, #{status})")
-//     void insert(AccountHolding accountHolding);
+    @Select("SELECT " + COLUMNS + " FROM account_holdings WHERE account_id = #{accountId}")
+    List<AccountHolding> findByAccountId(@Param("accountId") Long accountId);
 
     // #{...} are AccountHolding field names
     @Update("UPDATE account_holdings SET quantity = #{quantity}, status = #{status} WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND as_of_date = #{asOfDate}")
     void update(AccountHolding accountHolding);
 
-    @Delete("DELETE FROM account_holdings WHERE account_id = #{account_Id} AND instrument_id = #{instrument_Id} AND as_of_date = #{as_Of_Date}")
-    void delete(@Param("account_Id") Long account_Id, @Param("instrument_Id") Long instrument_Id,
-                @Param("as_Of_Date") LocalDateTime as_Of_Date);
+    @Delete("DELETE FROM account_holdings WHERE account_id = #{accountId} AND instrument_id = #{instrumentId} AND as_of_date = #{asOfDate}")
+    void delete(@Param("accountId") Long accountId, @Param("instrumentId") Long instrumentId,
+                @Param("asOfDate") LocalDateTime asOfDate);
 
     //vasus additions for accountholdingmapper
     // The 'ACTIVE' row is the current holding; older rows are 'INACTIVE' history

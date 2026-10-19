@@ -29,13 +29,6 @@ export interface BuySellRow {
   sell_trades: number;
 }
 
-export interface StatusMixRow extends Record<OrderStatus, number> {
-  period: string;
-  orders: number;
-  fill_rate: number | null;
-  reject_rate: number | null;
-}
-
 export interface PriceRow {
   period: string;
   avg_price: number | null;
@@ -55,6 +48,36 @@ export interface TopClientRow {
   client_name: string;
   trade_count: number;
   notional: number;
+}
+
+/** quartile 4 is the top 25% of clients by portfolio value, 1 the bottom 25%. */
+export type Quartile = 1 | 2 | 3 | 4;
+
+export interface PortfolioRow {
+  client_id: number;
+  client_name: string;
+  cash: number;
+  invested: number;
+  portfolio_value: number;
+  unpriced_positions: number;
+  quartile: Quartile;
+}
+
+export interface PortfoliosPage {
+  total: number;        // clients matching the filters
+  total_value: number;  // their combined portfolio value
+  page: number;
+  page_size: number;
+  pages: number;
+  rows: PortfolioRow[];
+}
+
+export interface PortfolioTierRow {
+  quartile: Quartile;
+  clients: number;
+  total_value: number;
+  min_value: number;
+  max_value: number;
 }
 
 export interface TopInstrumentRow {
@@ -81,6 +104,7 @@ export interface TradeRow {
 
 export interface OrderRow extends TradeRow {
   status_time: string;
+  reject_reason: string | null; // only for REJECTED orders, and only if the consumer saw why
   clients: string | null;
   instrument: string;
 }

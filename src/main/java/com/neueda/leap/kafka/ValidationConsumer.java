@@ -7,12 +7,15 @@ import com.neueda.leap.service.ValidationService;
 import java.util.concurrent.ExecutionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Consumes submitted trades, validates them and publishes the valid ones to trade.validated.
+ * Runs unless trade.stage.validation.enabled=false, so a container can run only some of the stages.
  */
+@ConditionalOnProperty(name = "trade.stage.validation.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class ValidationConsumer {
 
@@ -29,7 +32,7 @@ public class ValidationConsumer {
     // waits for the send so a failed publish fails the listener and the message is redelivered
     @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
     public void onTradeSubmitted(TradeSubmittedDTO trade) throws InterruptedException, ExecutionException {
-        LOGGER.info("Received submitted trade event. Task ID: {}", trade.taskId());
+        LOGGER.info("Received submitted trade event. Trade ID: {}", trade.externalTradeId());
 
         TradeValidatedDTO validated = validationService.validateSubmittedTrade(trade);
         tradeEventProducer.publishTradeValidated(validated).get();

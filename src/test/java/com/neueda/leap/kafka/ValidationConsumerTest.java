@@ -35,10 +35,10 @@ class ValidationConsumerTest {
     private ValidationConsumer validationConsumer;
 
     private final TradeSubmittedDTO trade = new TradeSubmittedDTO(
-            10L, UUID.randomUUID(), TradeSide.BUY, new BigDecimal("5"), 3L, EXTERNAL_TRADE_ID);
+            10L, UUID.randomUUID(), TradeSide.BUY, new BigDecimal("5"), EXTERNAL_TRADE_ID);
 
     private final TradeValidatedDTO validated = new TradeValidatedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 3L, EXTERNAL_TRADE_ID);
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), EXTERNAL_TRADE_ID);
 
     @BeforeEach
     void setUp() {

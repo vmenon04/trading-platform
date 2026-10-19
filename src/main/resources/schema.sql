@@ -9,9 +9,9 @@ DROP TABLE IF EXISTS account_trades CASCADE;
 DROP TABLE IF EXISTS client_accounts CASCADE;
 DROP TABLE IF EXISTS accounts CASCADE;
 DROP TABLE IF EXISTS instruments CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
 
 -- Old client-level tables, replaced by the account-level ones above
 DROP TABLE IF EXISTS client_subscriptions CASCADE;
@@ -21,7 +21,7 @@ DROP TABLE IF EXISTS client_trades CASCADE;
 -- clients
 CREATE TABLE clients (
     client_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_client_id uuid,
+    external_client_id UUID UNIQUE NOT NULL,
     first_name TEXT NOT NULL,
     last_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
@@ -32,7 +32,7 @@ CREATE TABLE clients (
 -- users: login accounts. a CLIENT user is linked to a client; what each user may do is in roles
 CREATE TABLE users (
     user_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_user_id uuid,
+    external_user_id UUID UNIQUE NOT NULL,
     username VARCHAR(50) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
     client_id BIGINT REFERENCES clients(client_id),
@@ -48,7 +48,7 @@ CREATE TABLE roles (
 
 CREATE TABLE accounts (
     account_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
-    external_account_id uuid,
+    external_account_id UUID UNIQUE NOT NULL,
     balance NUMERIC(14, 4) NOT NULL
 );
 
@@ -86,7 +86,7 @@ CREATE INDEX idx_account_holdings_instrument_id ON account_holdings(instrument_i
 CREATE TABLE account_trades (
     trade_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     -- generated when the order is submitted; UNIQUE so a redelivered trade.validated message can't record it twice
-    external_trade_id uuid UNIQUE NOT NULL,
+    external_trade_id UUID UNIQUE NOT NULL,
     account_id BIGINT REFERENCES accounts(account_id) NOT NULL,
     instrument_id BIGINT REFERENCES instruments(instrument_id) NOT NULL,
     trade_side TEXT NOT NULL

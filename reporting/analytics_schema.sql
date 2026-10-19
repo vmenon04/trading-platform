@@ -52,6 +52,10 @@ CREATE INDEX IF NOT EXISTS idx_trades_account_id ON trades(account_id);
 CREATE INDEX IF NOT EXISTS idx_trades_instrument_id ON trades(instrument_id);
 CREATE INDEX IF NOT EXISTS idx_trades_trade_time ON trades(trade_time);
 
+-- Why a REJECTED trade was rejected. Only the trade.finished Kafka message carries it
+-- (the trading database doesn't store it), so it's filled by consumer.py, never by sync.py.
+ALTER TABLE trades ADD COLUMN IF NOT EXISTS reject_reason TEXT;
+
 CREATE TABLE IF NOT EXISTS trade_status_history (
     trade_id    BIGINT NOT NULL,
     status      TEXT NOT NULL,

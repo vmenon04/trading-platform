@@ -25,6 +25,10 @@ tr.timeline ol { margin: 6px 0 2px; padding-left: 20px; display: flex; flex-wrap
 .status[data-status="ACCEPTED"]::before { content: "●"; color: var(--series-1); }
 .status[data-status="PENDING"]::before { content: "○"; color: var(--muted); }
 
+/* the rejection reason, under the status; long ones are cut off here and shown in full when the row is opened */
+.reason { display: block; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-secondary); }
+tr.timeline .why { margin: 6px 0 2px; }
+
 .pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin-top: 12px; }
 .pager label { display: flex; flex-direction: column; gap: 4px; color: var(--text-secondary); font-size: 12px; }
 .pager span { align-self: center; }
