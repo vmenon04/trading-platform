@@ -15,7 +15,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
 | | 4200 | Reporting dashboard dev server (`ng serve`, proxies `/api` to 8050) |
 
-## Docker Compose (`docker-compose.yaml`, Linux machine)
+## Docker Compose (`../docker-compose.yml`, Linux machine)
 
 | Service | Image | Does |
 |---|---|---|
