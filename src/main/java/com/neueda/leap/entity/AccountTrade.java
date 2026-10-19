@@ -17,19 +17,22 @@ public class AccountTrade {
     private Long instrumentId;
     private TradeSide tradeSide;
     private BigDecimal quantity;
-    private BigDecimal price;
+    private BigDecimal ppu;
+    private BigDecimal totalPrice;
 
     public AccountTrade() {
         this.accountTradeStatus = new AccountTradeStatus();
     }
 
-    public AccountTrade(Long accountId, Long instrumentId, TradeSide tradeSide, BigDecimal quantity, BigDecimal price) {
+    public AccountTrade(Long accountId, Long instrumentId, TradeSide tradeSide, BigDecimal quantity,
+                        BigDecimal ppu, BigDecimal totalPrice) {
         this.tradeId = null;
         this.accountId = accountId;
         this.instrumentId = instrumentId;
         this.tradeSide = tradeSide;
         this.quantity = quantity;
-        this.price = price;
+        this.ppu = ppu;
+        this.totalPrice = totalPrice;
         this.accountTradeStatus = new AccountTradeStatus();
         accountTradeStatus.setTradeStatus(TradeStatus.PENDING);
     }
@@ -82,12 +85,20 @@ public class AccountTrade {
         this.quantity = quantity;
     }
 
-    public BigDecimal getPrice() {
-        return price;
+    public BigDecimal getPPU() {
+        return ppu;
     }
 
-    public void setPrice(BigDecimal price) {
-        this.price = price;
+    public void setPPU(BigDecimal ppu) {
+        this.ppu = ppu;
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
     }
 
     public TradeStatus getStatus() { return accountTradeStatus.getTradeStatus();}
