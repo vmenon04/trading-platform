@@ -21,6 +21,7 @@ class GlobalExceptionHandlerTest {
     // MethodArgumentNotValidException needs a MethodParameter; any method with a parameter will do
     @SuppressWarnings("unused")
     private void target(Object body) {
+        // intentionally empty: only its signature is used, to build the MethodParameter
     }
 
     private static MethodArgumentNotValidException validationFailure(BeanPropertyBindingResult bindingResult)
