@@ -48,8 +48,8 @@ public class ValidationService {
         instrumentService.getInstrumentById(instrumentId);
         BigDecimal balance = accountService.getBalance(accountId);
 
-        // getCurrentPrice already rejects missing and non-positive prices
         BigDecimal quote = instrumentService.getCurrentPrice(instrumentId);
+        checkPricePositive(quote);
 
         if (TradeSide.BUY.equals(side)) {
             checkSufficientFunds(quote, quantity, balance, accountId);
@@ -77,6 +77,12 @@ public class ValidationService {
     private void checkDecimalsValid(BigDecimal quantity) {
         if (quantity.stripTrailingZeros().scale() > 8) {
             throw new IllegalArgumentException("Quantity can have at most 8 decimal places, got " + quantity);
+        }
+    }
+
+    private void checkPricePositive(BigDecimal price) {
+        if (price == null || price.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Price must be positive");
         }
     }
 

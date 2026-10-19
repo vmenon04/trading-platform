@@ -178,13 +178,24 @@ class ValidationServiceTest {
         verifyNoInteractions(instrumentService, accountService, accountHoldingService);
     }
 
-    @Test
-    void rejectsWhenNoPriceAvailable() {
+    private void givenInstrumentBalanceAndQuote(BigDecimal quote) {
         when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price"));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(quote);
+    }
+
+    @Test
+    void rejectsMissingQuote() {
+        givenInstrumentBalanceAndQuote(null);
         TradeSubmittedDTO buy = order("BUY", "5");
-        assertThrows(IllegalStateException.class, () -> validationService.validate(buy));
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(buy));
+    }
+
+    @Test
+    void rejectsNonPositiveQuote() {
+        givenInstrumentBalanceAndQuote(BigDecimal.ZERO);
+        TradeSubmittedDTO buy = order("BUY", "5");
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(buy));
         verifyNoInteractions(accountHoldingService);
     }
 }
