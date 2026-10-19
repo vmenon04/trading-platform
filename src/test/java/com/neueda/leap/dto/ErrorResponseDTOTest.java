@@ -7,10 +7,14 @@ import jakarta.validation.Validation;
 import jakarta.validation.Validator;
 import jakarta.validation.ValidatorFactory;
 import java.util.Set;
+import java.util.stream.Stream;
 import org.hibernate.validator.messageinterpolation.ParameterMessageInterpolator;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.http.HttpStatus;
 
 @DisplayName("ErrorResponseDTO Tests")
@@ -38,48 +42,24 @@ class ErrorResponseDTOTest {
         assertEquals("Account does not have sufficient balance", dto.message());
     }
 
-    @Test
-    @DisplayName("Should validate non-blank error field")
-    void testValidateBlankError() {
-        ErrorResponseDTO dto = new ErrorResponseDTO(HttpStatus.BAD_REQUEST, "   ", "Account does not have sufficient balance", null);
-        
-        Set<ConstraintViolation<ErrorResponseDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream()
-            .anyMatch(v -> v.getPropertyPath().toString().equals("error")));
+    static Stream<Arguments> missingFields() {
+        return Stream.of(
+            Arguments.of("   ", "Account does not have sufficient balance", "error"),
+            Arguments.of(null, "Account does not have sufficient balance", "error"),
+            Arguments.of("INSUFFICIENT_FUNDS", "", "message"),
+            Arguments.of("INSUFFICIENT_FUNDS", null, "message"));
     }
 
-    @Test
-    @DisplayName("Should validate null error field")
-    void testValidateNullError() {
-        ErrorResponseDTO dto = new ErrorResponseDTO(HttpStatus.BAD_REQUEST, null, "Account does not have sufficient balance", null);
+    @ParameterizedTest(name = "error={0}, message={1} -> violation on {2}")
+    @MethodSource("missingFields")
+    @DisplayName("Should validate non-blank error and message fields")
+    void testValidateBlankOrNullField(String error, String message, String invalidField) {
+        ErrorResponseDTO dto = new ErrorResponseDTO(HttpStatus.BAD_REQUEST, error, message, null);
         
         Set<ConstraintViolation<ErrorResponseDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
-            .anyMatch(v -> v.getPropertyPath().toString().equals("error")));
-    }
-
-    @Test
-    @DisplayName("Should validate non-blank message field")
-    void testValidateBlankMessage() {
-        ErrorResponseDTO dto = new ErrorResponseDTO(HttpStatus.BAD_REQUEST, "INSUFFICIENT_FUNDS", "", null);
-        
-        Set<ConstraintViolation<ErrorResponseDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream()
-            .anyMatch(v -> v.getPropertyPath().toString().equals("message")));
-    }
-
-    @Test
-    @DisplayName("Should validate null message field")
-    void testValidateNullMessage() {
-        ErrorResponseDTO dto = new ErrorResponseDTO(HttpStatus.BAD_REQUEST, "INSUFFICIENT_FUNDS", null, null);
-        
-        Set<ConstraintViolation<ErrorResponseDTO>> violations = validator.validate(dto);
-        assertFalse(violations.isEmpty());
-        assertTrue(violations.stream()
-            .anyMatch(v -> v.getPropertyPath().toString().equals("message")));
+            .anyMatch(v -> v.getPropertyPath().toString().equals(invalidField)));
     }
 
     @Test

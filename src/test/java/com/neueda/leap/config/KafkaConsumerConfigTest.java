@@ -55,10 +55,10 @@ class KafkaConsumerConfigTest {
     void rejectsADoubleEncodedMessage() throws Exception {
         TradeRecordedDTO sent = new TradeRecordedDTO(10L, 1L, TradeSide.BUY, new BigDecimal("5"),
                 new BigDecimal("100.25"), 42L);
-        String doubleEncoded = produce(new ObjectMapper().writeValueAsString(sent));
+        ConsumerRecord<String, String> doubleEncoded = consumerRecord(produce(new ObjectMapper().writeValueAsString(sent)));
 
         assertThrows(ConversionException.class,
-                () -> converter.toMessage(consumerRecord(doubleEncoded), null, null, TradeRecordedDTO.class));
+                () -> converter.toMessage(doubleEncoded, null, null, TradeRecordedDTO.class));
     }
 
     private static String produce(Object value) {
@@ -70,7 +70,8 @@ class KafkaConsumerConfigTest {
 
     @Test
     void rejectsMessagesThatAreNotJson() {
+        ConsumerRecord<String, String> notJson = consumerRecord("not json");
         assertThrows(ConversionException.class,
-                () -> converter.toMessage(consumerRecord("not json"), null, null, TradeRecordedDTO.class));
+                () -> converter.toMessage(notJson, null, null, TradeRecordedDTO.class));
     }
 }

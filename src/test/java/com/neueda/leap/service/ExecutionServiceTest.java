@@ -192,8 +192,8 @@ class ExecutionServiceTest {
         doThrow(new DataAccessResourceFailureException("Database down"))
                 .when(accountTradePriceMapper).insertTradePrice(any(), any(), any());
 
-        assertThrows(DataAccessResourceFailureException.class,
-                () -> executionService.execute(recorded(TradeSide.BUY, "5")));
+        TradeRecordedDTO buy = recorded(TradeSide.BUY, "5");
+        assertThrows(DataAccessResourceFailureException.class, () -> executionService.execute(buy));
 
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
