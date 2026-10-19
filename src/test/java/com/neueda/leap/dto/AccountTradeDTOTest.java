@@ -33,7 +33,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should create AccountTradeDTO with valid data")
     void testValidAccountTradeDTO() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         assertEquals(1L, dto.tradeId());
         assertEquals("2026-09-25T10:30:00", dto.tradeTime());
@@ -41,7 +41,8 @@ class AccountTradeDTOTest {
         assertEquals(3L, dto.instrumentId());
         assertEquals(TradeSide.BUY, dto.tradeSide());
         assertEquals(BigDecimal.valueOf(100), dto.quantity());
-        assertEquals(BigDecimal.valueOf(150), dto.price());
+        assertEquals(BigDecimal.valueOf(150), dto.ppu());
+        assertEquals(BigDecimal.valueOf(15000), dto.totalPrice());
         assertEquals(TradeStatus.FULFILLED, dto.status());
     }
 
@@ -49,7 +50,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate positive tradeId")
     void testValidateTradeId() {
         AccountTradeDTO dto = new AccountTradeDTO(invalidTradeId(), "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -61,7 +62,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate non-blank tradeTime")
     void testValidateBlankTradeTime() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "   ", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -73,7 +74,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate positive accountId")
     void testValidateAccountId() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", invalidAccountId(), 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -85,7 +86,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate positive instrumentId")
     void testValidateInstrumentId() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, invalidInstrumentId(), TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -97,7 +98,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate non-blank tradeSide")
     void testValidateBlankTradeType() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, null,
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -109,7 +110,7 @@ class AccountTradeDTOTest {
     @DisplayName("Should validate positive quantity")
     void testValidateQuantity() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(-100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(-100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -118,22 +119,22 @@ class AccountTradeDTOTest {
     }
 
     @Test
-    @DisplayName("Should validate positive price")
-    void testValidatePrice() {
+    @DisplayName("Should validate positive ppu")
+    void testValidatePPU() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(-150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(-150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
         assertTrue(violations.stream()
-            .anyMatch(v -> v.getPropertyPath().toString().equals("price")));
+            .anyMatch(v -> v.getPropertyPath().toString().equals("ppu")));
     }
 
     @Test
     @DisplayName("Should validate non-blank status")
     void testValidateBlankStatus() {
         AccountTradeDTO dto = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), null);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), null);
         
         Set<ConstraintViolation<AccountTradeDTO>> violations = validator.validate(dto);
         assertFalse(violations.isEmpty());
@@ -145,11 +146,11 @@ class AccountTradeDTOTest {
     @DisplayName("Should support record equality")
     void testRecordEquality() {
         AccountTradeDTO dto1 = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY,
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         AccountTradeDTO dto2 = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.BUY, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         AccountTradeDTO dto3 = new AccountTradeDTO(1L, "2026-09-25T10:30:00", 2L, 3L, TradeSide.SELL, 
-            BigDecimal.valueOf(100), BigDecimal.valueOf(150), TradeStatus.FULFILLED);
+            BigDecimal.valueOf(100), BigDecimal.valueOf(150), BigDecimal.valueOf(15000), TradeStatus.FULFILLED);
         
         assertEquals(dto1, dto2);
         assertNotEquals(dto1, dto3);

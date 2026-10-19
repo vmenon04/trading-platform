@@ -1,5 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { OrderItem, OrderItemData } from '../../components/order-item/order-item';
+import { AccountService } from '../../services/account.service';
+
+const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
 @Component({
   imports: [OrderItem],
@@ -8,19 +11,27 @@ import { OrderItem, OrderItemData } from '../../components/order-item/order-item
   templateUrl: './orders.html',
 })
 export class Orders {
+  protected account = inject(AccountService);
+
   activeFilter: 'All' | 'Buy' | 'Sell' = 'All';
 
-  orders: OrderItemData[] = [
-    { symbol: 'NVDA', name: 'NVIDIA Corp.', reference: 'FT-10482', date: 'Today, 10:42', side: 'Buy', quantity: '8 shares', price: '$138.85', status: 'Filled' },
-    { symbol: 'AAPL', name: 'Apple Inc.', reference: 'FT-10476', date: 'Yesterday, 15:21', side: 'Sell', quantity: '10 shares', price: '$226.41', status: 'Filled' },
-    { symbol: 'MSFT', name: 'Microsoft Corp.', reference: 'FT-10461', date: 'May 22, 11:09', side: 'Buy', quantity: '4 shares', price: '$412.18', status: 'Filled' },
-  ];
-
-  get visibleOrders(): OrderItemData[] {
-    return this.activeFilter === 'All' ? this.orders : this.orders.filter((order) => order.side === this.activeFilter);
-  }
+  // the backend filters by side, so these are already the orders to show
+  visibleOrders = computed<OrderItemData[]>(() =>
+    (this.account.orders.value() ?? []).map((trade) => ({
+      symbol: trade.ticker,
+      name: trade.ticker,
+      // tradeId is null until the backend can read UUIDs from account_trades
+      reference: trade.tradeId ? trade.tradeId.slice(0, 8) : '—',
+      date: '',
+      side: trade.side === 'BUY' ? 'Buy' : 'Sell',
+      quantity: `${trade.quantity} shares`,
+      price: trade.ppu === null ? '—' : usd.format(trade.ppu),
+      status: trade.status,
+    })),
+  );
 
   setFilter(filter: 'All' | 'Buy' | 'Sell'): void {
     this.activeFilter = filter;
+    this.account.orderSide.set(filter === 'All' ? null : filter === 'Buy' ? 'BUY' : 'SELL');
   }
 }
