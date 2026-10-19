@@ -11,12 +11,11 @@ import org.springframework.security.access.AccessDeniedException;
 
 import java.math.BigDecimal;
 import java.net.URI;
-import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 
 @Service
 public class RecipientService {
 
-    private static final AtomicLong JOB_ID_GENERATOR = new AtomicLong(1);
     private final TradeEventProducer tradeEventProducer;
     private final InstrumentService instrumentService;
     private final MarketDataClient marketDataClient;
@@ -36,8 +35,7 @@ public class RecipientService {
         if (!tradeAuthorizationService.isValidUserId(dto, userId)) {
             throw new AccessDeniedException("You are not authorized to perform this action.");
         }
-
-        long taskId = JOB_ID_GENERATOR.getAndIncrement();
+        UUID externalTradeId = UUID.randomUUID();
 
         String ticker = instrumentService.getInstrumentById(dto.instrumentId()).getTicker();
         BigDecimal quote = marketDataClient.getPrice(ticker);
@@ -50,14 +48,15 @@ public class RecipientService {
                 dto.accountId(),
                 dto.side(),
                 dto.quantity(),
-                taskId
+                externalTradeId
         );
+
         tradeEventProducer.publishTradeSubmitted(tradeSubmitted);
 
         URI location = ServletUriComponentsBuilder
                 .fromCurrentRequest()
-                .path("/tasks/{taskId}")
-                .buildAndExpand(taskId)
+                .path("/{externalTradeId}")
+                .buildAndExpand(externalTradeId)
                 .toUri();
 
         return ResponseEntity

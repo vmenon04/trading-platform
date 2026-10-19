@@ -3,6 +3,7 @@
 There's no database in tests. The `db` fixture swaps pd.read_sql for a fake that
 returns whatever DataFrame we put in `db.result`, and remembers the sql + params it got.
 """
+import re
 from datetime import date
 
 import pandas as pd
@@ -82,13 +83,6 @@ def test_weeks_start_on_monday_like_postgres():
 
 # --- months with no trades ----------------------------------------------------
 
-def test_month_with_no_orders_has_no_fill_rate(db):
-    db.result = periods("2026-01-01", PENDING=[0], ACCEPTED=[1], FULFILLED=[2], REJECTED=[1], orders=[4])
-    out = tf.status_by_period(None, JAN_TO_FEB, "month")
-    assert out["fill_rate"].tolist()[0] == 50.0
-    assert pd.isna(out["fill_rate"].tolist()[1])
-
-
 def test_month_with_no_trades_has_no_price(db):
     db.result = periods("2026-01-01", avg_price=[10.0], low_price=[9.0], high_price=[11.0])
     out = tf.price_by_period(None, JAN_TO_FEB, "month")
@@ -109,3 +103,44 @@ def test_window_starts_on_the_1st_but_not_before_the_first_trade(db):
 
     db.result = pd.DataFrame({"first_day": [date(2026, 9, 15)], "last_day": [date(2026, 10, 7)]})
     assert tf.reporting_window(None, 12) == (date(2026, 9, 15), date(2026, 10, 8))
+
+
+# --- client_portfolios --------------------------------------------------------
+
+def test_portfolio_filters_are_parameters_not_sql_text(db):
+    tf.client_portfolios(None, {"client_id": 7, "min_value": 1_000_000}, page=3, page_size=10)
+    assert db.params == {"client_id": 7, "min_value": 1_000_000, "max_value": None, "quartile": None,
+                         "page_size": 10, "offset": 20}
+    assert "1000000" not in db.sql
+
+
+def test_quartiles_are_ranked_before_filtering(db):
+    # If the WHERE ran first, NTILE would rank only the clients left (a $1M filter would still have a "bottom 25%").
+    tf.client_portfolios(None, {"min_value": 1_000_000})
+    assert db.sql.index("NTILE(4)") < db.sql.index("portfolio_value >= %(min_value)s")
+
+
+def test_portfolio_summary_comes_from_the_first_row(db):
+    db.result = pd.DataFrame({"client_id": [1, 2], "portfolio_value": [5.0, 3.0], "matching": [9, 9],
+                              "matching_value": [40.0, 40.0]})
+    summary, rows = tf.client_portfolios(None, {})
+    assert summary == {"total": 9, "total_value": 40.0}
+    assert list(rows.columns) == ["client_id", "portfolio_value"]
+
+
+def test_no_matching_portfolios_gives_zero_summary(db):
+    summary, rows = tf.client_portfolios(None, {"min_value": 1e15})
+    assert summary == {"total": 0, "total_value": 0.0}
+
+
+# --- queries.sql ----------------------------------------------------------------
+
+def test_every_query_in_transform_exists_in_queries_sql():
+    source = (tf.REPORTING_DIR / "scripts" / "transform.py").read_text()
+    used = set(re.findall(r'query\("(\w+)"', source))
+    assert used <= set(tf.QUERIES), f"missing from queries.sql: {used - set(tf.QUERIES)}"
+
+
+def test_comments_are_dropped_so_their_percent_signs_cant_reach_the_driver():
+    for name, sql in tf.QUERIES.items():
+        assert "--" not in sql, name

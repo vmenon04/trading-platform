@@ -79,7 +79,10 @@
           <tr class="order" [class.open]="expanded() === row.trade_id" (click)="toggleRow(row)">
             <td>{{ row.trade_id }}</td>
             <td>{{ dateTime(row.trade_time) }}</td>
-            <td><span class="status" [attr.data-status]="row.status">{{ row.status }}</span></td>
+            <td>
+              <span class="status" [attr.data-status]="row.status">{{ row.status }}</span>
+              @if (row.reject_reason) { <small class="reason" [title]="row.reject_reason">{{ row.reject_reason }}</small> }
+            </td>
             <td>{{ row.trade_type }}</td>
             <td>{{ row.clients ?? '–' }}</td>
             <td>{{ row.account_id }}</td>
@@ -100,6 +103,9 @@
                     <li>{{ history.isLoading() ? 'Loading…' : 'No status history.' }}</li>
                   }
                 </ol>
+                @if (row.status === 'REJECTED') {
+                  <p class="why">Why rejected: {{ row.reject_reason ?? 'not recorded (rejected before the Kafka consumer was running)' }}</p>
+                }
               </td>
             </tr>
           }

@@ -16,7 +16,7 @@ import pandas as pd
 
 import charts
 import transform as tf
-from config import REPORTS_DIR, get_analytics_engine
+from database_connection import REPORTS_DIR, get_analytics_engine
 
 
 def read_options():

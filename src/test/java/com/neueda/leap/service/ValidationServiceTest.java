@@ -29,9 +29,9 @@ class ValidationServiceTest {
     private static final Long ACCOUNT_ID = 1L;
     private static final Long INSTRUMENT_ID = 10L;
     private static final BigDecimal PRICE = new BigDecimal("100");
-    private static final long TASK_ID = 77L;
     private static final String BALANCE = "1000";
     private static final String TICKER = "AAPL";
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private InstrumentService instrumentService;
@@ -51,7 +51,7 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 TradeSide.valueOf(side),
                 new BigDecimal(quantity),
-                TASK_ID
+                EXTERNAL_TRADE_ID
         );
     }
 
@@ -102,7 +102,7 @@ class ValidationServiceTest {
                 EXTERNAL_ACCOUNT_ID,
                 null,
                 new BigDecimal("5"),
-                TASK_ID
+                EXTERNAL_TRADE_ID
         );
 
         assertThrows(IllegalArgumentException.class, () -> validationService.validate(invalidOrder));
@@ -159,7 +159,40 @@ class ValidationServiceTest {
                 () -> assertEquals(TradeSide.BUY, validatedDTO.side()),
                 () -> assertEquals(new BigDecimal("5"), validatedDTO.quantity()),
                 () -> assertEquals(PRICE, validatedDTO.quote()),
-                () -> assertEquals(TASK_ID, validatedDTO.taskId())
+                () -> assertEquals(EXTERNAL_TRADE_ID, validatedDTO.externalTradeId())
         );
+    }
+
+    @Test
+    void rejectsNullQuantity() {
+        TradeSubmittedDTO invalidOrder = new TradeSubmittedDTO(
+                INSTRUMENT_ID,
+                EXTERNAL_ACCOUNT_ID,
+                TradeSide.BUY,
+                null,
+                EXTERNAL_TRADE_ID
+        );
+
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(invalidOrder));
+        verifyNoInteractions(instrumentService, accountService, accountHoldingService);
+    }
+
+    private void givenInstrumentBalanceAndQuote(BigDecimal quote) {
+        when(accountService.getAccountIdByExternalAccountId(EXTERNAL_ACCOUNT_ID)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal(BALANCE));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(quote);
+    }
+
+    @Test
+    void rejectsMissingQuote() {
+        givenInstrumentBalanceAndQuote(null);
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
+    }
+
+    @Test
+    void rejectsNonPositiveQuote() {
+        givenInstrumentBalanceAndQuote(BigDecimal.ZERO);
+        assertThrows(IllegalArgumentException.class, () -> validationService.validate(order("BUY", "5")));
+        verifyNoInteractions(accountHoldingService);
     }
 }

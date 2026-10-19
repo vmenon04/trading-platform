@@ -15,6 +15,7 @@ public record AccountTradeDTO(
         @Positive Long instrumentId,
         @NotNull TradeSide tradeSide,
         @Positive BigDecimal quantity,
-        @Positive BigDecimal price,
+        @Positive BigDecimal ppu,
+        @Positive BigDecimal totalPrice,
         @NotNull TradeStatus status
 ) {}

@@ -2,10 +2,8 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
-import com.neueda.leap.dto.TradeRequestDTO;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
-import java.util.UUID;
 
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
@@ -30,7 +28,6 @@ import static org.mockito.Mockito.*;
 class ExecutionServiceTest {
 
     private static final Long ACCOUNT_ID = 1L;
-    private static final UUID EXTERNAL_ACCOUNT_ID = UUID.randomUUID();
     private static final Long INSTRUMENT_ID = 10L;
     private static final Long TRADE_ID = 42L;
     private static final BigDecimal PRICE = new BigDecimal("100");
@@ -66,51 +63,9 @@ class ExecutionServiceTest {
         return argThat(actual -> actual != null && actual.compareTo(new BigDecimal(expected)) == 0);
     }
 
-    private static TradeRequestDTO order(TradeSide side, String quantity) {
-        return new TradeRequestDTO(EXTERNAL_ACCOUNT_ID, INSTRUMENT_ID, side, new BigDecimal(quantity));
-    }
-
     private static TradeRecordedDTO recorded(TradeSide side, String quantity) {
         return new TradeRecordedDTO(INSTRUMENT_ID, ACCOUNT_ID, side, new BigDecimal(quantity),
-                new BigDecimal("99"), 3L, TRADE_ID);
-    }
-
-    @Test
-    void buyPurchasesThenAddsHoldings() {
-        executionService.execute(order(TradeSide.BUY, "5"), PRICE);
-
-        InOrder inOrder = inOrder(accountService, accountHoldingService);
-        inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
-        inOrder.verify(accountHoldingService).addQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
-        verifyNoMoreInteractions(accountService, accountHoldingService);
-    }
-
-    @Test
-    void sellRemovesHoldingsThenSellsForProceeds() {
-        executionService.execute(order(TradeSide.SELL, "5"), PRICE);
-
-        InOrder inOrder = inOrder(accountHoldingService, accountService);
-        inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
-        inOrder.verify(accountService).sell(eq(ACCOUNT_ID), amountEqualTo("500"));
-        verifyNoMoreInteractions(accountService, accountHoldingService);
-    }
-
-    @Test
-    void buyDoesNotAddHoldingsWhenPurchaseFails() {
-        doThrow(new IllegalStateException("Insufficient funds"))
-                .when(accountService).purchase(eq(ACCOUNT_ID), any());
-
-        assertThrows(IllegalStateException.class, () -> executionService.execute(order(TradeSide.BUY, "5"), PRICE));
-        verifyNoInteractions(accountHoldingService);
-    }
-
-    @Test
-    void sellDoesNotCreditWhenRemoveFails() {
-        doThrow(new IllegalStateException("Insufficient quantity"))
-                .when(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), any());
-
-        assertThrows(IllegalStateException.class, () -> executionService.execute(order(TradeSide.SELL, "5"), PRICE));
-        verifyNoInteractions(accountService);
+                new BigDecimal("99"), TRADE_ID);
     }
 
     @Test
@@ -124,7 +79,8 @@ class ExecutionServiceTest {
                 accountTradeStatusMapper, transactionManager);
         inOrder.verify(accountService).purchase(eq(ACCOUNT_ID), amountEqualTo("500"));
         inOrder.verify(accountHoldingService).addQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
-        inOrder.verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, 100.0, 500.0);
+        inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
+        inOrder.verify(accountTradePriceMapper).insertTradePrice(eq(TRADE_ID), amountEqualTo("100"), amountEqualTo("500"));
         inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         inOrder.verify(transactionManager).commit(any());
         verify(transactionManager, never()).rollback(any());
@@ -145,10 +101,11 @@ class ExecutionServiceTest {
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.SELL, "5"));
 
-        InOrder inOrder = inOrder(accountHoldingService, accountService);
+        InOrder inOrder = inOrder(accountHoldingService, accountTradeStatusMapper, accountService);
         inOrder.verify(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), amountEqualTo("5"));
         inOrder.verify(accountService).sell(eq(ACCOUNT_ID), amountEqualTo("500"));
-        verify(accountTradePriceMapper).insertTradePrice(TRADE_ID, 100.0, 500.0);
+        inOrder.verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
+        verify(accountTradePriceMapper).insertTradePrice(eq(TRADE_ID), amountEqualTo("100"), amountEqualTo("500"));
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         verify(transactionManager).commit(any());
         assertEquals(0, outcome.price().compareTo(PRICE));
@@ -165,6 +122,7 @@ class ExecutionServiceTest {
 
         verifyNoInteractions(accountHoldingService);
         verify(accountTradePriceMapper, never()).insertTradePrice(any(), any(), any());
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
@@ -182,6 +140,7 @@ class ExecutionServiceTest {
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.SELL, "5"));
 
         verifyNoInteractions(accountService);
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.ACCEPTED);
         verify(transactionManager).rollback(any());
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
@@ -238,13 +197,15 @@ class ExecutionServiceTest {
 
         verify(transactionManager).rollback(any());
         verify(transactionManager, never()).commit(any());
-        verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
+        // ACCEPTED was written inside the transaction that rolled back
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.FULFILLED);
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
     }
 
     @Test
     void redeliveredFulfilledTradeReturnsStoredPrice() {
         when(accountTradeStatusMapper.getTradeStatusByTradeId(TRADE_ID)).thenReturn(TradeStatus.FULFILLED);
-        when(accountTradePriceMapper.getTradePriceByTradeId(TRADE_ID)).thenReturn(100.0);
+        when(accountTradePriceMapper.getTradePriceByTradeId(TRADE_ID)).thenReturn(new BigDecimal("100.0"));
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.BUY, "5"));
 
@@ -266,5 +227,18 @@ class ExecutionServiceTest {
         verifyNoInteractions(instrumentService, accountService, accountHoldingService, transactionManager);
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertNull(outcome.price());
+    }
+
+    @Test
+    void recordedTradeWithoutASideIsRejected() {
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(PRICE);
+
+        TradeFinishedDTO outcome = executionService.execute(recorded(null, "5"));
+
+        verifyNoInteractions(accountService, accountHoldingService);
+        verify(transactionManager).rollback(any());
+        verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
+        assertNull(outcome.price());
+        assertEquals("Side must be BUY or SELL, got null", outcome.reason());
     }
 }

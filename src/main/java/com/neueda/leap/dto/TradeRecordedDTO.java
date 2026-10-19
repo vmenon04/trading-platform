@@ -13,6 +13,5 @@ public record TradeRecordedDTO(
     @NotBlank TradeSide side,
     @NotNull @Positive BigDecimal quantity,
     @NotNull @Positive BigDecimal quote,
-    @NotBlank Long taskId,
     @NotBlank Long tradeId
 ){}

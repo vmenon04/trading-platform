@@ -1,11 +1,12 @@
 package com.neueda.leap.entity;
 
 import java.util.HashMap;
+import java.util.Map;
 
 public class ModelPortfolio {
     private Long modelPortfolioId;
     private String name;
-    private HashMap<ModelPortfolioHolding, Double> holdings;
+    private Map<ModelPortfolioHolding, Double> holdings;
 
     public ModelPortfolio() {
         this.holdings = new HashMap<>();
@@ -28,11 +29,11 @@ public class ModelPortfolio {
         this.name = name;
     }
 
-    public HashMap<ModelPortfolioHolding, Double> getHoldings() {
+    public Map<ModelPortfolioHolding, Double> getHoldings() {
         return holdings;
     }
 
-    public void setHoldings(HashMap<ModelPortfolioHolding, Double> holdings) {
+    public void setHoldings(Map<ModelPortfolioHolding, Double> holdings) {
         this.holdings = holdings;
     }
 }

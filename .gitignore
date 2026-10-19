@@ -4,6 +4,7 @@ target/
 # Environment / secrets
 .env
 .env.*
+!.env.example
 application.properties
 start-services.sh
 

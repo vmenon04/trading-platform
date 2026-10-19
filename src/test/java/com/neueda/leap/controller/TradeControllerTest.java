@@ -14,14 +14,15 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 
 import java.net.URI;
 import java.util.UUID;
 
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -46,7 +47,7 @@ class TradeControllerTest {
     void submitOrder_malformedJson_returns400_andDoesNotCallService() throws Exception {
         UUID accountId = UUID.randomUUID();
 
-        mockMvc.perform(post("/api/accounts/{accountId}/trades", accountId)
+        mockMvc.perform(post("/api/v1/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
                         .principal(authentication())
                         .contentType(MediaType.APPLICATION_JSON)
@@ -63,18 +64,25 @@ class TradeControllerTest {
     }
 
     @Test
-    void submitOrder_validRequest_passesDtoToService_andReturns202WithTaskLocation() {
+    void submitOrder_validRequest_passesDtoToService_andReturns202WithTradeLocation() throws Exception {
         UUID accountId = UUID.randomUUID();
-        URI location = URI.create("/api/accounts/%s/trades/tasks/42".formatted(accountId));
-        TradeRequestDTO dto = new TradeRequestDTO(
-                accountId,
-                10L,
-                com.neueda.leap.enums.TradeSide.BUY,
-                new java.math.BigDecimal("25.5")
-        );
-        when(recipientService.publishOrder(dto, 1L))
+        URI location = URI.create("/api/accounts/%s/trades/%s".formatted(accountId, UUID.randomUUID()));
+        when(recipientService.publishOrder(any(TradeRequestDTO.class)))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
+        mockMvc.perform(post("/api/v1/accounts/{accountId}/trades", accountId)
+                        .contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountId": "%s",
+                                  "instrumentId": 10,
+                                  "side": "BUY",
+                                  "quantity": 25.5
+                                }
+                                """.formatted(accountId)))
+                .andExpect(status().isAccepted())
+                .andExpect(header().string("Location", location.toString()));
         Jwt jwt = mock(Jwt.class);
         when(jwt.getSubject()).thenReturn("1");
 

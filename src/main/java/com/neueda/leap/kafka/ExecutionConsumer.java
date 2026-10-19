@@ -5,12 +5,15 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.service.ExecutionService;
 import com.neueda.leap.service.TradeEventProducer;
 import java.util.concurrent.ExecutionException;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
  * Consumes recorded trades, executes them and publishes each outcome to trade.finished.
+ * Runs unless trade.stage.execution.enabled=false, so a container can run only some of the stages.
  */
+@ConditionalOnProperty(name = "trade.stage.execution.enabled", havingValue = "true", matchIfMissing = true)
 @Component
 public class ExecutionConsumer {
 

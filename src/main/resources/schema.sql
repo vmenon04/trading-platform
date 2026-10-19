@@ -9,9 +9,9 @@ DROP TABLE IF EXISTS account_trades CASCADE;
 DROP TABLE IF EXISTS client_accounts CASCADE;
 DROP TABLE IF EXISTS accounts CASCADE;
 DROP TABLE IF EXISTS instruments CASCADE;
+DROP TABLE IF EXISTS roles CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 DROP TABLE IF EXISTS clients CASCADE;
-DROP TABLE IF EXISTS roles CASCADE;
 
 -- Old client-level tables, replaced by the account-level ones above
 DROP TABLE IF EXISTS client_subscriptions CASCADE;
