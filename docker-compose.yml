@@ -1,4 +1,4 @@
-# Kafka, Postgres and the app for the trading platform
+# Kafka, Postgres, Redis and the app for the trading platform
 #
 # All values come from .env 
 # The app is one image run as four services, one per stage of the trade pipeline. 
@@ -15,6 +15,8 @@ x-app: &app
     kafka:
       condition: service_healthy
     postgres:
+      condition: service_healthy
+    redis:
       condition: service_healthy
   healthcheck:
     test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
@@ -36,6 +38,12 @@ x-app-environment: &app-environment
   SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
   MARKET_DATA_BASE_URL: ${MARKET_DATA_BASE_URL:?MARKET_DATA_BASE_URL is not set}
   MARKET_DATA_API_KEY: ${MARKET_DATA_API_KEY:?MARKET_DATA_API_KEY is not set}
+  MARKET_DATA_CACHE_TTL: ${MARKET_DATA_CACHE_TTL:?MARKET_DATA_CACHE_TTL is not set}
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: 6379
+  SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+  # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
 
 services:
   kafka:
@@ -86,6 +94,25 @@ services:
     healthcheck:
       # $$ so the variables are read inside the container, not by compose
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # caches Fauxnance prices for the validation and execution services
+  redis:
+    image: redis:7.4-alpine
+    container_name: trading-redis
+    # only a cache, so nothing is saved to disk (no snapshots, no append-only file)
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "no"]
+    ports:
+      # published like Postgres, so the app can use it when run on the VM
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_PORT:?REDIS_PORT is not set}:6379"
+    environment:
+      # read by redis-cli, so the healthcheck can log in without the password on its command line
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
       interval: 5s
       timeout: 5s
       retries: 24
