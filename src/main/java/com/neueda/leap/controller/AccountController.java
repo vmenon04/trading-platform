@@ -128,6 +128,6 @@ public class AccountController {
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
         return new TradeResponseDTO(trade.getInstrumentId(),
                 instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
-                trade.getTradeSide().name(), trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null);
+                trade.getTradeSide().name(), trade.getQuantity(), trade.getPPU(), trade.getTotalPrice(), trade.getStatus().name(), null);
     }
 }
