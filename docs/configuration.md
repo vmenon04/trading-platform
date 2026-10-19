@@ -9,6 +9,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Linux (`10.18.64.177`) | 8080 | Jenkins (host service, multibranch job `ftrade`) |
 | | 8081 | Trade API (`api` container → 8080 inside) |
 | | 8082 | Postgres (`trading-postgres` → 5432 inside) |
+| | 8083 | Redis price cache (`trading-redis` → 6379 inside) |
 | | 8085 | SonarQube (standalone container, not in compose) |
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
@@ -21,6 +22,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
 | `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` once, only when its volume is empty |
+| `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
@@ -37,6 +39,8 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `POSTGRES_PORT` | Host port for Postgres (`8082`) |
 | `API_PORT` | Host port for the `api` service (`8081`) |
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
+| `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
+| `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 
 ### Environment variables set on the app containers
@@ -48,7 +52,10 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | from `.env` |
 | `SPRING_SQL_INIT_MODE` | `never` (Postgres creates the schema; `schema.sql` drops every table) |
 | `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` | `5` (Postgres allows 100 connections) |
-| `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | from `.env` |
+| `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY`, `MARKET_DATA_CACHE_TTL` | from `.env` |
+| `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` | `redis`, `6379` |
+| `SPRING_DATA_REDIS_PASSWORD` | `${REDIS_PASSWORD}` |
+| `MANAGEMENT_HEALTH_REDIS_ENABLED` | `false` (Redis is only a cache, so it doesn't decide whether the app is UP) |
 | `TRADE_STAGE_{API,VALIDATION,RECORDING,EXECUTION}_ENABLED` | `true` for the service's own stage, `false` for the rest |
 
 ## `application.properties` (running the app outside Docker)
@@ -63,6 +70,9 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `spring.sql.init.mode` | `always` drops and reloads every table on start. Use `never` against the shared database |
 | `spring.sql.init.data-locations` | `classpath:sample-data.sql` (with `always`) |
 | `market.data.base-url`, `market.data.api-key` | Fauxnance |
+| `market.data.cache-ttl` | How long a price stays in the Redis cache, e.g. `5m` |
+| `spring.data.redis.host` / `.port` / `.password` | `10.18.64.177`, `8083`, and `REDIS_PASSWORD` from `.env` |
+| `management.health.redis.enabled` | `false`: if Redis is down, prices come straight from Fauxnance |
 | `trade.stage.{api,validation,recording,execution}.enabled` | Which stages run; unset counts as `true` |
 | `spring.kafka.listener.concurrency` | Optional: listener threads per stage (default 1) |
 
