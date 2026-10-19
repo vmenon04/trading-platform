@@ -9,7 +9,8 @@ public record TradeResponseDTO(
         UUID tradeId,
         String side,
         BigDecimal quantity,
-        BigDecimal price,
+        BigDecimal ppu,
+        BigDecimal totalPrice,
         String status,
         String reason
 ) {}

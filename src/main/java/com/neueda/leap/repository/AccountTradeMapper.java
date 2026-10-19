@@ -25,7 +25,7 @@ public interface AccountTradeMapper {
 
     String STATUS_COLUMNS = "status AS tradeStatus, trade_time AS tradeTime";
 
-    String PRICE_COLUMNS = "price";
+    String PRICE_COLUMNS = "price_per_unit AS ppu, total_price AS totalPrice";
 
     // current state of a trade (its latest row)
     @Select("SELECT " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
