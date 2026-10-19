@@ -20,7 +20,8 @@ public interface AccountTradeMapper {
 
     // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
     // (the status column goes into the tradeStatus field)
-    String TRADE_COLUMNS = "account_trades.trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
+    String TRADE_COLUMNS = "account_trades.trade_id AS tradeId, external_trade_id AS externalTradeId, "
+            + "account_id AS accountId, instrument_id AS instrumentId, "
             + "trade_side AS tradeSide, quantity";
 
     String STATUS_COLUMNS = "status AS tradeStatus, trade_time AS tradeTime";

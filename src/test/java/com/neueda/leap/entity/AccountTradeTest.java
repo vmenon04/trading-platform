@@ -23,7 +23,8 @@ class AccountTradeTest {
                 () -> assertNull(trade.getInstrumentId()),
                 () -> assertNull(trade.getTradeSide()),
                 () -> assertNull(trade.getQuantity()),
-                () -> assertNull(trade.getPrice()),
+                () -> assertNull(trade.getPPU()),
+                () -> assertNull(trade.getTotalPrice()),
                 () -> assertNull(trade.getStatus())
         );
     }
@@ -31,7 +32,8 @@ class AccountTradeTest {
     @Test
     void parameterizedConstructorSetsProvidedValuesAndDefaultsStatusToSubmitted() {
         OffsetDateTime start = OffsetDateTime.now();
-        AccountTrade trade = new AccountTrade(101L, 7L, TradeSide.BUY, new BigDecimal("10.5"), new BigDecimal("55.25"));
+        AccountTrade trade = new AccountTrade(101L, 7L, TradeSide.BUY,
+            new BigDecimal("10.5"), new BigDecimal("55.25"), new BigDecimal("579.375"));
         OffsetDateTime end = OffsetDateTime.now();
 
         assertAll(
@@ -42,7 +44,8 @@ class AccountTradeTest {
                 () -> assertEquals(7L, trade.getInstrumentId()),
                 () -> assertEquals(TradeSide.BUY, trade.getTradeSide()),
                 () -> assertEquals(BigDecimal.valueOf(10.5), trade.getQuantity()),
-                () -> assertEquals(BigDecimal.valueOf(55.25), trade.getPrice()),
+                () -> assertEquals(BigDecimal.valueOf(55.25), trade.getPPU()),
+                () -> assertEquals(new BigDecimal("579.375"), trade.getTotalPrice()),
                 () -> assertEquals(TradeStatus.PENDING, trade.getStatus())
         );
     }
@@ -56,7 +59,8 @@ class AccountTradeTest {
         trade.setInstrumentId(3L);
         trade.setTradeSide(TradeSide.SELL);
         trade.setQuantity(BigDecimal.valueOf(4.5));
-        trade.setPrice(BigDecimal.valueOf(6.75));
+        trade.setPPU(BigDecimal.valueOf(6.75));
+        trade.setTotalPrice(BigDecimal.valueOf(30.375));
         trade.setTradeStatus(TradeStatus.ACCEPTED);
 
         assertAll(
@@ -65,7 +69,8 @@ class AccountTradeTest {
                 () -> assertEquals(3, trade.getInstrumentId()),
                 () -> assertEquals(TradeSide.SELL, trade.getTradeSide()),
                 () -> assertEquals(BigDecimal.valueOf(4.5), trade.getQuantity()),
-                () -> assertEquals(BigDecimal.valueOf(6.75), trade.getPrice()),
+                () -> assertEquals(BigDecimal.valueOf(6.75), trade.getPPU()),
+                () -> assertEquals(BigDecimal.valueOf(30.375), trade.getTotalPrice()),
                 () -> assertEquals(TradeStatus.ACCEPTED, trade.getStatus())
         );
     }
