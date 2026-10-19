@@ -5,7 +5,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import java.util.UUID;
 
 @DisplayName("AccountSubscriptionDTO Tests")
 class AccountSubscriptionDTOTest {

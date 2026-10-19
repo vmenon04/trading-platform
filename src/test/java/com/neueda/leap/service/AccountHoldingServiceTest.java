@@ -77,10 +77,11 @@ class AccountHoldingServiceTest {
 
     @Test
     void addQuantityRejectsNonPositive() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class,
                 () -> accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, BigDecimal.ZERO));
         assertThrows(IllegalArgumentException.class,
-                () -> accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("-5")));
+                () -> accountHoldingService.addQuantity(ACCOUNT_ID, INSTRUMENT_ID, negative));
         verifyNoInteractions(accountHoldingMapper);
     }
 
@@ -101,25 +102,28 @@ class AccountHoldingServiceTest {
     @Test
     void removeQuantityThrowsWhenInsufficient() {
         givenActiveQuantity("100");
+        BigDecimal quantity = new BigDecimal("100.5");
         assertThrows(IllegalStateException.class,
-                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("100.5")));
+                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, quantity));
         verifyNothingChanged();
     }
 
     @Test
     void removeQuantityThrowsWhenNoActiveHolding() {
         givenActiveQuantity(null);
+        BigDecimal quantity = new BigDecimal("10");
         assertThrows(IllegalStateException.class,
-                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("10")));
+                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, quantity));
         verifyNothingChanged();
     }
 
     @Test
     void removeQuantityRejectsNonPositive() {
+        BigDecimal negative = new BigDecimal("-5");
         assertThrows(IllegalArgumentException.class,
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, BigDecimal.ZERO));
         assertThrows(IllegalArgumentException.class,
-                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, new BigDecimal("-5")));
+                () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, negative));
         verifyNoInteractions(accountHoldingMapper);
     }
 
