@@ -35,7 +35,7 @@ public interface AccountTradeMapper {
     AccountTrade findById(@Param("tradeId") Long tradeId);
 
     // current state of each of the account's trades (one row per trade)
-    @Select("SELECT DISTINCT ON (account_trades.trade_id) " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT DISTINCT ON (account_trades.trade_id) " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
             "WHERE account_trades.account_id = #{accountId} " +
@@ -43,7 +43,7 @@ public interface AccountTradeMapper {
     List<AccountTrade> findByAccountId(@Param("accountId") Long accountId);
 
     // every status a trade went through, oldest first
-    @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
             "WHERE account_trades.trade_id = #{tradeId} ORDER BY account_trade_status.trade_time")
