@@ -1,6 +1,8 @@
 import { Component, input, output } from '@angular/core';
 
 export interface Instrument {
+  // database id, needed to submit a trade
+  instrumentId?: number;
   symbol: string;
   name: string;
   exchange: string;
