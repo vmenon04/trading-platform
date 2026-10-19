@@ -28,7 +28,7 @@
 .navbar-brand img {
   display: block;
   width: 100%;
-  max-width: 150px;
+  max-width: 450px;
   height: auto;
 }
 
@@ -113,7 +113,7 @@ app-account-selector {
   }
 
   .navbar-brand img {
-    width: 110px;
+    width: 80px;
   }
 
   .navbar a {
