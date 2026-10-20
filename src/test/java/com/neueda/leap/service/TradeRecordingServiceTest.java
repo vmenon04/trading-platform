@@ -78,8 +78,9 @@ class TradeRecordingServiceTest {
     }
 
     @Test
-    void nullTradeIdThrowsInvalidTradeException() {
+    void tradeNeitherInsertedNorFoundThrowsInvalidTradeException() {
         when(accountTradeMapper.insert(validatedDTO)).thenReturn(null);
+        when(accountTradeMapper.findTradeIdByExternalTradeId(EXTERNAL_TRADE_ID)).thenReturn(null);
 
         assertThrows(InvalidTradeException.class, () -> tradeRecordingService.recordTrade(validatedDTO));
 
