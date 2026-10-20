@@ -29,6 +29,8 @@ public class SecurityConfig {
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     http.authorizeHttpRequests(auth -> auth
         .requestMatchers("/public").permitAll()
+        // the Docker and Jenkins health checks call this without a token
+        .requestMatchers("/actuator/health").permitAll()
         .anyRequest().authenticated())
         .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()));
     return http.build();

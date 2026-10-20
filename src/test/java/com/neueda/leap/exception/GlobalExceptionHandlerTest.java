@@ -39,7 +39,7 @@ class GlobalExceptionHandlerTest {
         bindingResult.addError(new FieldError(
                 "tradeRequest", "side", "must not be null"));
 
-        ResponseEntity<ErrorResponseDTO> response = handler.handleValidation(validationFailure(bindingResult), request);
+        ResponseEntity<ErrorResponseDTO> response = handler.handleValidation(validationFailure(bindingResult));
 
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         ErrorResponseDTO body = response.getBody();
