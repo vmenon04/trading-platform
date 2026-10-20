@@ -1,6 +1,7 @@
 package com.neueda.leap.controller;
 
 import com.neueda.leap.entity.Client;
+import com.neueda.leap.dto.AccountDTO;
 import com.neueda.leap.service.ClientService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.util.UUID;
+import java.util.List;
 
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -37,13 +39,17 @@ class ClientControllerTest {
     @Test
     void getClient_existingClient_returns200WithFullName() throws Exception {
         UUID clientId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
         when(clientService.getClientByExternalId(clientId))
                 .thenReturn(new Client("Ada", "Lovelace", "ada@example.com", null));
+        when(clientService.getTradingAccounts(clientId))
+            .thenReturn(List.of(new AccountDTO(accountId)));
 
         mockMvc.perform(get("/api/v1/clients/{clientId}", clientId).contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.clientId").value(clientId.toString()))
-                .andExpect(jsonPath("$.clientName").value("Ada Lovelace"));
+                .andExpect(jsonPath("$.clientName").value("Ada Lovelace"))
+                .andExpect(jsonPath("$.tradingAccounts[0].accountId").value(accountId.toString()));
     }
 
     @Test

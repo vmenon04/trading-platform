@@ -53,13 +53,25 @@ components:
   schemas:
     Client:
       type: object
-      required: [client_id, client_name]
+      required: [client_id, client_name, trading_accounts]
       properties:
         client_id:
           type: string
           format: uuid
         client_name:
           type: string
+        trading_accounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+
+    Account:
+      type: object
+      required: [account_id]
+      properties:
+        account_id:
+          type: string
+          format: uuid
 
     ErrorResponse:
       type: object
