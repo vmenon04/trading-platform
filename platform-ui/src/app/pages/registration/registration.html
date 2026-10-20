@@ -26,17 +26,20 @@
 
       <div class="field">
         <label for="password">Password</label>
-        <input
-          type="password"
-          id="password"
-          name="password"
-          required
-          minlength="8"
-          autocomplete="current-password"
-          [(ngModel)]="password"
-          #passwordField="ngModel"
-          [class.invalid]="submitted && passwordField.invalid"
-        />
+        <div class="password-input">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            name="password"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            [(ngModel)]="password"
+            #passwordField="ngModel"
+            [class.invalid]="submitted && passwordField.invalid"
+          />
+          <button type="button" class="toggle-password" (click)="showPassword.set(!showPassword())" [attr.aria-pressed]="showPassword()" aria-controls="password">{{ showPassword() ? 'Hide' : 'Show' }}</button>
+        </div>
       </div>
 
       <div class="field">
@@ -98,9 +101,9 @@
 
       
 
-      <p class="message" [class.hidden]="!message" [class.error]="messageKind === 'error'" [class.success]="messageKind === 'success'">{{ message }}</p>
+      <p class="message" [class.hidden]="!message()" [class.error]="messageKind() === 'error'" [class.success]="messageKind() === 'success'">{{ message() }}</p>
 
-      <button type="submit">Register</button>
+      <button type="submit" [disabled]="submitting()">{{ submitting() ? 'Creating account…' : 'Register' }}</button>
       <div class="auth-switch">Already have an account? <a routerLink="/login">Log in</a></div><p class="auth-terms">By continuing, you agree to f-trade’s Terms of Service and Privacy Policy.</p>
     </form>
   </main></section>

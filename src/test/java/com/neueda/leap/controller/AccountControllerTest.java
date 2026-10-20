@@ -3,6 +3,7 @@ package com.neueda.leap.controller;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.enums.TradeSide;
@@ -12,13 +13,20 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.TradeAuthorizationService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
@@ -26,8 +34,14 @@ import java.util.List;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,6 +51,7 @@ class AccountControllerTest {
     private static final Long ACCOUNT_ID = 5L;
     private static final Long OTHER_ACCOUNT_ID = 6L;
     private static final Long INSTRUMENT_ID = 1L;
+    private static final Long USER_ID = 42L;
 
     @Mock
     private AccountService accountService;
@@ -53,6 +68,9 @@ class AccountControllerTest {
     @Mock
     private InstrumentService instrumentService;
 
+    @Mock
+    private TradeAuthorizationService tradeAuthorizationService;
+
     @InjectMocks
     private AccountController accountController;
 
@@ -63,7 +81,82 @@ class AccountControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(accountController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(accountController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .build();
+        // @AuthenticationPrincipal reads the logged-in user from the security context
+        SecurityContextHolder.getContext().setAuthentication(loggedInAs(USER_ID));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static JwtAuthenticationToken loggedInAs(Long userId) {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", userId.toString())
+                .build();
+        return new JwtAuthenticationToken(jwt);
+    }
+
+    private ResultActions postDeposit() throws Exception {
+        return mockMvc.perform(post("/api/v1/accounts/{accountId}/deposits", externalAccountId)
+                .contextPath("/api")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                        {
+                          "amount": 250.50
+                        }
+                        """));
+    }
+
+    @Test
+    void deposit_ownedAccount_returnsNoContentAndCreditsIt() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(true);
+
+        postDeposit().andExpect(status().isNoContent());
+
+        verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
+    }
+
+    @Test
+    void deposit_accountOwnedBySomeoneElse_returns403AndDepositsNothing() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(false);
+
+        postDeposit().andExpect(status().isForbidden());
+
+        verify(accountService, never()).deposit(any(), any());
+    }
+
+    @Test
+    void deposit_unknownAccount_returns404() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId))
+                .thenThrow(new java.util.NoSuchElementException("account not found"));
+
+        postDeposit().andExpect(status().isNotFound());
+
+        verifyNoInteractions(tradeAuthorizationService);
+    }
+
+    @Test
+    void deposit_nonPositiveAmount_returns400() throws Exception {
+        mockMvc.perform(post("/api/v1/accounts/{accountId}/deposits", externalAccountId)
+                        .contextPath("/api")
+                        .contentType(APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "amount": 0
+                                }
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(tradeAuthorizationService);
+        verify(accountService, never()).deposit(any(), any());
     }
 
     @Test
@@ -94,6 +187,48 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Apple Inc"))
                 .andExpect(jsonPath("$[0].ticker").value("AAPL"))
                 .andExpect(jsonPath("$[0].quantity").value(10));
+    }
+
+    @Test
+    void getHoldings_includesCurrentMarketPrice() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].price").value(150.25));
+    }
+
+    @Test
+    void getHoldings_priceUnavailable_returnsNullPriceInsteadOfFailing() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price available for AAPL"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ticker").value("AAPL"))
+                .andExpect(jsonPath("$[0].price").doesNotExist());
+    }
+
+    @Test
+    void getSummary_investmentValueIsMarketValueOfActiveHoldings() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE),
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("4"), ActivityStatus.INACTIVE)));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.investmentValue").value(1502.50))
+                .andExpect(jsonPath("$.cashBalance").value(2500.00));
     }
 
     @Test

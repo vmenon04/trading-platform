@@ -15,6 +15,10 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 export class Portfolio {
   protected account = inject(AccountService);
 
+  constructor() {
+    this.account.refresh();
+  }
+
   // card values as display strings; '…' while the summary is loading
   private format(pick: (s: AccountSummary) => number) {
     return computed(() => {

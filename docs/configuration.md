@@ -9,24 +9,36 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Linux (`10.18.64.177`) | 8080 | Jenkins (host service, multibranch job `ftrade`) |
 | | 8081 | Trade API (`api` container → 8080 inside) |
 | | 8082 | Postgres (`trading-postgres` → 5432 inside) |
+| | 8083 | Redis price cache (`trading-redis` → 6379 inside) |
+| | 8084 | auth-service: login, registration, token refresh (`trading-auth` → 3000 inside) |
 | | 8085 | SonarQube (standalone container, not in compose) |
+| | 8086 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
+| | 8087 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
+| | 8088 | Adminer, web UI for Postgres (`trading-adminer`, `tools` profile only) |
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
 | | 4200 | Reporting dashboard dev server (`ng serve`, proxies `/api` to 8050) |
 
-## Docker Compose (`docker-compose.yml`, Linux machine)
+## Docker Compose (`../docker-compose.yml`, Linux machine)
 
 | Service | Image | Does |
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
-| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` once, only when its volume is empty |
+| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` once, only when its volume is empty |
+| `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
+| `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
 | `execution` | same | `trade.recorded` → `trade.finished` |
+| `redis-insight` | `redis/redisinsight:3.8` | Web UI for Redis, already connected to `redis`. `tools` profile only |
+| `kafka-ui` | `ghcr.io/kafbat/kafka-ui:v1.5.0` | Web UI for Kafka topics, messages and consumer groups (read-only). `tools` profile only |
+| `adminer` | `adminer:6.1.2` | Web UI for Postgres: browse tables, run SQL. Log in with `POSTGRES_USER` / `POSTGRES_PASSWORD`. `tools` profile only |
 
 All four app services use the one image built from `Dockerfile`; each switches on only its own stage. Scale one with `docker compose up -d --scale execution=3` (at most 8 per stage get work, one per partition). Reset the database with `docker compose down -v`.
+
+`docker compose up -d` leaves out the three web UIs; `docker compose --profile tools up -d` starts them too. Redis Insight and Kafka UI have no login.
 
 ### `.env` (read by compose and the reporting scripts)
 
@@ -37,6 +49,11 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `POSTGRES_PORT` | Host port for Postgres (`8082`) |
 | `API_PORT` | Host port for the `api` service (`8081`) |
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
+| `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
+| `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
+| `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app) with, at least 32 characters |
+| `AUTH_PORT` | Host port for auth-service (`8084`) |
+| `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT`, `ADMINER_PORT` | Host ports for the web UIs (`8086`, `8087`, `8088`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 
 ### Environment variables set on the app containers
@@ -48,7 +65,11 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `SPRING_DATASOURCE_USERNAME`, `SPRING_DATASOURCE_PASSWORD` | from `.env` |
 | `SPRING_SQL_INIT_MODE` | `never` (Postgres creates the schema; `schema.sql` drops every table) |
 | `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` | `5` (Postgres allows 100 connections) |
-| `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | from `.env` |
+| `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY`, `MARKET_DATA_CACHE_TTL` | from `.env` |
+| `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` | `redis`, `6379` |
+| `SPRING_DATA_REDIS_PASSWORD` | `${REDIS_PASSWORD}` |
+| `MANAGEMENT_HEALTH_REDIS_ENABLED` | `false` (Redis is only a cache, so it doesn't decide whether the app is UP) |
+| `JWT_SHARED_SECRET` | from `.env` |
 | `TRADE_STAGE_{API,VALIDATION,RECORDING,EXECUTION}_ENABLED` | `true` for the service's own stage, `false` for the rest |
 
 ## `application.properties` (running the app outside Docker)
@@ -63,6 +84,10 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `spring.sql.init.mode` | `always` drops and reloads every table on start. Use `never` against the shared database |
 | `spring.sql.init.data-locations` | `classpath:sample-data.sql` (with `always`) |
 | `market.data.base-url`, `market.data.api-key` | Fauxnance |
+| `market.data.cache-ttl` | How long a price stays in the Redis cache, e.g. `5m` |
+| `spring.data.redis.host` / `.port` / `.password` | `10.18.64.177`, `8083`, and `REDIS_PASSWORD` from `.env` |
+| `management.health.redis.enabled` | `false`: if Redis is down, prices come straight from Fauxnance |
+| `jwt.shared-secret` | Same value as `JWT_SHARED_SECRET` in `.env`. Every endpoint except `/actuator/health` needs a login token signed with it |
 | `trade.stage.{api,validation,recording,execution}.enabled` | Which stages run; unset counts as `true` |
 | `spring.kafka.listener.concurrency` | Optional: listener threads per stage (default 1) |
 
@@ -85,7 +110,7 @@ Builds are started manually. Stages: Build Image → Smoke-Test → (Code-Covera
 |---|---|
 | Jenkins tools | Maven `Maven3`, SonarQube scanner `Sonar`, server `SonarQube` |
 | Image | `fintech-five:<branch>` |
-| Smoke test | Throwaway `postgres:17-alpine` + the image with `SPRING_SQL_INIT_MODE=always`, Kafka listeners off (`SPRING_KAFKA_LISTENER_AUTO_STARTUP=false`), dummy market data; waits for `/actuator/health` UP |
+| Smoke test | Throwaway `postgres:17-alpine` + the image with `SPRING_SQL_INIT_MODE=always`, Kafka listeners off (`SPRING_KAFKA_LISTENER_AUTO_STARTUP=false`), dummy market data and JWT secret; waits for `/actuator/health` UP |
 | Static analysis | Checkstyle (`config/checkstyle.xml`) + SpotBugs; new issues mark the build UNSTABLE |
 | Coverage | JaCoCo (`target/site/jacoco/jacoco.xml`) |
 | SonarQube | Project key `fintech-five`, at `http://10.18.64.177:8085` |

@@ -4,6 +4,7 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.repository.AccountTradeStatusMapper;
 import java.math.BigDecimal;
@@ -15,6 +16,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -73,5 +75,15 @@ class TradeRecordingServiceTest {
 
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertEquals(4L, tradeRecordedDTO.tradeId());
+    }
+
+    @Test
+    void tradeNeitherInsertedNorFoundThrowsInvalidTradeException() {
+        when(accountTradeMapper.insert(validatedDTO)).thenReturn(null);
+        when(accountTradeMapper.findTradeIdByExternalTradeId(EXTERNAL_TRADE_ID)).thenReturn(null);
+
+        assertThrows(InvalidTradeException.class, () -> tradeRecordingService.recordTrade(validatedDTO));
+
+        verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
     }
 }

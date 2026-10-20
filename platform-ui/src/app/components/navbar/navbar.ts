@@ -1,6 +1,7 @@
-import { Component, signal } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountSelector } from '../account-selector/account-selector';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   selector: 'app-navbar',
@@ -14,14 +15,17 @@ export class Navbar {
   private logoClickTimer?: ReturnType<typeof setTimeout>;
   private easterEggTimer?: ReturnType<typeof setTimeout>;
 
+  private readonly auth = inject(AuthService);
+
   constructor(private readonly router: Router) {}
 
   openAccount(): void {
     this.router.navigate(['/account']);
   }
 
+  // clears the login token, then goes to /login
   logout(): void {
-    this.router.navigate(['/login']);
+    this.auth.logout();
   }
 
   onLogoClick(): void {

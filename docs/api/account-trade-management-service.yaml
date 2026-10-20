@@ -14,6 +14,56 @@ tags:
     description: Order and trade queries
 
 paths:
+  /accounts/{account_id}/deposits:
+    post:
+      tags: [accounts]
+      summary: Deposit cash into a client account
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: External UUID of the account receiving the deposit
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRequest'
+            example:
+              amount: 500.00
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deposit completed successfully
+        '400':
+          description: Invalid deposit request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The logged-in user does not own the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /accounts/{account_id}:
     get:
       tags: [accounts]
@@ -237,6 +287,15 @@ paths:
 
 components:
   schemas:
+    DepositRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+
     AccountSummary:
       type: object
       required: [accountId, investmentValue, cashBalance, costBasis]

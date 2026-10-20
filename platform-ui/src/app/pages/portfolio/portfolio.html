@@ -1,9 +1,11 @@
 <header class="page-header"><div><h1>Portfolio</h1><span>Your investment overview</span></div><span class="market-status">● Markets open</span></header>
 <main class="portfolio-page">
-	@if (account.summary.error()) {
+	@if (account.hasNoAccount()) {
+		<p class="load-error">You don't have a trading account yet.</p>
+	} @else if (account.client.error() || account.summary.error()) {
 		<p class="load-error">Couldn't load your account. Is the backend running?</p>
 	}
-	<section class="portfolio-intro"><div><span class="eyebrow">Investment account · •••• {{ account.accountId().slice(-4) }}</span><strong>{{ totalValue() }}</strong><p>Total portfolio value</p></div><div class="intro-actions"><button>Deposit funds</button><button class="primary">↗ Trade</button></div></section>
+	<section class="portfolio-intro"><div><span class="eyebrow">Investment account · •••• {{ (account.accountId() ?? '').slice(-4) }}</span><strong>{{ totalValue() }}</strong><p>Total portfolio value</p></div><div class="intro-actions"><button>Deposit funds</button><button class="primary">↗ Trade</button></div></section>
 	<div class="metrics-grid"><app-financial-card label="Investments" [value]="investments()" change="Market value of holdings"></app-financial-card><app-financial-card label="Cash balance" [value]="cashBalance()" change="Ready to invest"></app-financial-card><app-financial-card label="Cost basis" [value]="costBasis()" change="Total amount invested"></app-financial-card></div>
 	@if (account.holdings.error()) {
 		<p class="load-error">Couldn't load your holdings.</p>

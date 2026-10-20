@@ -1,6 +1,8 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink, Router } from '@angular/router';
+import { RouterLink, Router, ActivatedRoute } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -10,26 +12,51 @@ import { RouterLink, Router } from '@angular/router';
 })
 export class Login {
   private router = inject(Router);
+  private route = inject(ActivatedRoute);
+  private auth = inject(AuthService);
+
   username = '';
   password = '';
-  message = '';
-  messageKind: 'error' | 'success' | '' = '';
+  // signals, because they change after an await (the app runs without zone.js)
+  message = signal('');
+  messageKind = signal<'error' | 'success' | ''>('');
+  submitting = signal(false);
+  showPassword = signal(false);
   submitted = false;
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.submitted = true;
 
-    if (this.username.length < 3 || this.password.length < 8) {
-      this.message = 'Username needs 3+ chars, password needs 8+.';
-      this.messageKind = 'error';
+    if (this.username.length < 3 || !this.password) {
+      this.message.set('Enter your username (3+ characters) and password.');
+      this.messageKind.set('error');
       return;
     }
 
-    this.message = 'Successfully submitted';
-    this.messageKind = 'success';
-    this.username = '';
-    this.password = '';
-    this.submitted = false;
-    this.router.navigate(['/dashboard']);
+    this.submitting.set(true);
+    this.message.set('');
+    try {
+      await this.auth.login(this.username, this.password);
+      this.submitted = false;
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/portfolio';
+      this.router.navigateByUrl(returnUrl);
+    } catch (error) {
+      this.message.set(this.errorMessage(error));
+      this.messageKind.set('error');
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 401) {
+        return 'Invalid username or password.';
+      }
+      if (error.status === 0 || error.status === 502 || error.status === 504) {
+        return "Couldn't reach the login service. Is auth-service running?";
+      }
+    }
+    return 'Login failed. Please try again.';
   }
 }
