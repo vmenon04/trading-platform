@@ -24,7 +24,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Service | Image | Does |
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
-| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` once, only when its volume is empty |
+| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` once, only when its volume is empty |
 | `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
@@ -49,6 +49,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
+| `JWT_SHARED_SECRET` | Secret the app checks login tokens with; same as auth-service's `JWT_SECRET`, at least 32 characters |
 | `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT`, `ADMINER_PORT` | Host ports for the web UIs (`8086`, `8087`, `8088`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 
@@ -65,6 +66,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` | `redis`, `6379` |
 | `SPRING_DATA_REDIS_PASSWORD` | `${REDIS_PASSWORD}` |
 | `MANAGEMENT_HEALTH_REDIS_ENABLED` | `false` (Redis is only a cache, so it doesn't decide whether the app is UP) |
+| `JWT_SHARED_SECRET` | from `.env` |
 | `TRADE_STAGE_{API,VALIDATION,RECORDING,EXECUTION}_ENABLED` | `true` for the service's own stage, `false` for the rest |
 
 ## `application.properties` (running the app outside Docker)
@@ -82,6 +84,7 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `market.data.cache-ttl` | How long a price stays in the Redis cache, e.g. `5m` |
 | `spring.data.redis.host` / `.port` / `.password` | `10.18.64.177`, `8083`, and `REDIS_PASSWORD` from `.env` |
 | `management.health.redis.enabled` | `false`: if Redis is down, prices come straight from Fauxnance |
+| `jwt.shared-secret` | Same value as `JWT_SHARED_SECRET` in `.env`. Every endpoint except `/actuator/health` needs a login token signed with it |
 | `trade.stage.{api,validation,recording,execution}.enabled` | Which stages run; unset counts as `true` |
 | `spring.kafka.listener.concurrency` | Optional: listener threads per stage (default 1) |
 
@@ -104,7 +107,7 @@ Builds are started manually. Stages: Build Image → Smoke-Test → (Code-Covera
 |---|---|
 | Jenkins tools | Maven `Maven3`, SonarQube scanner `Sonar`, server `SonarQube` |
 | Image | `fintech-five:<branch>` |
-| Smoke test | Throwaway `postgres:17-alpine` + the image with `SPRING_SQL_INIT_MODE=always`, Kafka listeners off (`SPRING_KAFKA_LISTENER_AUTO_STARTUP=false`), dummy market data; waits for `/actuator/health` UP |
+| Smoke test | Throwaway `postgres:17-alpine` + the image with `SPRING_SQL_INIT_MODE=always`, Kafka listeners off (`SPRING_KAFKA_LISTENER_AUTO_STARTUP=false`), dummy market data and JWT secret; waits for `/actuator/health` UP |
 | Static analysis | Checkstyle (`config/checkstyle.xml`) + SpotBugs; new issues mark the build UNSTABLE |
 | Coverage | JaCoCo (`target/site/jacoco/jacoco.xml`) |
 | SonarQube | Project key `fintech-five`, at `http://10.18.64.177:8085` |
