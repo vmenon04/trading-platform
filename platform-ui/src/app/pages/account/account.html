@@ -1,0 +1,50 @@
+
+<main class="account-page">
+  <section class="account-intro">
+    <div>
+      <h2>Alex Investor</h2>
+      <p>Manage your profile and funding preferences.</p>
+    </div>
+    <button type="button" class="logout-button" (click)="logout()">Log out</button>
+  </section>
+
+  <div class="account-grid">
+    <section class="account-card account-details">
+      <div class="card-heading"><div><h2>Client information</h2><span>Your account details</span></div></div>
+      <dl>
+        <div><dt>Full name</dt><dd>Alex Investor</dd></div>
+        <div><dt>Email</dt><dd>alex@example.com</dd></div>
+      </dl>
+    </section>
+
+    <section class="account-card cash-card">
+      <div class="card-heading"><div><h2>Cash balance</h2><span>Available to invest</span></div></div>
+      
+      @if (account.summary.isLoading()) {
+        <strong class="balance loading">Loading...</strong>
+      } @else {
+        <strong class="balance">{{ cashBalance() }}</strong>
+      }
+      @if (account.summary.error()) {
+        <p class="form-message error">Could not load your cash balance.</p>
+      }
+      <label class="account-label" for="funding-account">Deposit into</label>
+      <select id="funding-account" [(ngModel)]="selectedAccount" [ngModelOptions]="{ standalone: true }" (ngModelChange)="selectAccount($event)">
+        @for (accountOption of accounts; track accountOption.accountNumber) {
+          <option [ngValue]="accountOption">{{ accountOption.name }} · {{ accountOption.brokerage }} · {{ accountOption.accountNumber }}</option>
+        }
+      </select>
+      <form (ngSubmit)="deposit()">
+        <label for="deposit-amount">Deposit cash</label>
+        <div class="deposit-row">
+          <span class="currency">$</span>
+          <input id="deposit-amount" name="depositAmount" type="number" min="0.01" step="0.01" placeholder="0.00" [(ngModel)]="depositAmount" [disabled]="isDepositing()">
+          <button type="submit" [disabled]="isDepositing() || !depositAmount">{{ isDepositing() ? 'Processing...' : 'Deposit' }}</button>
+        </div>
+      </form>
+      @if (depositConfirmed()) {
+        <p class="form-message success" role="status">Deposit confirmed for {{ selectedAccount.name }}. Your balance will update when funding is connected.</p>
+      }
+    </section>
+  </div>
+</main>

@@ -19,12 +19,13 @@ export class Navbar {
 
   constructor(private readonly router: Router) {}
 
-  logout(): void {
-    this.auth.logout();
+  openAccount(): void {
+    this.router.navigate(['/account']);
   }
 
-  openProfile(): void {
-    this.router.navigate(['/profile']);
+  // clears the login token, then goes to /login
+  logout(): void {
+    this.auth.logout();
   }
 
   onLogoClick(): void {

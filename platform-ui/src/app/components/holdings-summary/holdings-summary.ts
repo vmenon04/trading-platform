@@ -11,6 +11,7 @@ interface HoldingRow {
 }
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const shares = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 @Component({
   imports: [],
@@ -41,7 +42,7 @@ export class HoldingsSummary {
     return data.map((holding) => ({
       symbol: holding.ticker,
       name: holding.name,
-      shares: String(holding.quantity),
+      shares: shares.format(holding.quantity),
       price: holding.price === null ? '—' : usd.format(holding.price),
       change: '—',
       value: holding.price === null ? '—' : usd.format(holding.quantity * holding.price),

@@ -174,8 +174,9 @@ public class AccountController {
     }
 
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
+        var instrument = instrumentService.getInstrumentById(trade.getInstrumentId());
         return new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
+            instrument.getTicker(), instrument.getName(), trade.getExternalTradeId(),
                 trade.getTradeSide().name(), trade.getQuantity(), trade.getPPU(), trade.getTotalPrice(), trade.getStatus().name(), null);
     }
 }

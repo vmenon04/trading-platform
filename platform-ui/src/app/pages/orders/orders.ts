@@ -3,6 +3,7 @@ import { OrderItem, OrderItemData } from '../../components/order-item/order-item
 import { AccountService } from '../../services/account.service';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+const shares = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 @Component({
   imports: [OrderItem],
@@ -23,12 +24,12 @@ export class Orders {
   visibleOrders = computed<OrderItemData[]>(() =>
     (this.account.orders.value() ?? []).map((trade) => ({
       symbol: trade.ticker,
-      name: trade.ticker,
+      name: trade.name,
       // tradeId is null until the backend can read UUIDs from account_trades
       reference: trade.tradeId ? trade.tradeId.slice(0, 8) : '—',
       date: '',
       side: trade.side === 'BUY' ? 'Buy' : 'Sell',
-      quantity: `${trade.quantity} shares`,
+      quantity: `${shares.format(trade.quantity)} shares`,
       price: trade.ppu === null ? '—' : usd.format(trade.ppu),
       status: trade.status,
     })),

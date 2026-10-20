@@ -16,7 +16,7 @@ export class OrderSubmitter {
 
   mode: 'buy' | 'sell' = 'buy';
   search = '';
-  quantity = 5;
+  quantity = 0;
   selectedInstrument: Instrument | null = null;
 
   submitting = signal(false);
@@ -57,7 +57,7 @@ export class OrderSubmitter {
 
   async submitOrder(): Promise<void> {
     const instrument = this.selectedInstrument;
-    if (!instrument || this.submitting()) {
+    if (!instrument || this.quantity <= 0 || this.submitting()) {
       return;
     }
     if (instrument.instrumentId === undefined) {
