@@ -44,6 +44,8 @@ x-app-environment: &app-environment
   SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
   # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # verifies the login tokens issued by auth-service; must be the same secret it signs them with (its JWT_SECRET)
+  JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 services:
   kafka:
@@ -52,7 +54,7 @@ services:
     container_name: trading-kafka
     ports:
       # published only on the machine's private IP, like Postgres
-      - "${HOST_IP:?HOST_IP is not set}:9092"
+      - "${HOST_IP:?HOST_IP is not set}:9092:9092"
     environment:
       # a single node in KRaft mode: broker and controller in one process, no ZooKeeper
       KAFKA_NODE_ID: 1
@@ -68,7 +70,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
       interval: 5s
@@ -82,7 +83,7 @@ services:
     container_name: trading-postgres
     ports:
       # the host port is configurable because only some ports are open between the machines
-      - "${HOST_IP:?HOST_IP is not set}:5432:5432"
+      - "${HOST_IP:?HOST_IP is not set}:${POSTGRES_PORT:?POSTGRES_PORT is not set}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
@@ -186,8 +187,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
-
 
   # trade.submitted -> trade.validated
   validation:
@@ -198,7 +197,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "true"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.validated -> trade.recorded
   recording:
@@ -209,7 +207,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "true"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.recorded -> trade.finished
   execution:
@@ -220,7 +217,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "true"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 volumes:
   postgres-data:
