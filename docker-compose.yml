@@ -118,9 +118,9 @@ services:
       retries: 24
     restart: unless-stopped
 
-  # Web UIs for looking inside Redis and Kafka. In the "tools" profile, so a plain `docker compose up` leaves them
-  # out; start them with `docker compose --profile tools up -d`. Neither has a login, so anyone who can reach the port
-  # can use them.
+  # Web UIs for looking inside Redis, Kafka and Postgres. In the "tools" profile, so a plain `docker compose up` leaves
+  # them out; start them with `docker compose --profile tools up -d`. Redis Insight and Kafka UI have no login, so
+  # anyone who can reach their ports can use them.
 
   # browse the price cache: keys, values, TTLs
   redis-insight:
@@ -156,6 +156,21 @@ services:
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${HOST_IP:?HOST_IP is not set}:9092
       # no deleting topics, clearing messages or sending messages from the UI
       KAFKA_CLUSTERS_0_READONLY: "true"
+    restart: unless-stopped
+
+  # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env
+  adminer:
+    image: adminer:6.1.2
+    container_name: trading-adminer
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${ADMINER_PORT:?ADMINER_PORT is not set}:8080"
+    environment:
+      # fills in the server on the login page
+      ADMINER_DEFAULT_SERVER: postgres
     restart: unless-stopped
 
   # receives POST /accounts/{accountId}/trades and publishes to trade.submitted
