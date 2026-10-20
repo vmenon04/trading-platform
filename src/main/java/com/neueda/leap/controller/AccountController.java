@@ -10,12 +10,13 @@ import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
-import com.neueda.leap.service.ClientAccountService;
-import com.neueda.leap.service.ClientService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.TradeAuthorizationService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -27,7 +28,6 @@ import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -38,30 +38,28 @@ public class AccountController {
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
-    private final ClientService clientService;
-    private final ClientAccountService clientAccountService;
+    private final TradeAuthorizationService tradeAuthorizationService;
 
     public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
-                             InstrumentService instrumentService, ClientService clientService,
-                             ClientAccountService clientAccountService) {
+                             InstrumentService instrumentService,
+                             TradeAuthorizationService tradeAuthorizationService) {
         this.accountService = accountService;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
-        this.clientService = clientService;
-        this.clientAccountService = clientAccountService;
+        this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
     @PostMapping("/{accountId}/deposits")
-    public ResponseEntity<Void> deposit(@PathVariable UUID accountId, @Valid @RequestBody DepositRequestDTO request) {
+    public ResponseEntity<Void> deposit(@AuthenticationPrincipal Jwt jwt,
+                                        @PathVariable UUID accountId,
+                                        @Valid @RequestBody DepositRequestDTO request) {
+        // the depositor is the logged-in user from the token, never an ID the caller puts in the request
+        Long userId = Long.parseLong(jwt.getSubject());
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-        Long clientInternalId = clientService.getInternalClientId(request.clientId());
-        if (clientInternalId == null) {
-            throw new NoSuchElementException("No client with external client id " + request.clientId());
-        }
 
-        if (!clientAccountService.existsByClientIdAndAccountId(clientInternalId, accountInternalId)) {
+        if (!tradeAuthorizationService.ownsAccount(userId, accountInternalId)) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
 

@@ -22,6 +22,11 @@ public class TradeAuthorizationService {
 
     public boolean isValidUserId(TradeRequestDTO dto, Long userId) {
         Long accountId = accountService.getAccountIdByExternalAccountId(dto.accountId());
+        return ownsAccount(userId, accountId);
+    }
+
+    // true if the logged-in user is one of the clients linked to the account (accountId is the internal ID)
+    public boolean ownsAccount(Long userId, Long accountId) {
         List<Long> clientIds = clientAccountsService.getClientIdByAccountId(accountId);
 
         for (Long clientId : clientIds) {

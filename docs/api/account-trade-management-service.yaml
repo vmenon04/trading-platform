@@ -33,7 +33,6 @@ paths:
             schema:
               $ref: '#/components/schemas/DepositRequest'
             example:
-              client_id: "7fa85f64-5717-4562-b3fc-2c963f66afa6"
               amount: 500.00
       security:
         - bearerAuth: []
@@ -53,13 +52,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '403':
-          description: Client does not own the account
+          description: The logged-in user does not own the account
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
-          description: Account or client not found
+          description: Account not found
           content:
             application/json:
               schema:
@@ -287,11 +286,8 @@ components:
   schemas:
     DepositRequest:
       type: object
-      required: [client_id, amount]
+      required: [amount]
       properties:
-        client_id:
-          type: string
-          format: uuid
         amount:
           type: number
           format: double
