@@ -46,6 +46,15 @@ CREATE TABLE roles (
     PRIMARY KEY (user_id, role)
 );
 
+CREATE TABLE refresh_tokens (
+    token_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+    user_id BIGINT REFERENCES users(user_id),
+    token_hash TEXT NOT NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    revoked_at TIMESTAMPTZ,
+    created_at TIMESTAMPTZ DEFAULT CURRENT_TIMESTAMP
+);
+
 CREATE TABLE accounts (
     account_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     external_account_id UUID UNIQUE NOT NULL,

@@ -1,12 +1,8 @@
 package com.neueda.leap.repository;
 
-import org.apache.ibatis.annotations.Insert;
-import org.apache.ibatis.annotations.Options;
-import org.apache.ibatis.annotations.Update;
-import org.apache.ibatis.annotations.Delete;
-import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.*;
 import com.neueda.leap.entity.Client;
-import org.apache.ibatis.annotations.Select;
+
 import java.util.List;
 import java.util.UUID;
 
@@ -25,7 +21,7 @@ public interface ClientMapper {
     Client findById(Long clientId);
 
     @Select("SELECT client_id as clientId FROM clients WHERE external_client_id = #{externalClientId}")
-    Long findInternalIdByExternalClientId(UUID externalClientId);
+    Long findInternalIdByExternalClientId(@Param("externalClientId") UUID externalClientId);
 
     @Select("SELECT " + COLUMNS + " FROM clients")
     List<Client> findAll();
