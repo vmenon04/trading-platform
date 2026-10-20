@@ -55,7 +55,7 @@ public class AccountController {
 
     @PostMapping("/{accountId}/deposits")
     public ResponseEntity<Void> deposit(@PathVariable UUID accountId, @Valid @RequestBody DepositRequestDTO request) {
-        Long accountInternalId = accountService.getAccountIdByExternalAccountId(request.accountId());
+        Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
         Long clientInternalId = clientService.getInternalClientId(request.clientId());
         if (clientInternalId == null) {
             throw new NoSuchElementException("No client with external client id " + request.clientId());

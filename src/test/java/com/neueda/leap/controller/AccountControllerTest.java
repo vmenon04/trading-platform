@@ -86,16 +86,15 @@ class AccountControllerTest {
         when(clientService.getInternalClientId(externalClientId)).thenReturn(11L);
         when(clientAccountService.existsByClientIdAndAccountId(11L, ACCOUNT_ID)).thenReturn(true);
 
-        mockMvc.perform(post("/api/v1/accounts/{externalAccountId}/deposits")
+                mockMvc.perform(post("/api/v1/accounts/{accountId}/deposits", externalAccountId)
                 .contextPath("/api")
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {
-                      "accountId": "%s",
                       "clientId": "%s",
                       "amount": 250.50
                     }
-                    """.formatted(externalAccountId, externalClientId)))
+                                                                """.formatted(externalClientId)))
             .andExpect(status().isNoContent());
 
         verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
@@ -109,16 +108,15 @@ class AccountControllerTest {
             .setControllerAdvice(new GlobalExceptionHandler())
             .build();
 
-        mockMvc.perform(post("/api/v1/accounts/{externalAccountId}/deposits")
+                mockMvc.perform(post("/api/v1/accounts/{accountId}/deposits", externalAccountId)
                 .contextPath("/api")
                 .contentType(APPLICATION_JSON)
                 .content("""
                     {
-                      "accountId": "%s",
                       "clientId": "%s",
                       "amount": 250.50
                     }
-                    """.formatted(externalAccountId, externalClientId)))
+                                                                """.formatted(externalClientId)))
             .andExpect(status().isNotFound());
 
         verifyNoInteractions(clientService, clientAccountService);

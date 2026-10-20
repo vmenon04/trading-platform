@@ -14,10 +14,18 @@ tags:
     description: Order and trade queries
 
 paths:
-  /accounts/deposits:
+  /accounts/{account_id}/deposits:
     post:
       tags: [accounts]
       summary: Deposit cash into a client account
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: External UUID of the account receiving the deposit
+          schema:
+            type: string
+            format: uuid
       requestBody:
         required: true
         content:
@@ -25,7 +33,6 @@ paths:
             schema:
               $ref: '#/components/schemas/DepositRequest'
             example:
-              account_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
               client_id: "7fa85f64-5717-4562-b3fc-2c963f66afa6"
               amount: 500.00
       security:
@@ -280,11 +287,8 @@ components:
   schemas:
     DepositRequest:
       type: object
-      required: [account_id, client_id, amount]
+      required: [client_id, amount]
       properties:
-        account_id:
-          type: string
-          format: uuid
         client_id:
           type: string
           format: uuid
