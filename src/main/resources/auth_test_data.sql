@@ -32,7 +32,7 @@ INSERT INTO accounts (
 )
 VALUES (
     'cfe3fcd1-7520-45a5-9a50-d870d47e3b62',
-    100.0000
+    1000000.0000
 );
 
 INSERT INTO client_accounts (client_id, account_id)
