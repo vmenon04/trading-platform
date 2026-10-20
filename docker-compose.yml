@@ -1,7 +1,7 @@
 # Kafka, Postgres and the app for the trading platform
 #
-# All values come from .env 
-# The app is one image run as four services, one per stage of the trade pipeline. 
+# All values come from .env
+# The app is one image run as four services, one per stage of the trade pipeline.
 # Scale a stage on its own with e.g. `docker compose up -d --scale execution=4`; at most
 # KafkaTopicConfig.PARTITIONS containers of a stage get work, the rest wait as standbys.
 
@@ -44,7 +44,7 @@ services:
     container_name: trading-kafka
     ports:
       # published only on the machine's private IP, like Postgres
-      - "${HOST_IP:?HOST_IP is not set}:9092:9092"
+      - "${HOST_IP:?HOST_IP is not set}:9092"
     environment:
       # a single node in KRaft mode: broker and controller in one process, no ZooKeeper
       KAFKA_NODE_ID: 1
@@ -60,6 +60,7 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
       interval: 5s
@@ -73,7 +74,7 @@ services:
     container_name: trading-postgres
     ports:
       # the host port is configurable because only some ports are open between the machines
-      - "${HOST_IP:?HOST_IP is not set}:${POSTGRES_PORT:?POSTGRES_PORT is not set}:5432"
+      - "${HOST_IP:?HOST_IP is not set}:5432:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
@@ -83,6 +84,7 @@ services:
       # run once, only when the data volume is empty (a new database)
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
       - ./src/main/resources/sample-data.sql:/docker-entrypoint-initdb.d/2-sample-data.sql:ro
+      - ./src/main/resources/auth_test_data.sql:/docker-entrypoint-initdb.d/3-auth_test_data.sql:ro
     healthcheck:
       # $$ so the variables are read inside the container, not by compose
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -102,6 +104,8 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+
 
   # trade.submitted -> trade.validated
   validation:
@@ -112,6 +116,7 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "true"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.validated -> trade.recorded
   recording:
@@ -122,6 +127,7 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "true"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.recorded -> trade.finished
   execution:
@@ -132,6 +138,7 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "true"
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 volumes:
   postgres-data:

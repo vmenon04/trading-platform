@@ -7,7 +7,6 @@ import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
-import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
@@ -33,7 +32,7 @@ public class AccountController {
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
 
-    public AccountController(AccountService accountService, AccountMapper accountMapper,
+    public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
                              InstrumentService instrumentService) {
         this.accountService = accountService;
@@ -45,13 +44,10 @@ public class AccountController {
     @GetMapping("/{accountId}")
     public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        BigDecimal investmentValue = activeHoldings(internalId).stream()
-                .map(holding -> holding.getQuantity().multiply(instrumentService.getCurrentPrice(holding.getInstrumentId())))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
         BigDecimal cashBalance = accountService.getBalance(internalId);
         
         // TODO: calculate cost basis and investment value 
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, investmentValue));
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, new BigDecimal(0), cashBalance, new BigDecimal(0)));
     }
 
     @GetMapping("/{accountId}/holdings")
@@ -60,8 +56,9 @@ public class AccountController {
         List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
                 .map(holding -> new AccountHoldingResponseDTO(accountId, instrumentService.getInstrumentById(holding.getInstrumentId()).getName(),
                         instrumentService.getInstrumentById(holding.getInstrumentId()).getTicker(), holding.getQuantity(),
-                        instrumentService.getCurrentPrice(holding.getInstrumentId())))
+                        new BigDecimal(0)))
                 .toList();
+                // TODO: add market price
         return ResponseEntity.ok(response);
     }
 
@@ -127,6 +124,6 @@ public class AccountController {
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
         return new TradeResponseDTO(trade.getInstrumentId(),
                 instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
-                trade.getTradeSide().name(), trade.getQuantity(), trade.getPrice(), trade.getStatus().name(), null);
+                trade.getTradeSide().name(), trade.getQuantity(), trade.getPPU(), trade.getTotalPrice(), trade.getStatus().name(), null);
     }
 }

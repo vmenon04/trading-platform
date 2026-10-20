@@ -20,22 +20,23 @@ public interface AccountTradeMapper {
 
     // columns aliased to the AccountTrade field names, so MyBatis fills the right fields
     // (the status column goes into the tradeStatus field)
-    String TRADE_COLUMNS = "account_trades.trade_id AS tradeId, account_id AS accountId, instrument_id AS instrumentId, "
+    String TRADE_COLUMNS = "account_trades.trade_id AS tradeId, external_trade_id AS externalTradeId, "
+            + "account_id AS accountId, instrument_id AS instrumentId, "
             + "trade_side AS tradeSide, quantity";
 
-    String STATUS_COLUMNS = "status, trade_time AS tradeTime";
+    String STATUS_COLUMNS = "status AS tradeStatus, trade_time AS tradeTime";
 
-    String PRICE_COLUMNS = "price";
+    String PRICE_COLUMNS = "price_per_unit AS ppu, total_price AS totalPrice";
 
     // current state of a trade (its latest row)
-    @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
             "WHERE account_trades.trade_id = #{tradeId} ORDER BY account_trade_status.trade_time DESC LIMIT 1")
     AccountTrade findById(@Param("tradeId") Long tradeId);
 
     // current state of each of the account's trades (one row per trade)
-    @Select("SELECT DISTINCT ON (account_trades.trade_id) " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT DISTINCT ON (account_trades.trade_id) " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
             "WHERE account_trades.account_id = #{accountId} " +
@@ -43,7 +44,7 @@ public interface AccountTradeMapper {
     List<AccountTrade> findByAccountId(@Param("accountId") Long accountId);
 
     // every status a trade went through, oldest first
-    @Select("SELECT " + TRADE_COLUMNS + STATUS_COLUMNS + PRICE_COLUMNS + " FROM account_trades " +
+    @Select("SELECT " + TRADE_COLUMNS + "," +  STATUS_COLUMNS + "," + PRICE_COLUMNS + " FROM account_trades " +
             "LEFT JOIN account_trade_status ON account_trades.trade_id = account_trade_status.trade_id " +
             "LEFT JOIN account_trade_price ON account_trades.trade_id = account_trade_price.trade_id " +
             "WHERE account_trades.trade_id = #{tradeId} ORDER BY account_trade_status.trade_time")
