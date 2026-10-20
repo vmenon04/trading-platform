@@ -10,6 +10,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | | 8081 | Trade API (`api` container → 8080 inside) |
 | | 8082 | Postgres (`trading-postgres` → 5432 inside) |
 | | 8083 | Redis price cache (`trading-redis` → 6379 inside) |
+| | 8084 | auth-service: login, registration, token refresh (`trading-auth` → 3000 inside) |
 | | 8085 | SonarQube (standalone container, not in compose) |
 | | 8086 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
 | | 8087 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
@@ -26,6 +27,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | `kafka` | `apache/kafka:3.9.1` | Broker |
 | `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` once, only when its volume is empty |
 | `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
+| `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
@@ -49,7 +51,8 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
-| `JWT_SHARED_SECRET` | Secret the app checks login tokens with; same as auth-service's `JWT_SECRET`, at least 32 characters |
+| `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app) with, at least 32 characters |
+| `AUTH_PORT` | Host port for auth-service (`8084`) |
 | `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT`, `ADMINER_PORT` | Host ports for the web UIs (`8086`, `8087`, `8088`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 

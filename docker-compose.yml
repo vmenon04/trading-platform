@@ -1,4 +1,4 @@
-# Kafka, Postgres, Redis and the app for the trading platform
+# Kafka, Postgres, Redis, auth-service and the app for the trading platform
 #
 # All values come from .env
 # The app is one image run as four services, one per stage of the trade pipeline.
@@ -44,7 +44,7 @@ x-app-environment: &app-environment
   SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
   # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
-  # verifies the login tokens issued by auth-service; must be the same secret it signs them with (its JWT_SECRET)
+  # verifies the login tokens issued by auth-service, which compose gives the same secret
   JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 services:
@@ -119,6 +119,30 @@ services:
       interval: 5s
       timeout: 5s
       retries: 24
+    restart: unless-stopped
+
+  # login, registration and token refresh: issues the JWTs the app services check
+  auth-service:
+    build: ./auth-service
+    image: trading-platform-auth
+    container_name: trading-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${AUTH_PORT:?AUTH_PORT is not set}:3000"
+    environment:
+      # the users and refresh_tokens tables live in the trading database
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+      # signs the tokens; the same secret the app services check them with, so the two can't drift apart
+      JWT_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+    healthcheck:
+      # it has no health endpoint, so any HTTP answer (even a 404) means it is up
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(() => process.exit(0), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
     restart: unless-stopped
 
   # Web UIs for looking inside Redis, Kafka and Postgres. In the "tools" profile, so a plain `docker compose up` leaves

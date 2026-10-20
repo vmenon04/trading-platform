@@ -2,7 +2,9 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.repository.ClientMapper;
+import com.neueda.leap.dto.AccountDTO;
 import java.util.UUID;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -48,5 +50,27 @@ class ClientServiceTest {
         when(clientMapper.findInternalIdByExternalClientId(externalClientId)).thenReturn(null);
         assertNull(clientService.getClientByExternalId(externalClientId));
         verify(clientMapper, never()).findById(any());
+    }
+
+    @Test
+    void getTradingAccountsReturnsPublicAccountIds() {
+        UUID accountId = UUID.randomUUID();
+        when(clientMapper.findInternalIdByExternalClientId(externalClientId)).thenReturn(7L);
+        when(clientMapper.findExternalAccountIdsByClientId(7L)).thenReturn(List.of(accountId));
+
+        assertEquals(List.of(new AccountDTO(accountId)), clientService.getTradingAccounts(externalClientId));
+    }
+
+    @Test
+    void getTradingAccountsReturnsMultiplePublicAccountIds() {
+        UUID firstAccountId = UUID.randomUUID();
+        UUID secondAccountId = UUID.randomUUID();
+        when(clientMapper.findInternalIdByExternalClientId(externalClientId)).thenReturn(7L);
+        when(clientMapper.findExternalAccountIdsByClientId(7L))
+                .thenReturn(List.of(firstAccountId, secondAccountId));
+
+        assertEquals(
+                List.of(new AccountDTO(firstAccountId), new AccountDTO(secondAccountId)),
+                clientService.getTradingAccounts(externalClientId));
     }
 }

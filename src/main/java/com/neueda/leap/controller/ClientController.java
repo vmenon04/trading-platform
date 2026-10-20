@@ -27,6 +27,9 @@ public class ClientController {
         if (client == null) {
             return ResponseEntity.notFound().build();
         }
-        return ResponseEntity.ok(new ClientResponseDTO(externalClientId, client.getFirstName() + " " + client.getLastName()));
+        return ResponseEntity.ok(new ClientResponseDTO(
+            externalClientId,
+            client.getFirstName() + " " + client.getLastName(),
+            clientService.getTradingAccounts(externalClientId)));
     }
 }

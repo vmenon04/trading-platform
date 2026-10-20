@@ -63,4 +63,19 @@ class TradeAuthorizationServiceTest {
 
         assertFalse(tradeAuthorizationService.isValidUserId(dto, 42L));
     }
+
+    @Test
+    void ownsAccountIsFalseForAnAccountWithNoLinkedClients() {
+        when(clientAccountService.getClientIdByAccountId(1L)).thenReturn(List.of());
+
+        assertFalse(tradeAuthorizationService.ownsAccount(42L, 1L));
+    }
+
+    @Test
+    void ownsAccountIsTrueWhenTheUserIsALinkedClient() {
+        when(clientAccountService.getClientIdByAccountId(1L)).thenReturn(List.of(100L));
+        when(userService.getUserIdByClientId(100L)).thenReturn(42L);
+
+        assertTrue(tradeAuthorizationService.ownsAccount(42L, 1L));
+    }
 }
