@@ -10,9 +10,9 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | | 8081 | Trade API (`api` container → 8080 inside) |
 | | 8082 | Postgres (`trading-postgres` → 5432 inside) |
 | | 8083 | Redis price cache (`trading-redis` → 6379 inside) |
-| | 8084 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
 | | 8085 | SonarQube (standalone container, not in compose) |
-| | 8086 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
+| | 8086 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
+| | 8087 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
@@ -47,7 +47,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
-| `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT` | Host ports for the web UIs (`8084`, `8086`) |
+| `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT` | Host ports for the web UIs (`8086`, `8087`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 
 ### Environment variables set on the app containers
