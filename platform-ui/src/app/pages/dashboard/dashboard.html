@@ -11,5 +11,5 @@
 		<section class="chart-card"><div class="card-heading"><div><h2>Portfolio performance</h2><span>May 1 — May 27, 2025</span></div><div class="periods"><button>1D</button><button>1W</button><button class="selected">1M</button><button>1Y</button></div></div><strong class="chart-value">$48,729.64 <small>+6.42%</small></strong><div class="chart-placeholder"><i></i><span></span></div><div class="chart-axis"><span>May 1</span><span>May 8</span><span>May 15</span><span>May 22</span><span>May 27</span></div></section>
 		<section class="allocation-card"><h2>Allocation</h2><span>By asset class</span><div class="donut"><strong>$48.7k<small>Total</small></strong></div><ul><li><span><i class="dot etf"></i>ETF</span><b>68%</b></li><li><span><i class="dot equity"></i>Equity</span><b>18%</b></li><li><span><i class="dot forex"></i>Forex</span><b>14%</b></li></ul></section>
 	</div>
-	<app-holdings-summary></app-holdings-summary>
+	<app-holdings-summary [data]="account.holdings.value() ?? []"></app-holdings-summary>
 </section>

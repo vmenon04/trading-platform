@@ -16,8 +16,12 @@ export class Navbar {
 
   constructor(private readonly router: Router) {}
 
-  openProfile(): void {
-    this.router.navigate(['/profile']);
+  openAccount(): void {
+    this.router.navigate(['/account']);
+  }
+
+  logout(): void {
+    this.router.navigate(['/login']);
   }
 
   onLogoClick(): void {

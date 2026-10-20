@@ -13,6 +13,6 @@
 .estimate { display: flex; justify-content: space-between; padding: 14px 0; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }.estimate strong { font-size: 1.2rem; }
 .allocation span { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.65rem; }.allocation i { display: block; height: 6px; margin-top: 7px; border-radius: 99px; background: linear-gradient(90deg, var(--green) 77%, #dce6e1 77%); }
 .submit-order { min-height: 40px; border: 0; border-radius: 7px; background: var(--green); color: #fff; font-weight: 700; cursor: pointer; }.disclaimer { color: var(--muted); text-align: center; font-size: 0.58rem; }
-.submit-order:disabled { opacity: 0.6; cursor: wait; }
+.submit-order:disabled { background: #a8b2ad; color: #eef1ef; opacity: 1; cursor: not-allowed; }
 .order-result { margin: 0; padding: 10px 12px; border-radius: 7px; background: var(--green-soft); color: var(--green); font-size: 0.68rem; }
 .order-result.error { background: var(--red-soft); color: var(--red); }

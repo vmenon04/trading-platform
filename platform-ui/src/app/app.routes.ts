@@ -12,4 +12,5 @@ export const routes: Routes = [
     { path: 'orders', loadComponent: () => import('./pages/orders/orders').then((m) => m.Orders) },
     { path: 'portfolio', loadComponent: () => import('./pages/portfolio/portfolio').then((m) => m.Portfolio) },
     { path: 'profile', loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile)},
+    { path: 'account', loadComponent: () => import('./pages/account/account').then((m) => m.Account)},
     { path: 'registration', component: Registration },];

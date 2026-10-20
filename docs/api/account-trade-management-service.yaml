@@ -256,12 +256,14 @@ components:
 
     TradeStatus:
       type: object
-      required: [instrumentId, ticker, tradeId, side, quantity, status]
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
       properties:
         instrumentId:
           type: integer
           format: int64
         ticker:
+          type: string
+        name:
           type: string
         tradeId:
           type: string
@@ -308,12 +310,14 @@ components:
 
     Trade:
       type: object
-      required: [instrumentId, ticker, tradeId, side, quantity, status]
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
       properties:
         instrumentId:
           type: integer
           format: int64
         ticker:
+          type: string
+        name:
           type: string
         tradeId:
           type: string

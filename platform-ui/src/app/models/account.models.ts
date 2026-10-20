@@ -41,6 +41,7 @@ export interface ErrorResponse {
 export interface Trade {
   instrumentId: number;
   ticker: string;
+  name: string;
   tradeId: string | null;
   side: TradeSide;
   quantity: number;
