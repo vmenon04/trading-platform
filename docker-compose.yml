@@ -1,4 +1,4 @@
-# Kafka, Postgres and the app for the trading platform
+# Kafka, Postgres, Redis and the app for the trading platform
 #
 # All values come from .env
 # The app is one image run as four services, one per stage of the trade pipeline.
@@ -15,6 +15,8 @@ x-app: &app
     kafka:
       condition: service_healthy
     postgres:
+      condition: service_healthy
+    redis:
       condition: service_healthy
   healthcheck:
     test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
@@ -36,6 +38,14 @@ x-app-environment: &app-environment
   SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
   MARKET_DATA_BASE_URL: ${MARKET_DATA_BASE_URL:?MARKET_DATA_BASE_URL is not set}
   MARKET_DATA_API_KEY: ${MARKET_DATA_API_KEY:?MARKET_DATA_API_KEY is not set}
+  MARKET_DATA_CACHE_TTL: ${MARKET_DATA_CACHE_TTL:?MARKET_DATA_CACHE_TTL is not set}
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: 6379
+  SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+  # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # verifies the login tokens issued by auth-service; must be the same secret it signs them with (its JWT_SECRET)
+  JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 services:
   kafka:
@@ -44,7 +54,7 @@ services:
     container_name: trading-kafka
     ports:
       # published only on the machine's private IP, like Postgres
-      - "${HOST_IP:?HOST_IP is not set}:9092"
+      - "${HOST_IP:?HOST_IP is not set}:9092:9092"
     environment:
       # a single node in KRaft mode: broker and controller in one process, no ZooKeeper
       KAFKA_NODE_ID: 1
@@ -60,7 +70,6 @@ services:
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
     healthcheck:
       test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
       interval: 5s
@@ -74,7 +83,7 @@ services:
     container_name: trading-postgres
     ports:
       # the host port is configurable because only some ports are open between the machines
-      - "${HOST_IP:?HOST_IP is not set}:5432:5432"
+      - "${HOST_IP:?HOST_IP is not set}:${POSTGRES_PORT:?POSTGRES_PORT is not set}:5432"
     environment:
       POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
       POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
@@ -93,6 +102,80 @@ services:
       retries: 24
     restart: unless-stopped
 
+  # caches Fauxnance prices for the validation and execution services
+  redis:
+    image: redis:7.4-alpine
+    container_name: trading-redis
+    # only a cache, so nothing is saved to disk (no snapshots, no append-only file)
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "no"]
+    ports:
+      # published like Postgres, so the app can use it when run on the VM
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_PORT:?REDIS_PORT is not set}:6379"
+    environment:
+      # read by redis-cli, so the healthcheck can log in without the password on its command line
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # Web UIs for looking inside Redis, Kafka and Postgres. In the "tools" profile, so a plain `docker compose up` leaves
+  # them out; start them with `docker compose --profile tools up -d`. Redis Insight and Kafka UI have no login, so
+  # anyone who can reach their ports can use them.
+
+  # browse the price cache: keys, values, TTLs
+  redis-insight:
+    image: redis/redisinsight:3.8
+    container_name: trading-redis-insight
+    profiles: ["tools"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set}:5540"
+    environment:
+      # adds the redis service as a database, so there is nothing to set up in the UI
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+      RI_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+      RI_REDIS_ALIAS: trading-redis
+      RI_ACCEPT_TERMS_AND_CONDITIONS: "true"
+    restart: unless-stopped
+
+  # browse the trade topics, their messages and the consumer groups
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
+    container_name: trading-kafka-ui
+    profiles: ["tools"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: trading
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+      # no deleting topics, clearing messages or sending messages from the UI
+      KAFKA_CLUSTERS_0_READONLY: "true"
+    restart: unless-stopped
+
+  # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env
+  adminer:
+    image: adminer:6.1.2
+    container_name: trading-adminer
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${ADMINER_PORT:?ADMINER_PORT is not set}:8080"
+    environment:
+      # fills in the server on the login page
+      ADMINER_DEFAULT_SERVER: postgres
+    restart: unless-stopped
+
   # receives POST /accounts/{accountId}/trades and publishes to trade.submitted
   api:
     <<: *app
@@ -104,8 +187,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
-
 
   # trade.submitted -> trade.validated
   validation:
@@ -116,7 +197,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "true"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.validated -> trade.recorded
   recording:
@@ -127,7 +207,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "true"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
   # trade.recorded -> trade.finished
   execution:
@@ -138,7 +217,6 @@ services:
       TRADE_STAGE_VALIDATION_ENABLED: "false"
       TRADE_STAGE_RECORDING_ENABLED: "false"
       TRADE_STAGE_EXECUTION_ENABLED: "true"
-      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
 volumes:
   postgres-data:
