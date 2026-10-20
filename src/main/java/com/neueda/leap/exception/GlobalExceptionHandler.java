@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.List;
+import java.util.NoSuchElementException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,6 +37,13 @@ public class GlobalExceptionHandler {
                 HttpStatus.INTERNAL_SERVER_ERROR, "Internal Server Error", "an unexpected error occurred");
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(body);
     }
+
+        @ExceptionHandler(NoSuchElementException.class)
+        public ResponseEntity<ErrorResponseDTO> handleNotFound(NoSuchElementException ex) {
+                ErrorResponseDTO body = ErrorResponseDTO.of(
+                                HttpStatus.NOT_FOUND, "Not Found", ex.getMessage());
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+        }
 
     @ExceptionHandler(AccessDeniedException.class)
     public ResponseEntity<ErrorResponseDTO> handleAccessDenied(AccessDeniedException ex) {

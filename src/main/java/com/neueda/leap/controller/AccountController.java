@@ -2,6 +2,7 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.AccountHoldingResponseDTO;
 import com.neueda.leap.dto.AccountSummaryResponseDTO;
+import com.neueda.leap.dto.DepositRequestDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
@@ -10,14 +11,20 @@ import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.TradeAuthorizationService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -31,14 +38,33 @@ public class AccountController {
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
+    private final TradeAuthorizationService tradeAuthorizationService;
 
     public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
-                             InstrumentService instrumentService) {
+                             InstrumentService instrumentService,
+                             TradeAuthorizationService tradeAuthorizationService) {
         this.accountService = accountService;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
+        this.tradeAuthorizationService = tradeAuthorizationService;
+    }
+
+    @PostMapping("/{accountId}/deposits")
+    public ResponseEntity<Void> deposit(@AuthenticationPrincipal Jwt jwt,
+                                        @PathVariable UUID accountId,
+                                        @Valid @RequestBody DepositRequestDTO request) {
+        // the depositor is the logged-in user from the token, never an ID the caller puts in the request
+        Long userId = Long.parseLong(jwt.getSubject());
+        Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
+
+        if (!tradeAuthorizationService.ownsAccount(userId, accountInternalId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
+        }
+
+        accountService.deposit(accountInternalId, request.amount());
+        return ResponseEntity.noContent().build();
     }
 
     @GetMapping("/{accountId}")

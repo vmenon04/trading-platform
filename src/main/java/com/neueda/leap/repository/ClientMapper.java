@@ -23,6 +23,12 @@ public interface ClientMapper {
     @Select("SELECT client_id as clientId FROM clients WHERE external_client_id = #{externalClientId}")
     Long findInternalIdByExternalClientId(@Param("externalClientId") UUID externalClientId);
 
+        @Select("SELECT accounts.external_account_id FROM accounts "
+            + "JOIN client_accounts ON accounts.account_id = client_accounts.account_id "
+            + "WHERE client_accounts.client_id = #{clientId} "
+            + "ORDER BY accounts.external_account_id")
+        List<UUID> findExternalAccountIdsByClientId(@Param("clientId") Long clientId);
+
     @Select("SELECT " + COLUMNS + " FROM clients")
     List<Client> findAll();
 

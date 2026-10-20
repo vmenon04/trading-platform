@@ -1,9 +1,12 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.dto.AccountDTO;
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.repository.ClientMapper;
 import org.springframework.stereotype.Service;
 
+import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 /**
@@ -37,5 +40,15 @@ public class ClientService {
     public Client getClientByExternalId(UUID externalClientId) {
         Long internalClientId = getInternalClientId(externalClientId);
         return internalClientId == null ? null : clientMapper.findById(internalClientId);
+    }
+
+    public List<AccountDTO> getTradingAccounts(UUID externalClientId) {
+        Long internalClientId = getInternalClientId(externalClientId);
+        if (internalClientId == null) {
+            throw new NoSuchElementException("No client with external client id " + externalClientId);
+        }
+        return clientMapper.findExternalAccountIdsByClientId(internalClientId).stream()
+                .map(AccountDTO::new)
+                .toList();
     }
 }
