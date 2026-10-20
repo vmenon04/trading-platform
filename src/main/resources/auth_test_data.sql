@@ -3,7 +3,7 @@
 -- This script inserts the minimal rows needed to support the provided users row:
 --   external_user_id = cfe3fcd1-7520-45a5-9a50-d870d47e3b61
 --   username = efe
---   password_hash = $2b$10$kPf3i0mdvOh//y.0WzFL8uysl/eeeMSy7td7FJ6vBmbwrSrdcxAqq
+--   password_hash = $2b$10$Cm.S3UnWmQTGLYbMxRvU1eqLoi5rGX/5DHwbnMrrIBSIeyI/ky0ZS
 --   linked client = cfe3fcd1-7520-45a5-9a50-d870d47e3b60 with one linked account = cfe3fcd1-7520-45a5-9a50-d870d47e3b62
 --
 -- It also creates the matching client, account, client_accounts, and roles rows so the auth service
@@ -51,7 +51,7 @@ INSERT INTO users (
 SELECT
     'cfe3fcd1-7520-45a5-9a50-d870d47e3b61',
     'efe',
-    '$2b$10$kPf3i0mdvOh//y.0WzFL8uysl/eeeMSy7td7FJ6vBmbwrSrdcxAqq',
+    '$2b$10$Cm.S3UnWmQTGLYbMxRvU1eqLoi5rGX/5DHwbnMrrIBSIeyI/ky0ZS',
     client_id,
     TIMESTAMPTZ '2026-10-16 14:56:58.034498+00'
 FROM clients
