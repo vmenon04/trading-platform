@@ -10,7 +10,9 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | | 8081 | Trade API (`api` container → 8080 inside) |
 | | 8082 | Postgres (`trading-postgres` → 5432 inside) |
 | | 8083 | Redis price cache (`trading-redis` → 6379 inside) |
+| | 8084 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
 | | 8085 | SonarQube (standalone container, not in compose) |
+| | 8086 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
@@ -27,8 +29,12 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
 | `execution` | same | `trade.recorded` → `trade.finished` |
+| `redis-insight` | `redis/redisinsight:3.8` | Web UI for Redis, already connected to `redis`. `tools` profile only |
+| `kafka-ui` | `ghcr.io/kafbat/kafka-ui:v1.5.0` | Web UI for Kafka topics, messages and consumer groups (read-only). `tools` profile only |
 
 All four app services use the one image built from `Dockerfile`; each switches on only its own stage. Scale one with `docker compose up -d --scale execution=3` (at most 8 per stage get work, one per partition). Reset the database with `docker compose down -v`.
+
+`docker compose up -d` leaves out the two web UIs; `docker compose --profile tools up -d` starts them too. Neither has a login.
 
 ### `.env` (read by compose and the reporting scripts)
 
@@ -41,6 +47,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
+| `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT` | Host ports for the web UIs (`8084`, `8086`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
 
 ### Environment variables set on the app containers

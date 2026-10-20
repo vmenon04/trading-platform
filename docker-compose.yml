@@ -118,6 +118,46 @@ services:
       retries: 24
     restart: unless-stopped
 
+  # Web UIs for looking inside Redis and Kafka. In the "tools" profile, so a plain `docker compose up` leaves them
+  # out; start them with `docker compose --profile tools up -d`. Neither has a login, so anyone who can reach the port
+  # can use them.
+
+  # browse the price cache: keys, values, TTLs
+  redis-insight:
+    image: redis/redisinsight:3.8
+    container_name: trading-redis-insight
+    profiles: ["tools"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set}:5540"
+    environment:
+      # adds the redis service as a database, so there is nothing to set up in the UI
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+      RI_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+      RI_REDIS_ALIAS: trading-redis
+      RI_ACCEPT_TERMS_AND_CONDITIONS: "true"
+    restart: unless-stopped
+
+  # browse the trade topics, their messages and the consumer groups
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
+    container_name: trading-kafka-ui
+    profiles: ["tools"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: trading
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+      # no deleting topics, clearing messages or sending messages from the UI
+      KAFKA_CLUSTERS_0_READONLY: "true"
+    restart: unless-stopped
+
   # receives POST /accounts/{accountId}/trades and publishes to trade.submitted
   api:
     <<: *app
