@@ -3,6 +3,9 @@ package com.neueda.leap.controller;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.exception.GlobalExceptionHandler;
+import com.neueda.leap.service.ClientAccountService;
+import com.neueda.leap.service.ClientService;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.enums.TradeSide;
@@ -27,7 +30,11 @@ import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -53,18 +60,69 @@ class AccountControllerTest {
     @Mock
     private InstrumentService instrumentService;
 
+    @Mock
+    private ClientService clientService;
+
+    @Mock
+    private ClientAccountService clientAccountService;
+
     @InjectMocks
     private AccountController accountController;
 
     private MockMvc mockMvc;
 
     private final UUID externalAccountId = UUID.randomUUID();
+    private final UUID externalClientId = UUID.randomUUID();
     private final UUID externalTradeId = UUID.randomUUID();
 
     @BeforeEach
     void setUp() {
         mockMvc = MockMvcBuilders.standaloneSetup(accountController).build();
     }
+
+        @Test
+        void deposit_returnsNoContentAndCreditsOwnedAccount() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(clientService.getInternalClientId(externalClientId)).thenReturn(11L);
+        when(clientAccountService.existsByClientIdAndAccountId(11L, ACCOUNT_ID)).thenReturn(true);
+
+        mockMvc.perform(post("/api/v1/accounts/{externalAccountId}/deposits")
+                .contextPath("/api")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {
+                      "accountId": "%s",
+                      "clientId": "%s",
+                      "amount": 250.50
+                    }
+                    """.formatted(externalAccountId, externalClientId)))
+            .andExpect(status().isNoContent());
+
+        verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
+        }
+
+        @Test
+        void deposit_unknownAccount_returns404() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId))
+            .thenThrow(new java.util.NoSuchElementException("account not found"));
+        mockMvc = MockMvcBuilders.standaloneSetup(accountController)
+            .setControllerAdvice(new GlobalExceptionHandler())
+            .build();
+
+        mockMvc.perform(post("/api/v1/accounts/{externalAccountId}/deposits")
+                .contextPath("/api")
+                .contentType(APPLICATION_JSON)
+                .content("""
+                    {
+                      "accountId": "%s",
+                      "clientId": "%s",
+                      "amount": 250.50
+                    }
+                    """.formatted(externalAccountId, externalClientId)))
+            .andExpect(status().isNotFound());
+
+        verifyNoInteractions(clientService, clientAccountService);
+        }
 
     @Test
     void getSummary_returnsCashBalance() throws Exception {

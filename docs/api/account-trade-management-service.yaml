@@ -14,6 +14,50 @@ tags:
     description: Order and trade queries
 
 paths:
+  /accounts/deposits:
+    post:
+      tags: [accounts]
+      summary: Deposit cash into a client account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRequest'
+            example:
+              account_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+              client_id: "7fa85f64-5717-4562-b3fc-2c963f66afa6"
+              amount: 500.00
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deposit completed successfully
+        '400':
+          description: Invalid deposit request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Client does not own the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account or client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /accounts/{account_id}:
     get:
       tags: [accounts]
@@ -234,6 +278,21 @@ paths:
 
 components:
   schemas:
+    DepositRequest:
+      type: object
+      required: [account_id, client_id, amount]
+      properties:
+        account_id:
+          type: string
+          format: uuid
+        client_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+
     AccountSummary:
       type: object
       required: [account_id, investment_value, cash_balance, cost_basis]
