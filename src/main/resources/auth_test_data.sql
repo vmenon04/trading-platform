@@ -1,24 +1,15 @@
 -- Auth test seed data
 --
 -- This script inserts the minimal rows needed to support the provided users row:
---   user_id = 2
 --   external_user_id = cfe3fcd1-7520-45a5-9a50-d870d47e3b61
 --   username = efe
 --   password_hash = $2b$10$kPf3i0mdvOh//y.0WzFL8uysl/eeeMSy7td7FJ6vBmbwrSrdcxAqq
---   linked client = 1 with one linked account = 1
+--   linked client = cfe3fcd1-7520-45a5-9a50-d870d47e3b60 with one linked account = cfe3fcd1-7520-45a5-9a50-d870d47e3b62
 --
 -- It also creates the matching client, account, client_accounts, and roles rows so the auth service
 -- and the Java authorization flow can load the user cleanly.
--- Run schema.sql first.
-
-TRUNCATE TABLE
-    client_accounts,
-    roles,
-    refresh_tokens,
-    users,
-    accounts,
-    clients
-RESTART IDENTITY CASCADE;
+-- Run schema.sql and sample-data.sql first. Nothing is deleted: the rows are added after the sample data, so the
+-- internal IDs are whatever Postgres assigns and each row is linked by its external ID.
 
 INSERT INTO clients (
     external_client_id,
@@ -45,7 +36,10 @@ VALUES (
 );
 
 INSERT INTO client_accounts (client_id, account_id)
-VALUES (1, 1);
+SELECT clients.client_id, accounts.account_id
+FROM clients, accounts
+WHERE clients.external_client_id = 'cfe3fcd1-7520-45a5-9a50-d870d47e3b60'
+  AND accounts.external_account_id = 'cfe3fcd1-7520-45a5-9a50-d870d47e3b62';
 
 INSERT INTO users (
     external_user_id,
@@ -54,21 +48,16 @@ INSERT INTO users (
     client_id,
     created_at
 )
-OVERRIDING SYSTEM VALUE
-VALUES (
+SELECT
     'cfe3fcd1-7520-45a5-9a50-d870d47e3b61',
     'efe',
     '$2b$10$kPf3i0mdvOh//y.0WzFL8uysl/eeeMSy7td7FJ6vBmbwrSrdcxAqq',
-    1,
+    client_id,
     TIMESTAMPTZ '2026-10-16 14:56:58.034498+00'
-);
-
-SELECT setval(pg_get_serial_sequence('users', 'user_id'), 2, true);
+FROM clients
+WHERE external_client_id = 'cfe3fcd1-7520-45a5-9a50-d870d47e3b60';
 
 INSERT INTO roles (user_id, role)
-VALUES (2, 'CLIENT');
-
-
-
-
-
+SELECT user_id, 'CLIENT'
+FROM users
+WHERE username = 'efe';
