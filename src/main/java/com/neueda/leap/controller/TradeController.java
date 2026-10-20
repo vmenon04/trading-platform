@@ -5,6 +5,8 @@ import com.neueda.leap.service.RecipientService;
 import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.UUID;
@@ -24,11 +26,12 @@ public class TradeController {
 
     @PostMapping
     public ResponseEntity<Void> submitOrder(
-            @PathVariable UUID accountId,
+        @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody TradeRequestDTO dto) {
-        
-        
-        return recipientService.publishOrder(dto);
+
+        String userIdString = jwt.getSubject();
+        Long userId = Long.parseLong(userIdString);
+        return recipientService.publishOrder(dto, userId);
     }
 
 }
