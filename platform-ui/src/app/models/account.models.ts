@@ -4,6 +4,13 @@
 export type TradeSide = 'BUY' | 'SELL';
 export type TradeStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'FULFILLED';
 
+// GET /v1/clients/me
+export interface ClientProfile {
+  clientId: string;
+  clientName: string;
+  tradingAccounts: { accountId: string }[];
+}
+
 // GET /v1/accounts/{accountId}
 export interface AccountSummary {
   accountId: string;
@@ -18,7 +25,8 @@ export interface AccountHolding {
   name: string;
   ticker: string;
   quantity: number;
-  price: number;
+  // current market price; null when no quote is available right now
+  price: number | null;
 }
 
 // POST /v1/accounts/{accountId}/trades (accountId is also required in the body)

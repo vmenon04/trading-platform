@@ -1,6 +1,8 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
+import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
+import { AuthService } from '../../services/auth.service';
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -9,17 +11,24 @@ import { RouterLink } from '@angular/router';
   templateUrl: './registration.html',
 })
 export class Registration {
+  private auth = inject(AuthService);
+  private router = inject(Router);
+
   username = '';
   password = '';
+  // TODO: auth-service only stores username + password; these need a backend endpoint to be saved
   firstName = '';
   lastName = '';
   email = '';
   dob = '';
-  message = '';
-  messageKind: 'error' | 'success' | '' = '';
+  // signals, because they change after an await (the app runs without zone.js)
+  message = signal('');
+  messageKind = signal<'error' | 'success' | ''>('');
+  submitting = signal(false);
+  showPassword = signal(false);
   submitted = false;
 
-  submit(): void {
+  async submit(): Promise<void> {
     this.submitted = true;
 
     const valid = this.username.length >= 3
@@ -30,19 +39,40 @@ export class Registration {
       && this.dob.length > 0;
 
     if (!valid) {
-      this.message = 'Please complete all fields using valid values.';
-      this.messageKind = 'error';
+      this.message.set('Please complete all fields using valid values.');
+      this.messageKind.set('error');
       return;
     }
 
-    this.message = 'Successfully submitted';
-    this.messageKind = 'success';
-    this.username = '';
-    this.password = '';
-    this.firstName = '';
-    this.lastName = '';
-    this.email = '';
-    this.dob = '';
-    this.submitted = false;
+    this.submitting.set(true);
+    this.message.set('');
+    try {
+      await this.auth.register(this.username, this.password);
+      // log straight in so the user doesn't have to type their details again
+      await this.auth.login(this.username, this.password);
+      this.submitted = false;
+      this.router.navigate(['/portfolio']);
+    } catch (error) {
+      this.message.set(this.errorMessage(error));
+      this.messageKind.set('error');
+    } finally {
+      this.submitting.set(false);
+    }
+  }
+
+  private errorMessage(error: unknown): string {
+    if (error instanceof HttpErrorResponse) {
+      if (error.status === 409) {
+        return `The username "${this.username}" is already taken.`;
+      }
+      if (error.status === 400) {
+        const message = error.error?.message;
+        return Array.isArray(message) ? message.join('. ') : message ?? 'Please check your details.';
+      }
+      if (error.status === 0 || error.status === 502 || error.status === 504) {
+        return "Couldn't reach the login service. Is auth-service running?";
+      }
+    }
+    return 'Registration failed. Please try again.';
   }
 }

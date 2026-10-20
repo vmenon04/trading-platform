@@ -123,3 +123,21 @@ app-account-selector {
 
   .profile-button { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
 }
+
+.logout-button {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #b9cec5;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.logout-button:hover {
+  background: #245443;
+  color: #ffffff;
+}

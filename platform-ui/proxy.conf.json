@@ -1,6 +1,10 @@
 {
   "/v1": {
-    "target": "http://localhost:8081",
+    "target": "http://10.18.72.182:8081",
+    "secure": false
+  },
+  "/auth": {
+    "target": "http://10.18.64.177:8084",
     "secure": false
   }
 }

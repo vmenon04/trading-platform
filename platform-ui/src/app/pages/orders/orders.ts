@@ -13,6 +13,10 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 export class Orders {
   protected account = inject(AccountService);
 
+  constructor() {
+    this.account.refresh();
+  }
+
   activeFilter: 'All' | 'Buy' | 'Sell' = 'All';
 
   // the backend filters by side, so these are already the orders to show

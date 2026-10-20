@@ -1,4 +1,4 @@
-@if (router.url === '/login' || router.url === '/registration') {
+@if (router.url.startsWith('/login') || router.url.startsWith('/registration')) {
   <main class="auth-content"><router-outlet></router-outlet></main>
 } @else {
   <div class="app-shell">

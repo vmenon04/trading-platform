@@ -190,6 +190,48 @@ class AccountControllerTest {
     }
 
     @Test
+    void getHoldings_includesCurrentMarketPrice() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].price").value(150.25));
+    }
+
+    @Test
+    void getHoldings_priceUnavailable_returnsNullPriceInsteadOfFailing() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price available for AAPL"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ticker").value("AAPL"))
+                .andExpect(jsonPath("$[0].price").doesNotExist());
+    }
+
+    @Test
+    void getSummary_investmentValueIsMarketValueOfActiveHoldings() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE),
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("4"), ActivityStatus.INACTIVE)));
+        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.investmentValue").value(1502.50))
+                .andExpect(jsonPath("$.cashBalance").value(2500.00));
+    }
+
+    @Test
     void getOrders_withoutSide_returnsAllTrades() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountTradeMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(

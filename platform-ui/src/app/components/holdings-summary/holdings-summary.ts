@@ -42,9 +42,9 @@ export class HoldingsSummary {
       symbol: holding.ticker,
       name: holding.name,
       shares: String(holding.quantity),
-      price: usd.format(holding.price),
+      price: holding.price === null ? '—' : usd.format(holding.price),
       change: '—',
-      value: usd.format(holding.quantity * holding.price),
+      value: holding.price === null ? '—' : usd.format(holding.quantity * holding.price),
     }));
   });
 
