@@ -21,10 +21,27 @@ export interface AccountHolding {
   price: number;
 }
 
+// POST /v1/accounts/{accountId}/trades (accountId is also required in the body)
+export interface TradeRequest {
+  accountId: string;
+  instrumentId: number;
+  side: TradeSide;
+  quantity: number;
+}
+
+// 400 response body (ErrorResponseDTO)
+export interface ErrorResponse {
+  status: string;
+  error: string;
+  message: string;
+  fieldErrors: { field: string; message: string }[];
+}
+
 // GET /v1/accounts/{accountId}/orders
 export interface Trade {
   instrumentId: number;
   ticker: string;
+  name: string;
   tradeId: string | null;
   side: TradeSide;
   quantity: number;

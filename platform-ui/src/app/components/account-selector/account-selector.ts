@@ -1,10 +1,15 @@
 import { Component } from '@angular/core';
 
-interface InvestmentAccount {
+export interface InvestmentAccount {
   name: string;
   brokerage: string;
   accountNumber: string;
 }
+
+export const investmentAccounts: InvestmentAccount[] = [
+  { name: 'Individual account', brokerage: 'Brokerage', accountNumber: '•••• 8024' },
+  { name: 'Retirement account', brokerage: 'IRA', accountNumber: '•••• 1842' },
+];
 
 @Component({
   selector: 'app-account-selector',
@@ -13,10 +18,7 @@ interface InvestmentAccount {
   styleUrl: './account-selector.css'
 })
 export class AccountSelector {
-  accounts: InvestmentAccount[] = [
-    { name: 'Individual account', brokerage: 'Brokerage', accountNumber: '•••• 8024' },
-    { name: 'Retirement account', brokerage: 'IRA', accountNumber: '•••• 1842' },
-  ];
+  accounts = investmentAccounts;
 
   selectedAccount = this.accounts[0];
   isOpen = false;

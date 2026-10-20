@@ -1,6 +1,7 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { FinancialCard } from '../../components/financial-card/financial-card';
 import { HoldingsSummary } from '../../components/holdings-summary/holdings-summary';
+import { AccountService } from '../../services/account.service';
 
 @Component({
   imports: [FinancialCard, HoldingsSummary],
@@ -8,4 +9,6 @@ import { HoldingsSummary } from '../../components/holdings-summary/holdings-summ
   styleUrl: './dashboard.css',
   templateUrl: './dashboard.html',
 })
-export class Dashboard {}
+export class Dashboard {
+  protected account = inject(AccountService);
+}

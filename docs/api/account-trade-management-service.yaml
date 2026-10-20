@@ -36,10 +36,10 @@ paths:
               schema:
                 $ref: '#/components/schemas/AccountSummary'
               example:
-                account_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                investment_value: 125430.75
-                cash_balance: 10234.50
-                cost_basis: 98000.25
+                accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                investmentValue: 125430.75
+                cashBalance: 10234.50
+                costBasis: 98000.25
         '400':
           description: Bad request
           content:
@@ -87,12 +87,13 @@ paths:
               schema:
                 $ref: '#/components/schemas/TradeStatus'
               example:
-                trade_id: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
-                instrument_id: 44
+                instrumentId: 44
                 ticker: "AAPL"
-                quantity: 10.5
+                tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
                 side: "BUY"
-                quote: 151.23
+                quantity: 10.5
+                ppu: 151.23
+                totalPrice: 1587.92
                 status: "ACCEPTED"
                 reason: null
         '400':
@@ -137,13 +138,13 @@ paths:
                 items:
                   $ref: '#/components/schemas/AccountHolding'
               example:
-                - account_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                  instrument_id: 44
+                - accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  name: "Apple Inc."
                   ticker: "AAPL"
                   quantity: 25.0
                   price: 151.23
-                - account_id: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
-                  instrument_id: 12
+                - accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  name: "Microsoft Corp."
                   ticker: "MSFT"
                   quantity: 10.0
                   price: 305.40
@@ -197,20 +198,22 @@ paths:
                   $ref: '#/components/schemas/Trade'
 
               example:
-                - instrument_id: 44
+                - instrumentId: 44
                   ticker: "AAPL"
-                  trade_id: 5001
+                  tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
                   side: "BUY"
                   quantity: 10.5
-                  executed_price: 151.00
+                  ppu: 151.00
+                  totalPrice: 1585.50
                   status: "FULFILLED"
                   reason: null
-                - instrument_id: 12
+                - instrumentId: 12
                   ticker: "MSFT"
-                  trade_id: 5002
+                  tradeId: "9a1d2c3b-4e5f-4a6b-8c7d-0e1f2a3b4c5d"
                   side: "SELL"
                   quantity: 5.0
-                  executed_price: null
+                  ppu: null
+                  totalPrice: null
                   status: "PENDING"
                   reason: null
         '400':
@@ -236,41 +239,50 @@ components:
   schemas:
     AccountSummary:
       type: object
-      required: [account_id, investment_value, cash_balance, cost_basis]
+      required: [accountId, investmentValue, cashBalance, costBasis]
       properties:
-        account_id:
+        accountId:
           type: string
           format: uuid
-        investment_value:
+        investmentValue:
           type: number
           format: double
-        cash_balance:
+        cashBalance:
           type: number
           format: double
-        cost_basis:
+        costBasis:
           type: number
           format: double
 
     TradeStatus:
       type: object
-      required: [trade_id, instrument_id, ticker, quantity, side, quote, status]
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
       properties:
-        trade_id:
-          type: string
-          format: uuid
-        instrument_id:
+        instrumentId:
           type: integer
+          format: int64
         ticker:
           type: string
-        quantity:
-          type: number
-          format: double
+        name:
+          type: string
+        tradeId:
+          type: string
+          format: uuid
         side:
           type: string
           enum: [BUY, SELL]
-        quote:
+        quantity:
           type: number
           format: double
+        ppu:
+          type: number
+          format: double
+          nullable: true
+          description: Price per unit; null until the trade has a price
+        totalPrice:
+          type: number
+          format: double
+          nullable: true
         status:
           type: string
           enum: [PENDING, ACCEPTED, REJECTED, FULFILLED]
@@ -280,13 +292,13 @@ components:
 
     AccountHolding:
       type: object
-      required: [account_id, instrument_id, ticker, quantity, price]
+      required: [accountId, name, ticker, quantity, price]
       properties:
-        account_id:
+        accountId:
           type: string
           format: uuid
-        instrument_id:
-          type: integer
+        name:
+          type: string
         ticker:
           type: string
         quantity:
@@ -298,24 +310,33 @@ components:
 
     Trade:
       type: object
-      required: [instrument_id, ticker, trade_id, side, quantity, executed_price, status]
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
       properties:
-        instrument_id:
-          type: integer
-        ticker:
-          type: string
-        trade_id:
+        instrumentId:
           type: integer
           format: int64
+        ticker:
+          type: string
+        name:
+          type: string
+        tradeId:
+          type: string
+          format: uuid
         side:
           type: string
           enum: [BUY, SELL]
         quantity:
           type: number
           format: double
-        executed_price:
+        ppu:
           type: number
           format: double
+          nullable: true
+          description: Price per unit; null until the trade has a price
+        totalPrice:
+          type: number
+          format: double
+          nullable: true
         status:
           type: string
           enum: [PENDING, ACCEPTED, REJECTED, FULFILLED]
@@ -325,12 +346,24 @@ components:
 
     ErrorResponse:
       type: object
-      required: [error, message]
+      required: [status, error, message, fieldErrors]
       properties:
+        status:
+          type: string
+          description: Spring HttpStatus name, e.g. BAD_REQUEST
         error:
           type: string
         message:
           type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
 
   securitySchemes:
     bearerAuth:
