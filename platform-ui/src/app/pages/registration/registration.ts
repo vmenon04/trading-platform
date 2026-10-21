@@ -3,6 +3,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { AuthService } from '../../services/auth.service';
+import { AccountService } from '../../services/account.service';
 
 @Component({
   imports: [FormsModule, RouterLink],
@@ -12,11 +13,12 @@ import { AuthService } from '../../services/auth.service';
 })
 export class Registration {
   private auth = inject(AuthService);
+  private account = inject(AccountService);
   private router = inject(Router);
 
   username = '';
   password = '';
-  // TODO: auth-service only stores username + password; these need a backend endpoint to be saved
+  // saved as the user's client details when their trading account is opened
   firstName = '';
   lastName = '';
   email = '';
@@ -50,6 +52,17 @@ export class Registration {
       await this.auth.register(this.username, this.password);
       // log straight in so the user doesn't have to type their details again
       await this.auth.login(this.username, this.password);
+      try {
+        // open their trading account from the rest of the form; it starts with no cash
+        await this.account.openAccount({
+          firstName: this.firstName,
+          lastName: this.lastName,
+          email: this.email,
+          birthDate: this.dob,
+        });
+      } catch {
+        // the login exists; Portfolio offers to open the account again
+      }
       this.submitted = false;
       this.router.navigate(['/portfolio']);
     } catch (error) {

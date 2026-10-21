@@ -43,7 +43,10 @@
         </div>
       </form>
       @if (depositConfirmed()) {
-        <p class="form-message success" role="status">Deposit confirmed for {{ selectedAccount.name }}. Your balance will update when funding is connected.</p>
+        <p class="form-message success" role="status">Deposit added to your cash balance.</p>
+      }
+      @if (depositFailed()) {
+        <p class="form-message error" role="alert">The deposit failed. Please try again.</p>
       }
     </section>
   </div>

@@ -1,8 +1,8 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
 import { InvestmentAccount, investmentAccounts } from '../../components/account-selector/account-selector';
 import { AccountService } from '../../services/account.service';
+import { AuthService } from '../../services/auth.service';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
@@ -14,7 +14,7 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 })
 export class Account {
   protected account = inject(AccountService);
-  private router = inject(Router);
+  private auth = inject(AuthService);
 
   depositAmount = '';
   accounts = investmentAccounts;
@@ -27,19 +27,27 @@ export class Account {
     return summary ? usd.format(summary.cashBalance) : '...';
   });
 
-  deposit(): void {
+  protected depositFailed = signal(false);
+
+  // POST /v1/accounts/{accountId}/deposits through AccountService, which also refreshes the cash balance
+  async deposit(): Promise<void> {
     const amount = Number(this.depositAmount);
     if (!Number.isFinite(amount) || amount <= 0 || this.isDepositing()) {
       return;
     }
 
     this.depositConfirmed.set(false);
+    this.depositFailed.set(false);
     this.isDepositing.set(true);
-    setTimeout(() => {
-      this.isDepositing.set(false);
+    try {
+      await this.account.deposit(Math.round(amount * 100) / 100);
       this.depositConfirmed.set(true);
       this.depositAmount = '';
-    }, 800);
+    } catch {
+      this.depositFailed.set(true);
+    } finally {
+      this.isDepositing.set(false);
+    }
   }
 
   selectAccount(account: InvestmentAccount): void {
@@ -47,7 +55,8 @@ export class Account {
     this.depositConfirmed.set(false);
   }
 
+  // clears the login token, then goes to /login
   logout(): void {
-    this.router.navigate(['/login']);
+    this.auth.logout();
   }
 }

@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { HttpClient, httpResource } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
-import { AccountHolding, AccountSummary, ClientProfile, Trade, TradeSide, TradeRequest } from '../models/account.models';
+import { AccountHolding, AccountSummary, ClientProfile, OpenAccountRequest, Trade, TradeSide, TradeRequest } from '../models/account.models';
 import { AuthService } from './auth.service';
 
 // trades go through Kafka, so reload a few times after submitting until the new order has settled
@@ -69,6 +69,22 @@ export class AccountService {
     const body: TradeRequest = { accountId, instrumentId, side, quantity };
     await firstValueFrom(this.http.post(`/v1/accounts/${accountId}/trades`, body));
     this.refreshAfterTrade();
+  }
+
+  // POST /v1/clients/me -> opens the logged-in user's first trading account, with no cash
+  async openAccount(details: OpenAccountRequest): Promise<void> {
+    await firstValueFrom(this.http.post('/v1/clients/me', details));
+    this.client.reload();
+  }
+
+  // POST /v1/accounts/{accountId}/deposits -> 204; adds practice cash to the account
+  async deposit(amount: number): Promise<void> {
+    const accountId = this.accountId();
+    if (!accountId) {
+      throw new Error('No trading account to deposit into.');
+    }
+    await firstValueFrom(this.http.post(`/v1/accounts/${accountId}/deposits`, { amount }));
+    this.summary.reload();
   }
 
   // the resources are fetched once for the whole app, so pages call this when opened to avoid stale data

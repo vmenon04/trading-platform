@@ -2,6 +2,8 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.dto.AccountDTO;
+import com.neueda.leap.dto.OpenAccountRequestDTO;
+import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.ClientService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,14 +16,24 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import java.time.LocalDate;
 import java.util.UUID;
 import java.util.List;
 
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.http.MediaType.APPLICATION_JSON;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -30,6 +42,9 @@ class ClientControllerTest {
 
     @Mock
     private ClientService clientService;
+
+    @Mock
+    private AccountOpeningService accountOpeningService;
 
     @InjectMocks
     private ClientController clientController;
@@ -71,6 +86,64 @@ class ClientControllerTest {
                 .andExpect(jsonPath("$.clientId").value(clientId.toString()))
                 .andExpect(jsonPath("$.clientName").value("Ada Lovelace"))
                 .andExpect(jsonPath("$.tradingAccounts[0].accountId").value(accountId.toString()));
+    }
+
+    @Test
+    void openAccount_newUser_returns201WithTheNewAccount() throws Exception {
+        UUID clientId = UUID.randomUUID();
+        UUID accountId = UUID.randomUUID();
+        when(clientService.getExternalClientIdForUser(USER_ID)).thenReturn(clientId);
+        when(clientService.getClientByExternalId(clientId))
+                .thenReturn(new Client("Ada", "Lovelace", "ada@example.com", null));
+        when(clientService.getTradingAccounts(clientId)).thenReturn(List.of(new AccountDTO(accountId)));
+
+        postOpenAccount(validAccountJson())
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.clientName").value("Ada Lovelace"))
+                .andExpect(jsonPath("$.tradingAccounts[0].accountId").value(accountId.toString()));
+        verify(accountOpeningService).openAccount(USER_ID, new OpenAccountRequestDTO(
+                "Ada", "Lovelace", "ada@example.com", LocalDate.of(1990, 1, 1)));
+    }
+
+    @Test
+    void openAccount_userAlreadyHasAccount_returns409() throws Exception {
+        doThrow(new IllegalStateException("already has an account"))
+                .when(accountOpeningService).openAccount(eq(USER_ID), any());
+
+        postOpenAccount(validAccountJson())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("You already have a trading account"));
+    }
+
+    @Test
+    void openAccount_emailAlreadyUsed_returns409() throws Exception {
+        doThrow(new DuplicateKeyException("clients_email_key"))
+                .when(accountOpeningService).openAccount(eq(USER_ID), any());
+
+        postOpenAccount(validAccountJson())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("That email is already used by another client"));
+    }
+
+    @Test
+    void openAccount_missingDetails_returns400AndOpensNothing() throws Exception {
+        postOpenAccount("""
+                {"firstName": "", "lastName": "Lovelace", "email": "not-an-email", "birthDate": "1990-01-01"}
+                """)
+                .andExpect(status().isBadRequest());
+        verify(accountOpeningService, never()).openAccount(any(), any());
+    }
+
+    private ResultActions postOpenAccount(String json) throws Exception {
+        return mockMvc.perform(post("/api/v1/clients/me").contextPath("/api")
+                .contentType(APPLICATION_JSON)
+                .content(json));
+    }
+
+    private static String validAccountJson() {
+        return """
+                {"firstName": "Ada", "lastName": "Lovelace", "email": "ada@example.com", "birthDate": "1990-01-01"}
+                """;
     }
 
     @Test

@@ -11,6 +11,14 @@ export interface ClientProfile {
   tradingAccounts: { accountId: string }[];
 }
 
+// POST /v1/clients/me (birthDate as yyyy-mm-dd)
+export interface OpenAccountRequest {
+  firstName: string;
+  lastName: string;
+  email: string;
+  birthDate: string;
+}
+
 // GET /v1/accounts/{accountId}
 export interface AccountSummary {
   accountId: string;
