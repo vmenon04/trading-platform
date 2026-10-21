@@ -34,18 +34,18 @@ export class OrderSubmitter {
   submitting = signal(false);
   result = signal<{ ok: boolean; message: string } | null>(null);
 
-  // buy: every instrument from GET /v1/instruments, with the backend's current price
+  // buy: the instrument catalogue (GET /v1/instruments) plus any symbols found by searching
   private instruments = computed<Instrument[]>(() =>
-    (this.instrumentService.instruments.value() ?? []).map((quote) => this.toInstrument(quote)));
+    this.instrumentService.instruments().map((quote) => this.toInstrument(quote)));
 
-  // sell: the account's holdings, matched to instruments by ticker for the id the order needs
+  // sell: the account's holdings; each comes with the instrument id the order needs
   private holdings = computed<Instrument[]>(() => {
-    const byTicker = this.instrumentService.byTicker();
+    const byTicker = new Map(this.instrumentService.instruments().map((quote) => [quote.ticker, quote]));
     return (this.account.holdings.value() ?? []).map((holding) => {
       const quote = byTicker.get(holding.ticker);
       const priceValue = holding.price ?? quote?.price ?? null;
       return {
-        instrumentId: quote?.instrumentId,
+        instrumentId: holding.instrumentId,
         symbol: holding.ticker,
         name: holding.name,
         exchange: quote?.assetClass ? ASSET_CLASS_LABELS[quote.assetClass] ?? quote.assetClass : '',
@@ -68,11 +68,43 @@ export class OrderSubmitter {
   }
 
   get listLoading(): boolean {
-    return this.mode === 'sell' ? this.account.holdings.isLoading() : this.instrumentService.instruments.isLoading();
+    return this.mode === 'sell' ? this.account.holdings.isLoading() : this.instrumentService.isLoading();
   }
 
   get listFailed(): boolean {
-    return !!(this.mode === 'sell' ? this.account.holdings.error() : this.instrumentService.instruments.error());
+    return !!(this.mode === 'sell' ? this.account.holdings.error() : this.instrumentService.error());
+  }
+
+  // looking up a symbol that isn't listed yet (backend: Redis, then Fauxnance, then cached for next time)
+  searching = signal(false);
+  searchMiss = signal('');
+  private searchTimer?: ReturnType<typeof setTimeout>;
+
+  onSearchChange(value: string): void {
+    this.searchMiss.set('');
+    clearTimeout(this.searchTimer);
+    const symbol = value.trim().toUpperCase();
+    // symbols are letters, digits, '.', '-' and ':' (e.g. BRK.B, BTC-USD, FX:EURUSD)
+    if (this.mode !== 'buy' || !/^[A-Z0-9.:\-]{1,15}$/.test(symbol)
+        || this.instruments().some((instrument) => instrument.symbol === symbol)) {
+      return;
+    }
+    this.searchTimer = setTimeout(() => this.lookUp(symbol), 500);
+  }
+
+  private async lookUp(symbol: string): Promise<void> {
+    this.searching.set(true);
+    try {
+      const found = await this.instrumentService.search(symbol);
+      if (!found && this.search.trim().toUpperCase() === symbol
+          && !this.instruments().some((instrument) => `${instrument.symbol} ${instrument.name}`.toUpperCase().includes(symbol))) {
+        this.searchMiss.set(`No instrument found for "${symbol}".`);
+      }
+    } catch {
+      this.searchMiss.set(`Couldn't look up "${symbol}" right now.`);
+    } finally {
+      this.searching.set(false);
+    }
   }
 
   // share of the account's value that is invested, from the account summary
@@ -92,6 +124,7 @@ export class OrderSubmitter {
   setMode(mode: 'buy' | 'sell'): void {
     this.mode = mode;
     this.search = '';
+    this.searchMiss.set('');
     this.selectedInstrument = null;
     this.result.set(null);
   }

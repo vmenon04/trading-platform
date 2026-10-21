@@ -69,11 +69,11 @@ class HttpMarketDataClientTest {
     }
 
     @Test
-    void returnsNullForStaleQuote() {
+    void returnsLastKnownPriceForStaleQuote() {
         server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
                 .andRespond(withSuccess(quoteJson("AAPL", "313.53", true), MediaType.APPLICATION_JSON));
 
-        assertNull(client.getPrice("AAPL"));
+        assertEquals(0, new BigDecimal("313.53").compareTo(client.getPrice("AAPL")));
     }
 
     @Test
@@ -172,14 +172,14 @@ class HttpMarketDataClientTest {
     }
 
     @Test
-    void getPrices_leavesOutStaleAndErroredSymbols() {
+    void getPrices_keepsStaleQuotesAndLeavesOutErroredSymbols() {
         server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
                 .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", true),
                         batchError("NOPE")), MediaType.APPLICATION_JSON));
 
         Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT", "NOPE"));
 
-        assertEquals(Set.of("AAPL"), prices.keySet());
+        assertEquals(Set.of("AAPL", "MSFT"), prices.keySet());
     }
 
     @Test
@@ -196,6 +196,36 @@ class HttpMarketDataClientTest {
 
         assertEquals(Set.of("T0", "T29"), prices.keySet());
         server.verify();
+    }
+
+    @Test
+    void getSymbol_returnsNameAndType() {
+        server.expect(requestTo(BASE_URL + "/symbols/ORCL"))
+                .andExpect(header("X-Api-Key", API_KEY))
+                .andRespond(withSuccess("""
+                        {"data": {"symbol": "ORCL", "name": "Oracle Corporation", "type": "equity", "exchange": "US",
+                                  "currency": "USD", "active": true},
+                         "meta": {"symbol": "ORCL", "source": "stored"}}
+                        """, MediaType.APPLICATION_JSON));
+
+        assertEquals(new SymbolInfo("ORCL", "Oracle Corporation", "equity"), client.getSymbol("ORCL"));
+    }
+
+    @Test
+    void getSymbol_unknownSymbol_returnsNull() {
+        server.expect(requestTo(BASE_URL + "/symbols/NOPE"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON).body(errorJson("SYMBOL_NOT_FOUND")));
+
+        assertNull(client.getSymbol("NOPE"));
+    }
+
+    @Test
+    void getSymbol_throwsWhenFauxnanceFails() {
+        server.expect(requestTo(BASE_URL + "/symbols/ORCL"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThrows(IllegalStateException.class, () -> client.getSymbol("ORCL"));
     }
 
     @Test

@@ -97,7 +97,7 @@ public class AccountController {
                 .map(holding -> {
                     Instrument instrument = instrumentService.getInstrumentById(holding.getInstrumentId());
                     return new AccountHoldingResponseDTO(accountId, instrument.getName(), instrument.getTicker(),
-                            holding.getQuantity(), marketPrice(holding.getInstrumentId()));
+                            holding.getQuantity(), marketPrice(holding.getInstrumentId()), holding.getInstrumentId());
                 })
                 .toList();
         return ResponseEntity.ok(response);

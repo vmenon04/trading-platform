@@ -37,10 +37,24 @@ export class AccountSelector {
   }
 
   // signals, because they change after an await (the app runs without zone.js)
+  protected confirming = signal(false);
   protected opening = signal(false);
   protected openError = signal('');
 
-  async openNewAccount(): Promise<void> {
+  // "Open new account" only asks; the account is created when the user confirms
+  askToOpenAccount(): void {
+    this.openError.set('');
+    this.confirming.set(true);
+    this.isOpen = false;
+  }
+
+  cancelOpenAccount(): void {
+    if (!this.opening()) {
+      this.confirming.set(false);
+    }
+  }
+
+  async confirmOpenAccount(): Promise<void> {
     if (this.opening()) {
       return;
     }
@@ -48,7 +62,7 @@ export class AccountSelector {
     this.openError.set('');
     try {
       await this.account.openAdditionalAccount();
-      this.isOpen = false;
+      this.confirming.set(false);
     } catch {
       this.openError.set("Couldn't open a new account. Please try again.");
     } finally {

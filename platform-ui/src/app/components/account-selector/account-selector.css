@@ -105,3 +105,14 @@
 .account-empty { margin: 0; padding: 10px 12px; color: #b9cec5; font-size: 0.8rem; }
 .open-account { border-top: 1px solid #ffffff1f; }
 .open-account:disabled { opacity: 0.6; cursor: wait; }
+
+/* confirmation before opening another account (same look as the Deposit funds dialog) */
+.dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: #10231d66; }
+.confirm-dialog { display: grid; gap: 12px; width: min(420px, 100%); padding: 24px; border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: 0 20px 50px #10231d33; }
+.confirm-dialog h2 { margin: 0; font-size: 1.1rem; }
+.confirm-dialog p { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.confirm-error { padding: 10px 12px; border-radius: 9px; background: var(--red-soft); color: var(--red) !important; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.dialog-actions button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; }
+.dialog-actions button.primary { border-color: var(--green); background: var(--green); color: #fff; }
+.dialog-actions button:disabled { opacity: 0.6; cursor: wait; }

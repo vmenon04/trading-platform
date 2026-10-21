@@ -37,15 +37,17 @@ public class HttpMarketDataClient implements MarketDataClient {
                         throw new IllegalStateException("Fauxnance returned " + status + " for " + ticker);
                     }
                     QuoteResponse body = response.bodyTo(QuoteResponse.class);
-                    if (body == null || body.meta().stale()) {
+                    // a stale quote (past Fauxnance's freshness window) still carries the last known price,
+                    // which is the price this practice platform trades at
+                    if (body == null || body.data() == null) {
                         return null;
                     }
                     return body.data().price();
                 });
     }
 
-    // Same rules as getPrice: a symbol that errors (unknown, still being fetched) or whose quote is stale
-    // gets no price. The request fails as a whole only if Fauxnance itself does (bad key, quota, outage).
+    // Same rules as getPrice: a symbol that errors (unknown, still being fetched) gets no price, a stale quote
+    // keeps its last known price. The request fails as a whole only if Fauxnance itself does (bad key, quota, outage).
     @Override
     public Map<String, BigDecimal> getPrices(Collection<String> tickers) {
         List<String> symbols = List.copyOf(tickers);
@@ -65,7 +67,7 @@ public class HttpMarketDataClient implements MarketDataClient {
                 continue;
             }
             for (BatchEntry entry : body.data().quotes()) {
-                if (entry.quote() != null && !Boolean.TRUE.equals(entry.stale()) && entry.quote().price() != null) {
+                if (entry.quote() != null && entry.quote().price() != null) {
                     prices.put(entry.symbol(), entry.quote().price());
                 }
             }
@@ -73,24 +75,41 @@ public class HttpMarketDataClient implements MarketDataClient {
         return prices;
     }
 
-    // take the fields we use from the JSON response
-    record QuoteResponse(Quote data, Meta meta) {
+    // GET /symbols/{symbol}; 404 (unknown symbol) or 202 (still being fetched) means no symbol right now
+    @Override
+    public SymbolInfo getSymbol(String symbol) {
+        return restClient.get()
+                .uri("/symbols/{symbol}", symbol)
+                .exchange((request, response) -> {
+                    int status = response.getStatusCode().value();
+                    if (status == 404 || status == 202) {
+                        return null;
+                    }
+                    if (response.getStatusCode().isError()) {
+                        throw new IllegalStateException("Fauxnance returned " + status + " for symbol " + symbol);
+                    }
+                    SymbolResponse body = response.bodyTo(SymbolResponse.class);
+                    return body == null ? null : body.data();
+                });
     }
 
-    // GET /quotes?symbols=: {"data": {"quotes": [{"symbol", "stale", "quote": {"price"}} or {"symbol", "error"}]}}
+    // take the fields we use from the JSON response
+    record QuoteResponse(Quote data) {
+    }
+
+    record SymbolResponse(SymbolInfo data) {
+    }
+
+    // GET /quotes?symbols=: {"data": {"quotes": [{"symbol", "quote": {"price"}} or {"symbol", "error"}]}}
     record BatchQuoteResponse(BatchData data) {
     }
 
     record BatchData(List<BatchEntry> quotes) {
     }
 
-    // error entries have no stale field, so it's a Boolean (null there)
-    record BatchEntry(String symbol, Boolean stale, Quote quote) {
+    record BatchEntry(String symbol, Quote quote) {
     }
 
     record Quote(BigDecimal price) {
-    }
-
-    record Meta(boolean stale) {
     }
 }

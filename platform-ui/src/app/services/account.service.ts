@@ -7,6 +7,11 @@ import { AuthService } from './auth.service';
 // trades go through Kafka, so reload a few times after submitting until the new order has settled
 const REFRESH_DELAYS_MS = [3000, 8000, 15000];
 
+// upper-cases only the first letter of each word, so "mcDonald" stays "McDonald"
+function capitalizeWords(name: string): string {
+  return name.trim().split(/\s+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 // Calls the Account & Trade Management Service. URLs are relative (/v1/...) and the
 // dev server forwards them to Spring Boot via proxy.conf.json.
 @Injectable({ providedIn: 'root' })
@@ -17,8 +22,8 @@ export class AccountService {
   // the logged-in user's client and their trading accounts (GET /v1/clients/me); 404 = no accounts yet
   readonly client = httpResource<ClientProfile>(() => (this.auth.isLoggedIn() ? '/v1/clients/me' : undefined));
 
-  // the user's name and trading accounts as returned by the backend
-  readonly clientName = computed(() => this.client.value()?.clientName ?? '');
+  // the user's name for display, each word capitalized ("efe test" -> "Efe Test"); the backend keeps it as typed
+  readonly clientName = computed(() => capitalizeWords(this.client.value()?.clientName ?? ''));
   readonly accounts = computed(() => this.client.value()?.tradingAccounts ?? []);
 
   // the account chosen in the account selector; null = the user's first account

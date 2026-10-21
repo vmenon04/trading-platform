@@ -115,11 +115,11 @@ public class InstrumentService {
      * Returns current prices for many instruments at once: cached prices from Redis, and the rest from the
      * market data API in batches. Instruments with no valid price right now are left out.
      *
-     * @param instruments instruments to price
+     * @param tickers tickers to price
      * @return positive prices by ticker; empty if the market data API is unavailable
      */
-    public Map<String, BigDecimal> getCurrentPrices(List<Instrument> instruments) {
-        List<String> tickers = instruments.stream().map(Instrument::getTicker).distinct().toList();
+    public Map<String, BigDecimal> getCurrentPrices(List<String> tickers) {
+        tickers = tickers.stream().distinct().toList();
         try {
             Map<String, BigDecimal> prices = new HashMap<>(marketDataClient.getPrices(tickers));
             prices.values().removeIf(price -> price.compareTo(BigDecimal.ZERO) <= 0);

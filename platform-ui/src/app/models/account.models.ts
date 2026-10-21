@@ -44,6 +44,8 @@ export interface AccountHolding {
   quantity: number;
   // current market price; null when no quote is available right now
   price: number | null;
+  // the id to sell this holding with
+  instrumentId: number;
 }
 
 // POST /v1/accounts/{accountId}/trades (accountId is also required in the body)

@@ -69,6 +69,12 @@ public class CachingMarketDataClient implements MarketDataClient {
         return prices;
     }
 
+    // instrument details are cached by InstrumentCatalog, which also stores the database id with them
+    @Override
+    public SymbolInfo getSymbol(String symbol) {
+        return delegate.getSymbol(symbol);
+    }
+
     private static String key(String ticker) {
         return "price:" + ticker;
     }
