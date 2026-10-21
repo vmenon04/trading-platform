@@ -2,6 +2,7 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.AccountHoldingResponseDTO;
 import com.neueda.leap.dto.AccountSummaryResponseDTO;
+import com.neueda.leap.dto.DepositRequestDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
@@ -17,10 +18,13 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -42,6 +46,17 @@ public class AccountController {
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
+    }
+
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
+    @PostMapping("/{accountId}/deposits")
+    public ResponseEntity<Void> deposit(@AuthenticationPrincipal Jwt jwt,
+                                        @PathVariable UUID accountId,
+                                        @Valid @RequestBody DepositRequestDTO request) {
+        // the depositor is the logged-in user from the token, never an ID the caller puts in the request
+        Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
+        accountService.deposit(accountInternalId, request.amount());
+        return ResponseEntity.noContent().build();
     }
 
     @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")

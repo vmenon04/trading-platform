@@ -17,4 +17,8 @@ public class ClientAccountService {
     public List<Long> getClientIdByAccountId(Long accountId) {
         return clientAccountMapper.getClientIdByAccountId(accountId);
     }
+
+    public boolean existsByClientIdAndAccountId(Long clientId, Long accountId) {
+        return clientAccountMapper.existsByClientIdAndAccountId(clientId, accountId);
+    }
 }

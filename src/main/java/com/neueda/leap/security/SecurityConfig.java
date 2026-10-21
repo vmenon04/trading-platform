@@ -28,6 +28,9 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     http.authorizeHttpRequests(auth -> auth
+        .requestMatchers("/public").permitAll()
+        // the Docker and Jenkins health checks call this without a token
+        .requestMatchers("/actuator/health").permitAll()
         .requestMatchers("/auth/register").permitAll()
         .requestMatchers("/auth/login").permitAll()
         .requestMatchers("/v1/clients/**").hasRole("USER")
