@@ -88,6 +88,7 @@ paths:
               example:
                 accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                 investmentValue: 125430.75
+                portfolioValue: 135665.25
                 cashBalance: 10234.50
                 costBasis: 98000.25
         '400':
@@ -298,12 +299,15 @@ components:
 
     AccountSummary:
       type: object
-      required: [accountId, investmentValue, cashBalance, costBasis]
+      required: [accountId, investmentValue, portfolioValue, cashBalance, costBasis]
       properties:
         accountId:
           type: string
           format: uuid
         investmentValue:
+          type: number
+          format: double
+        portfolioValue:
           type: number
           format: double
         cashBalance:

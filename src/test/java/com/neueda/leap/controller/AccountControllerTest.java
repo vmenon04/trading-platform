@@ -169,6 +169,7 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.accountId").value(externalAccountId.toString()))
                 .andExpect(jsonPath("$.cashBalance").value(2500.00))
                 .andExpect(jsonPath("$.investmentValue").value(0))
+                .andExpect(jsonPath("$.portfolioValue").value(2500.00))
                 .andExpect(jsonPath("$.costBasis").value(0));
     }
 
@@ -228,6 +229,7 @@ class AccountControllerTest {
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.investmentValue").value(1502.50))
+                .andExpect(jsonPath("$.portfolioValue").value(4002.50))
                 .andExpect(jsonPath("$.cashBalance").value(2500.00));
     }
 

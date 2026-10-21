@@ -3,9 +3,9 @@
 <section class="dashboard-page">
 	<div class="welcome-row"><div><span class="eyebrow">Portfolio overview</span><h2>Good morning, Alex.</h2><p>Here’s how your investments are performing today.</p></div><button class="primary-action">↗ Place a trade</button></div>
 	<div class="metrics-grid">
-		<app-financial-card label="Total portfolio value" value="$48,729.64" change="+$682.40 today"></app-financial-card>
-		<app-financial-card label="Cash available" value="$12,480.20" change="Ready to invest"></app-financial-card>
-		<app-financial-card label="Total return" value="+$6,349.28" change="+14.98% all time"></app-financial-card>
+		<app-financial-card label="Total portfolio value" [value]="portfolioValue()" change="Investments plus cash"></app-financial-card>
+		<app-financial-card label="Cash available" [value]="cashBalance()" change="Ready to invest"></app-financial-card>
+		<app-financial-card label="Investment value" [value]="investmentValue()" change="Market value of holdings"></app-financial-card>
 	</div>
 	<div class="dashboard-grid">
 		<section class="chart-card"><div class="card-heading"><div><h2>Portfolio performance</h2><span>May 1 — May 27, 2025</span></div><div class="periods"><button>1D</button><button>1W</button><button class="selected">1M</button><button>1Y</button></div></div><strong class="chart-value">$48,729.64 <small>+6.42%</small></strong><div class="chart-placeholder"><i></i><span></span></div><div class="chart-axis"><span>May 1</span><span>May 8</span><span>May 15</span><span>May 22</span><span>May 27</span></div></section>

@@ -86,8 +86,10 @@ public class AccountController {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
+        BigDecimal portfolioValue = investmentValue.add(cashBalance);
         // TODO: calculate cost basis
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, BigDecimal.ZERO));
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, portfolioValue,
+            cashBalance, BigDecimal.ZERO));
     }
 
     @GetMapping("/{accountId}/holdings")

@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 
 // trades go through Kafka, so reload a few times after submitting until the new order has settled
 const REFRESH_DELAYS_MS = [3000, 8000, 15000];
+const VALUATION_REFRESH_MS = 10 * 60 * 1000;
 
 // Calls the Account & Trade Management Service. URLs are relative (/v1/...) and the
 // dev server forwards them to Spring Boot via proxy.conf.json.
@@ -58,6 +59,13 @@ export class AccountService {
     const params: Record<string, string> = side ? { side } : {};
     return { url: `/v1/accounts/${accountId}/orders`, params };
   });
+
+  constructor() {
+    setInterval(() => {
+      this.summary.reload();
+      this.holdings.reload();
+    }, VALUATION_REFRESH_MS);
+  }
 
   // POST /v1/accounts/{accountId}/trades -> 202 Accepted with an empty body.
   // Resolves once the order is accepted; rejects with the HttpErrorResponse otherwise.
