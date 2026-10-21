@@ -5,6 +5,8 @@ import com.neueda.leap.repository.AccountOpeningMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.NoSuchElementException;
+
 /**
  * Opens a trading account for a user who has only registered a login with auth-service.
  */
@@ -33,6 +35,22 @@ public class AccountOpeningService {
         if (accountOpeningMapper.linkUserToClient(userId, clientId) == 0) {
             // rolls back the client inserted above
             throw new IllegalStateException("User " + userId + " already has an account");
+        }
+        Long accountId = accountOpeningMapper.insertAccount();
+        accountOpeningMapper.linkClientToAccount(clientId, accountId);
+    }
+
+    /**
+     * Opens another account, with no cash, for a user who already has a client.
+     *
+     * @param userId logged-in user id from the token
+     * @throws java.util.NoSuchElementException if the user has no client yet (they open their first account instead)
+     */
+    @Transactional
+    public void openAdditionalAccount(Long userId) {
+        Long clientId = accountOpeningMapper.findClientIdByUserId(userId);
+        if (clientId == null) {
+            throw new NoSuchElementException("User " + userId + " has no client yet");
         }
         Long accountId = accountOpeningMapper.insertAccount();
         accountOpeningMapper.linkClientToAccount(clientId, accountId);

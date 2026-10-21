@@ -14,6 +14,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.Mockito.when;
@@ -42,8 +43,8 @@ class InstrumentControllerTest {
         Instrument apple = instrument(1L, "Apple Inc", "AAPL");
         Instrument bitcoin = instrument(2L, "Bitcoin", "X:BTC-USD");
         when(instrumentService.getAllInstruments()).thenReturn(List.of(apple, bitcoin));
-        when(instrumentService.getCurrentPrice(1L)).thenReturn(new BigDecimal("189.50"));
-        when(instrumentService.getCurrentPrice(2L)).thenReturn(new BigDecimal("64000.00"));
+        when(instrumentService.getCurrentPrices(List.of(apple, bitcoin))).thenReturn(Map.of(
+                "AAPL", new BigDecimal("189.50"), "X:BTC-USD", new BigDecimal("64000.00")));
 
         mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
                 .andExpect(status().isOk())
@@ -52,8 +53,23 @@ class InstrumentControllerTest {
                 .andExpect(jsonPath("$[0].ticker").value("AAPL"))
                 .andExpect(jsonPath("$[0].name").value("Apple Inc"))
                 .andExpect(jsonPath("$[0].price").value(189.50))
+                .andExpect(jsonPath("$[0].assetClass").value("STOCK"))
                 .andExpect(jsonPath("$[1].ticker").value("X:BTC-USD"))
                 .andExpect(jsonPath("$[1].price").value(64000.00));
+    }
+
+    @Test
+    void getInstruments_instrumentWithoutPrice_isStillListedWithNullPrice() throws Exception {
+        Instrument apple = instrument(1L, "Apple Inc", "AAPL");
+        Instrument bitcoin = instrument(2L, "Bitcoin", "X:BTC-USD");
+        when(instrumentService.getAllInstruments()).thenReturn(List.of(apple, bitcoin));
+        when(instrumentService.getCurrentPrices(List.of(apple, bitcoin))).thenReturn(Map.of("AAPL", new BigDecimal("189.50")));
+
+        mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[1].ticker").value("X:BTC-USD"))
+                .andExpect(jsonPath("$[1].price").doesNotExist());
     }
 
     @Test

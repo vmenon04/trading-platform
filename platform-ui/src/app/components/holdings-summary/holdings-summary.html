@@ -15,7 +15,7 @@
 		</div>
 		@for (holding of visibleHoldings(); track holding.symbol) {
 			<div class="holding-row" role="row">
-				<span class="asset"><b>{{ holding.symbol[0] }}</b><span>{{ holding.symbol }}<small>{{ holding.name }}</small></span></span>
+				<span class="asset"><b><app-ticker-logo [ticker]="holding.symbol" /></b><span>{{ holding.symbol }}<small>{{ holding.name }}</small></span></span>
 				<span>{{ holding.shares }}</span><span>{{ holding.price }}</span><span class="positive">{{ holding.change }}</span><strong>{{ holding.value }}</strong>
 			</div>
 		}

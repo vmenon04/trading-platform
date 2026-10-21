@@ -2,7 +2,7 @@
 <main class="account-page">
   <section class="account-intro">
     <div>
-      <h2>Alex Investor</h2>
+      <h2>{{ account.clientName() || 'Your account' }}</h2>
       <p>Manage your profile and funding preferences.</p>
     </div>
     <button type="button" class="logout-button" (click)="logout()">Log out</button>
@@ -12,8 +12,8 @@
     <section class="account-card account-details">
       <div class="card-heading"><div><h2>Client information</h2><span>Your account details</span></div></div>
       <dl>
-        <div><dt>Full name</dt><dd>Alex Investor</dd></div>
-        <div><dt>Email</dt><dd>alex@example.com</dd></div>
+        <div><dt>Full name</dt><dd>{{ account.clientName() || '—' }}</dd></div>
+        <div><dt>Trading accounts</dt><dd>{{ account.accounts().length }}</dd></div>
       </dl>
     </section>
 
@@ -29,9 +29,9 @@
         <p class="form-message error">Could not load your cash balance.</p>
       }
       <label class="account-label" for="funding-account">Deposit into</label>
-      <select id="funding-account" [(ngModel)]="selectedAccount" [ngModelOptions]="{ standalone: true }" (ngModelChange)="selectAccount($event)">
-        @for (accountOption of accounts; track accountOption.accountNumber) {
-          <option [ngValue]="accountOption">{{ accountOption.name }} · {{ accountOption.brokerage }} · {{ accountOption.accountNumber }}</option>
+      <select id="funding-account" [ngModel]="account.accountId()" [ngModelOptions]="{ standalone: true }" (ngModelChange)="selectAccount($event)">
+        @for (option of account.accounts(); track option.accountId) {
+          <option [ngValue]="option.accountId">{{ accountType }} · {{ accountNumber(option.accountId) }}</option>
         }
       </select>
       <form (ngSubmit)="deposit()">

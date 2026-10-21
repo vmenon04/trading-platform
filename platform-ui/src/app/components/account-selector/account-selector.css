@@ -102,3 +102,6 @@
   height: 26px;
   font-size: 0.68rem;
 }
+.account-empty { margin: 0; padding: 10px 12px; color: #b9cec5; font-size: 0.8rem; }
+.open-account { border-top: 1px solid #ffffff1f; }
+.open-account:disabled { opacity: 0.6; cursor: wait; }

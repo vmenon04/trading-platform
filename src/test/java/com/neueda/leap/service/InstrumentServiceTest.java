@@ -6,6 +6,7 @@ import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -121,5 +122,24 @@ class InstrumentServiceTest {
     void getInstrumentByTickerRejectsNullTicker() {
         assertThrows(IllegalArgumentException.class, () -> instrumentService.getInstrumentByTicker(null));
         verifyNoInteractions(instrumentMapper);
+    }
+
+    @Test
+    void getCurrentPricesAsksForEachTickerOnceAndDropsNonPositivePrices() {
+        Instrument apple = new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK);
+        Instrument msft = new Instrument("Microsoft", "MSFT", InstrumentType.STOCK);
+        when(marketDataClient.getPrices(List.of("AAPL", "MSFT")))
+                .thenReturn(Map.of("AAPL", new BigDecimal("189.50"), "MSFT", BigDecimal.ZERO));
+
+        assertEquals(Map.of("AAPL", new BigDecimal("189.50")),
+                instrumentService.getCurrentPrices(List.of(apple, msft, apple)));
+    }
+
+    @Test
+    void getCurrentPricesReturnsNoPricesWhenTheApiIsUnavailable() {
+        Instrument apple = new Instrument("Apple Inc", "AAPL", InstrumentType.STOCK);
+        when(marketDataClient.getPrices(List.of("AAPL"))).thenThrow(new IllegalStateException("Fauxnance returned 429"));
+
+        assertEquals(Map.of(), instrumentService.getCurrentPrices(List.of(apple)));
     }
 }

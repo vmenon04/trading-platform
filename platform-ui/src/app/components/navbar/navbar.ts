@@ -1,6 +1,7 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { AccountSelector } from '../account-selector/account-selector';
+import { AccountService } from '../../services/account.service';
 import { AuthService } from '../../services/auth.service';
 
 @Component({
@@ -16,6 +17,11 @@ export class Navbar {
   private easterEggTimer?: ReturnType<typeof setTimeout>;
 
   private readonly auth = inject(AuthService);
+  protected readonly account = inject(AccountService);
+
+  // e.g. "Efe Test" -> "ET"
+  protected readonly initials = computed(() =>
+    this.account.clientName().split(' ').filter(Boolean).map((part) => part[0].toUpperCase()).slice(0, 2).join('') || '?');
 
   constructor(private readonly router: Router) {}
 

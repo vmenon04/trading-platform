@@ -8,7 +8,9 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/v1/instruments")
@@ -20,18 +22,22 @@ public class InstrumentController {
         this.instrumentService = instrumentService;
     }
 
-    // TODO: Add pagination 
+    // TODO: Add pagination
 
+    // every instrument with its current price, priced in one go (Redis first, then the API in batches);
+    // an instrument with no price right now is still listed, with a null price
     @GetMapping
     public ResponseEntity<List<InstrumentResponseDTO>> getInstruments() {
-        List<InstrumentResponseDTO> response = instrumentService.getAllInstruments().stream()
-                .map(this::toResponse)
+        List<Instrument> instruments = instrumentService.getAllInstruments();
+        Map<String, BigDecimal> prices = instrumentService.getCurrentPrices(instruments);
+        List<InstrumentResponseDTO> response = instruments.stream()
+                .map(instrument -> toResponse(instrument, prices.get(instrument.getTicker())))
                 .toList();
         return ResponseEntity.ok(response);
     }
 
-    private InstrumentResponseDTO toResponse(Instrument instrument) {
+    private InstrumentResponseDTO toResponse(Instrument instrument, BigDecimal price) {
         return new InstrumentResponseDTO(instrument.getInstrumentId(), instrument.getTicker(), instrument.getName(),
-                instrumentService.getCurrentPrice(instrument.getInstrumentId()));
+                price, instrument.getInstrumentType() == null ? null : instrument.getInstrumentType().name());
     }
 }
