@@ -13,7 +13,6 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
-import com.neueda.leap.service.TradeAuthorizationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -68,9 +67,6 @@ class AccountControllerTest {
     @Mock
     private InstrumentService instrumentService;
 
-    @Mock
-    private TradeAuthorizationService tradeAuthorizationService;
-
     @InjectMocks
     private AccountController accountController;
 
@@ -116,7 +112,6 @@ class AccountControllerTest {
     @Test
     void deposit_ownedAccount_returnsNoContentAndCreditsIt() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(true);
 
         postDeposit().andExpect(status().isNoContent());
 
@@ -126,7 +121,6 @@ class AccountControllerTest {
     @Test
     void deposit_accountOwnedBySomeoneElse_returns403AndDepositsNothing() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(false);
 
         postDeposit().andExpect(status().isForbidden());
 
@@ -140,7 +134,6 @@ class AccountControllerTest {
 
         postDeposit().andExpect(status().isNotFound());
 
-        verifyNoInteractions(tradeAuthorizationService);
     }
 
     @Test
@@ -155,7 +148,6 @@ class AccountControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(tradeAuthorizationService);
         verify(accountService, never()).deposit(any(), any());
     }
 
