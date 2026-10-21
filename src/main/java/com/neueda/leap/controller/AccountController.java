@@ -11,6 +11,7 @@ import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
+import com.neueda.leap.service.CostBasis;
 import com.neueda.leap.service.InstrumentService;
 import com.neueda.leap.service.TradeAuthorizationService;
 
@@ -86,8 +87,10 @@ public class AccountController {
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        // TODO: calculate cost basis
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, BigDecimal.ZERO));
+        // what was paid for the shares still held (average cost of the filled trades)
+        BigDecimal costBasis = CostBasis.of(accountTradeMapper.findByAccountId(internalId));
+
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, costBasis));
     }
 
     @GetMapping("/{accountId}/holdings")

@@ -23,3 +23,13 @@
 	color: var(--green);
 	font-size: 0.72rem;
 }
+
+.metric-card.positive strong,
+.metric-card.positive .metric-change {
+	color: var(--green);
+}
+
+.metric-card.negative strong,
+.metric-card.negative .metric-change {
+	color: var(--red);
+}

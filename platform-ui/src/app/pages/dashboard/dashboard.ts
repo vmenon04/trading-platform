@@ -7,6 +7,9 @@ import { AccountService } from '../../services/account.service';
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdCompact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
+// "+$12.34" / "-$12.34" for gains and losses
+const signedUsd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', signDisplay: 'exceptZero' });
+const signedPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 2, signDisplay: 'exceptZero' });
 
 // allocation slices: the largest holdings, then "Other", then cash
 const MAX_SLICES = 4;
@@ -62,14 +65,30 @@ export class Dashboard {
 
   readonly totalValue = this.money((s) => s.investmentValue + s.cashBalance);
   readonly cashBalance = this.money((s) => s.cashBalance);
-  readonly totalReturn = this.money((s) => s.investmentValue - s.costBasis);
+  // total return = market value of the holdings - what was paid for them (cost basis from the backend)
+  private returnAmount = computed(() => {
+    const summary = this.summary();
+    return summary ? Math.round((summary.investmentValue - summary.costBasis) * 100) / 100 : null;
+  });
+
+  readonly totalReturn = computed(() => {
+    const amount = this.returnAmount();
+    return amount === null ? '…' : signedUsd.format(amount);
+  });
+
+  // green for a gain, red for a loss, neutral at exactly $0.00
+  readonly totalReturnTone = computed(() => {
+    const amount = this.returnAmount();
+    return amount === null || amount === 0 ? null : amount > 0 ? 'positive' : 'negative';
+  });
 
   readonly totalReturnChange = computed(() => {
     const summary = this.summary();
-    if (!summary || summary.costBasis <= 0) {
+    const amount = this.returnAmount();
+    if (!summary || amount === null || summary.costBasis <= 0) {
       return 'Market value minus cost basis';
     }
-    return `${percent.format((summary.investmentValue - summary.costBasis) / summary.costBasis)} on cost basis`;
+    return `${signedPercent.format(amount / summary.costBasis)} on ${usd.format(summary.costBasis)} invested`;
   });
 
   readonly investedChange = computed(() => {

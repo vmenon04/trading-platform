@@ -8,7 +8,7 @@
 	<div class="metrics-grid">
 		<app-financial-card label="Total portfolio value" [value]="totalValue()" [change]="investedChange()"></app-financial-card>
 		<app-financial-card label="Cash available" [value]="cashBalance()" change="Ready to invest"></app-financial-card>
-		<app-financial-card label="Total return" [value]="totalReturn()" [change]="totalReturnChange()"></app-financial-card>
+		<app-financial-card label="Total return" [value]="totalReturn()" [change]="totalReturnChange()" [tone]="totalReturnTone()"></app-financial-card>
 	</div>
 	<div class="dashboard-grid">
 		<section class="chart-card"><div class="card-heading"><div><h2>Portfolio performance</h2><span>Total portfolio value today</span></div></div><strong class="chart-value">{{ totalValue() }}</strong><p class="chart-empty">Performance history over time isn't available yet.</p></section>
