@@ -19,22 +19,16 @@ public class RecipientService {
     private final TradeEventProducer tradeEventProducer;
     private final InstrumentService instrumentService;
     private final MarketDataClient marketDataClient;
-    private final TradeAuthorizationService tradeAuthorizationService;
 
     public RecipientService(TradeEventProducer tradeEventProducer,
                             InstrumentService instrumentService,
-                            MarketDataClient marketDataClient,
-                            TradeAuthorizationService tradeAuthorizationService) {
+                            MarketDataClient marketDataClient) {
         this.tradeEventProducer = tradeEventProducer;
         this.instrumentService = instrumentService;
         this.marketDataClient = marketDataClient;
-        this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
-    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto, Long userId) throws AccessDeniedException {
-        if (!tradeAuthorizationService.isValidUserId(dto, userId)) {
-            throw new AccessDeniedException("You are not authorized to perform this action.");
-        }
+    public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto) throws AccessDeniedException {
         UUID externalTradeId = UUID.randomUUID();
 
         String ticker = instrumentService.getInstrumentById(dto.instrumentId()).getTicker();

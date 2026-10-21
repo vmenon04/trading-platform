@@ -12,6 +12,7 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -19,7 +20,6 @@ import java.net.URI;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -72,6 +72,7 @@ class TradeControllerTest {
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/trades", accountId)
                         .contextPath("/api")
+                        .principal(authentication())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
                                 {
@@ -83,13 +84,6 @@ class TradeControllerTest {
                                 """.formatted(accountId)))
                 .andExpect(status().isAccepted())
                 .andExpect(header().string("Location", location.toString()));
-        Jwt jwt = mock(Jwt.class);
-        when(jwt.getSubject()).thenReturn("1");
-
-        ResponseEntity<Void> response = tradeController.submitOrder(jwt, dto);
-
-        org.junit.jupiter.api.Assertions.assertEquals(202, response.getStatusCode().value());
-        org.junit.jupiter.api.Assertions.assertEquals(location, response.getHeaders().getLocation());
     }
 
     private static JwtAuthenticationToken authentication() {

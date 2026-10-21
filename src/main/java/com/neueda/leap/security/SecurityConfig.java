@@ -28,8 +28,13 @@ public class SecurityConfig {
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     http.authorizeHttpRequests(auth -> auth
-        .requestMatchers("/public").permitAll()
+        .requestMatchers("/auth/register").permitAll()
+        .requestMatchers("/auth/login").permitAll()
+        .requestMatchers("/v1/clients/**").hasRole("USER")
         .anyRequest().authenticated())
+        .exceptionHandling(ex -> ex
+            .authenticationEntryPoint((req, res, e) -> res.sendError(401))
+            .accessDeniedHandler((req, res, e) -> res.sendError(403)))
         .oauth2ResourceServer(o -> o.jwt(Customizer.withDefaults()));
     return http.build();
   }

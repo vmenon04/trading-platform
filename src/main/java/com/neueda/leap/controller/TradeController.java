@@ -5,6 +5,7 @@ import com.neueda.leap.service.RecipientService;
 import jakarta.validation.Valid;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
@@ -24,14 +25,13 @@ public class TradeController {
         this.recipientService = recipientService;
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#dto.accountId(), #jwt.getSubject())")
     @PostMapping
     public ResponseEntity<Void> submitOrder(
         @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody TradeRequestDTO dto) {
 
-        String userIdString = jwt.getSubject();
-        Long userId = Long.parseLong(userIdString);
-        return recipientService.publishOrder(dto, userId);
+        return recipientService.publishOrder(dto);
     }
 
 }
