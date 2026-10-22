@@ -10,6 +10,7 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Objects;
 import java.util.UUID;
 
 
@@ -31,7 +32,7 @@ public class TradeController {
         @AuthenticationPrincipal Jwt jwt,
             @Valid @RequestBody TradeRequestDTO dto) {
 
-        return recipientService.publishOrder(dto);
+        return recipientService.publishOrder(dto, Long.valueOf(Objects.requireNonNull(jwt.getSubject())));
     }
 
 }
