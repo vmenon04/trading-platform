@@ -11,14 +11,11 @@ import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
-import com.neueda.leap.service.CostBasis;
 import com.neueda.leap.service.InstrumentService;
-import com.neueda.leap.service.TradeAuthorizationService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -28,87 +25,91 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestClientException;
 import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/accounts")
 public class AccountController {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccountController.class);
-
     private final AccountService accountService;
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
-    private final TradeAuthorizationService tradeAuthorizationService;
 
     public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
-                             InstrumentService instrumentService,
-                             TradeAuthorizationService tradeAuthorizationService) {
+                             InstrumentService instrumentService) {
         this.accountService = accountService;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
-        this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @PostMapping("/{accountId}/deposits")
     public ResponseEntity<Void> deposit(@AuthenticationPrincipal Jwt jwt,
                                         @PathVariable UUID accountId,
                                         @Valid @RequestBody DepositRequestDTO request) {
         // the depositor is the logged-in user from the token, never an ID the caller puts in the request
-        Long userId = Long.parseLong(jwt.getSubject());
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-
-        if (!tradeAuthorizationService.ownsAccount(userId, accountInternalId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
         accountService.deposit(accountInternalId, request.amount());
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}")
-    public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
+    public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId,
+                                                                @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         BigDecimal cashBalance = accountService.getBalance(internalId);
 
         // market value of the active holdings; a holding with no price available counts as 0
-        BigDecimal investmentValue = activeHoldings(internalId).stream()
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        BigDecimal investmentValue = holdings.stream()
                 .map(holding -> {
-                    BigDecimal price = marketPrice(holding.getInstrumentId());
+                    BigDecimal price = prices.get(instruments.get(holding.getInstrumentId()).getTicker());
                     return price == null ? BigDecimal.ZERO : holding.getQuantity().multiply(price);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         // what was paid for the shares still held (average cost of the filled trades)
-        BigDecimal costBasis = CostBasis.of(accountTradeMapper.findByAccountId(internalId));
+        BigDecimal costBasis = accountService.getCostBasis(internalId);
+        BigDecimal portfolioValue = investmentValue.add(cashBalance);
 
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, costBasis));
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue,  portfolioValue, cashBalance, costBasis));
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/holdings")
-    public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId) {
+    public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId,
+                                                                       @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        List<AccountHoldingResponseDTO> response = holdings.stream()
                 .map(holding -> {
-                    Instrument instrument = instrumentService.getInstrumentById(holding.getInstrumentId());
+                    Instrument instrument = instruments.get(holding.getInstrumentId());
                     return new AccountHoldingResponseDTO(accountId, instrument.getName(), instrument.getTicker(),
-                            holding.getQuantity(), marketPrice(holding.getInstrumentId()), holding.getInstrumentId());
+                            holding.getQuantity(), prices.get(instrument.getTicker()), holding.getInstrumentId());
                 })
                 .toList();
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/orders")
     public ResponseEntity<List<TradeResponseDTO>> getOrders(@PathVariable UUID accountId,
-                                                              @RequestParam(required = false) String side) {
+                                                              @RequestParam(required = false) String side,
+                                                            @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         List<TradeResponseDTO> response = accountTradeMapper.findByAccountId(internalId).stream()
                 .filter(trade -> side == null || trade.getTradeSide().name().equalsIgnoreCase(side))
@@ -117,9 +118,11 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/tasks/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTask(@PathVariable UUID accountId,
-                                                          @PathVariable UUID externalTradeId) {
+                                                          @PathVariable UUID externalTradeId,
+                                                          @AuthenticationPrincipal Jwt jwt) {
 
         Long taskInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
         AccountTrade task = accountTradeMapper.findById(taskInternalId);
@@ -129,7 +132,7 @@ public class AccountController {
         }
 
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-        
+
         if (!accountInternalId.equals(task.getAccountId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -137,11 +140,13 @@ public class AccountController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/trades/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTrade(@PathVariable UUID accountId,
-                                                          @PathVariable UUID externalTradeId) {
+                                                          @PathVariable UUID externalTradeId,
+                                                          @AuthenticationPrincipal Jwt jwt) {
 
-        
+
         Long tradeInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
         AccountTrade trade = accountTradeMapper.findById(tradeInternalId);
 
@@ -150,7 +155,7 @@ public class AccountController {
         }
 
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-        
+
         if (!accountInternalId.equals(trade.getAccountId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -159,15 +164,18 @@ public class AccountController {
     }
 
 
-    // current price (cached in Redis), or null if there's no price for it right now, so one instrument
-    // without a quote doesn't fail the whole portfolio
-    private BigDecimal marketPrice(Long instrumentId) {
-        try {
-            return instrumentService.getCurrentPrice(instrumentId);
-        } catch (IllegalStateException | RestClientException e) {
-            LOGGER.warn("No market price for instrument {}: {}", instrumentId, e.getMessage());
-            return null;
-        }
+    // each holding's instrument, looked up once
+    private Map<Long, Instrument> instrumentsOf(List<AccountHolding> holdings) {
+        Map<Long, Instrument> instruments = new HashMap<>();
+        holdings.forEach(holding -> instruments.computeIfAbsent(holding.getInstrumentId(),
+                instrumentService::getInstrumentById));
+        return instruments;
+    }
+
+    // prices to show, by ticker, in one batch (cached in Redis): a stale quote shows its last known price, and an
+    // instrument with no price right now is left out, so one instrument without a quote doesn't fail the portfolio
+    private Map<String, BigDecimal> displayPrices(Map<Long, Instrument> instruments) {
+        return instrumentService.getCurrentPrices(instruments.values().stream().map(Instrument::getTicker).toList());
     }
 
     private List<AccountHolding> activeHoldings(Long accountId) {

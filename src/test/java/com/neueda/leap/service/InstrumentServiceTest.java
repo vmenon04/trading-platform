@@ -3,6 +3,7 @@ package com.neueda.leap.service;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.external.MarketDataClient;
+import com.neueda.leap.external.PriceQuote;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
 import java.util.List;
@@ -126,11 +127,28 @@ class InstrumentServiceTest {
 
     @Test
     void getCurrentPricesAsksForEachTickerOnceAndDropsNonPositivePrices() {
-        when(marketDataClient.getPrices(List.of("AAPL", "MSFT")))
-                .thenReturn(Map.of("AAPL", new BigDecimal("189.50"), "MSFT", BigDecimal.ZERO));
+        when(marketDataClient.getPrices(List.of("AAPL", "MSFT"))).thenReturn(Map.of(
+                "AAPL", new PriceQuote(new BigDecimal("189.50"), false), "MSFT", new PriceQuote(BigDecimal.ZERO, false)));
 
         assertEquals(Map.of("AAPL", new BigDecimal("189.50")),
                 instrumentService.getCurrentPrices(List.of("AAPL", "MSFT", "AAPL")));
+    }
+
+    // the caching client leaves unknown symbols out, but a quote with no price must never break the listing
+    @Test
+    void getCurrentPricesSkipsQuotesWithNoPrice() {
+        when(marketDataClient.getPrices(List.of("NOPE"))).thenReturn(Map.of("NOPE", new PriceQuote(null, false)));
+
+        assertEquals(Map.of(), instrumentService.getCurrentPrices(List.of("NOPE")));
+    }
+
+    // getCurrentPrices is for showing prices, so a stale quote still shows its last known price
+    @Test
+    void getCurrentPricesKeepsStalePrices() {
+        when(marketDataClient.getPrices(List.of("AAPL")))
+                .thenReturn(Map.of("AAPL", new PriceQuote(new BigDecimal("189.50"), true)));
+
+        assertEquals(Map.of("AAPL", new BigDecimal("189.50")), instrumentService.getCurrentPrices(List.of("AAPL")));
     }
 
     @Test

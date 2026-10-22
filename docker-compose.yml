@@ -187,6 +187,22 @@ services:
       KAFKA_CLUSTERS_0_READONLY: "true"
     restart: unless-stopped
 
+  frontend:
+    build: ./platform-ui
+    image: trading-platform-frontend
+    container_name: trading-frontend
+    depends_on:
+      api:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}:80"
+    environment:
+      # logo.dev's publishable key, added to /logo requests by nginx; logos fall back to a letter without it
+      LOGO_DEV_CRED_KEY: ${LOGO_DEV_CRED_KEY:-}
+    restart: unless-stopped
+
   # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env
   adminer:
     image: adminer:6.1.2

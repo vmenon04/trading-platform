@@ -4,6 +4,7 @@ import { FinancialCard } from '../../components/financial-card/financial-card';
 import { HoldingsSummary } from '../../components/holdings-summary/holdings-summary';
 import { AccountService } from '../../services/account.service';
 
+
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdCompact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });

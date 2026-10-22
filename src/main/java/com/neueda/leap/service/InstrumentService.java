@@ -112,8 +112,9 @@ public class InstrumentService {
     }
 
     /**
-     * Returns current prices for many instruments at once: cached prices from Redis, and the rest from the
-     * market data API in batches. Instruments with no valid price right now are left out.
+     * Returns current prices for many instruments at once, for showing: cached prices from Redis, and the rest from
+     * the market data API in batches. A stale quote keeps its last known price (trades use getCurrentPrice, which
+     * rejects stale quotes). Instruments with no valid price right now are left out.
      *
      * @param tickers tickers to price
      * @return positive prices by ticker; empty if the market data API is unavailable
@@ -121,8 +122,12 @@ public class InstrumentService {
     public Map<String, BigDecimal> getCurrentPrices(List<String> tickers) {
         tickers = tickers.stream().distinct().toList();
         try {
-            Map<String, BigDecimal> prices = new HashMap<>(marketDataClient.getPrices(tickers));
-            prices.values().removeIf(price -> price.compareTo(BigDecimal.ZERO) <= 0);
+            Map<String, BigDecimal> prices = new HashMap<>();
+            marketDataClient.getPrices(tickers).forEach((ticker, quote) -> {
+                if (quote.price() != null && quote.price().compareTo(BigDecimal.ZERO) > 0) {
+                    prices.put(ticker, quote.price());
+                }
+            });
             return prices;
         } catch (IllegalStateException | RestClientException e) {
             // listing instruments still works without prices (bad key, quota used up, API down)

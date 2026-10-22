@@ -13,7 +13,6 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
-import com.neueda.leap.service.TradeAuthorizationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -31,6 +30,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -67,9 +67,6 @@ class AccountControllerTest {
 
     @Mock
     private InstrumentService instrumentService;
-
-    @Mock
-    private TradeAuthorizationService tradeAuthorizationService;
 
     @InjectMocks
     private AccountController accountController;
@@ -116,22 +113,14 @@ class AccountControllerTest {
     @Test
     void deposit_ownedAccount_returnsNoContentAndCreditsIt() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(true);
 
         postDeposit().andExpect(status().isNoContent());
 
         verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
     }
 
-    @Test
-    void deposit_accountOwnedBySomeoneElse_returns403AndDepositsNothing() throws Exception {
-        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(false);
-
-        postDeposit().andExpect(status().isForbidden());
-
-        verify(accountService, never()).deposit(any(), any());
-    }
+    // depositing into someone else's account (the @PreAuthorize ownership check) is tested in
+    // OwnershipAuthorizationTest: this plain MockMvc setup doesn't apply @PreAuthorize
 
     @Test
     void deposit_unknownAccount_returns404() throws Exception {
@@ -140,7 +129,6 @@ class AccountControllerTest {
 
         postDeposit().andExpect(status().isNotFound());
 
-        verifyNoInteractions(tradeAuthorizationService);
     }
 
     @Test
@@ -155,7 +143,6 @@ class AccountControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(tradeAuthorizationService);
         verify(accountService, never()).deposit(any(), any());
     }
 
@@ -163,12 +150,14 @@ class AccountControllerTest {
     void getSummary_returnsCashBalance() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("0.00"));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(externalAccountId.toString()))
                 .andExpect(jsonPath("$.cashBalance").value(2500.00))
                 .andExpect(jsonPath("$.investmentValue").value(0))
+                .andExpect(jsonPath("$.portfolioValue").value(2500.00))
                 .andExpect(jsonPath("$.costBasis").value(0));
     }
 
@@ -195,7 +184,8 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
         when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+        // one batch of display prices for all the holdings, not a price lookup per holding
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
@@ -208,7 +198,8 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
         when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price available for AAPL"));
+        // getCurrentPrices leaves out an instrument with no price (and returns nothing if Fauxnance is down)
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
@@ -223,11 +214,13 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE),
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("4"), ActivityStatus.INACTIVE)));
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.investmentValue").value(1502.50))
+                .andExpect(jsonPath("$.portfolioValue").value(4002.50))
                 .andExpect(jsonPath("$.cashBalance").value(2500.00));
     }
 
@@ -235,11 +228,8 @@ class AccountControllerTest {
     void getSummary_costBasisIsWhatWasPaidForTheSharesStillHeld() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
-        // bought 10 for 1500 (the trade() fixture), then sold 4: 6 left at an average of 150 = 900
-        AccountTrade sell = new AccountTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.SELL, new BigDecimal("4"),
-                new BigDecimal("160.00"), new BigDecimal("640.00"));
-        sell.setTradeStatus(TradeStatus.FULFILLED);
-        when(accountTradeMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(trade(ACCOUNT_ID, TradeSide.BUY), sell));
+        // how it's worked out is tested in AccountServiceTest
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("900.00"));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())

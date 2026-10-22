@@ -37,7 +37,6 @@
 		@if (instrument.priceValue === null) {
 			<p class="selection-hint">There's no live price for {{ instrument.symbol }} right now, so the order may be rejected.</p>
 		}
-		<div class="allocation"><span>▣ Cash allocation <small>{{ investedLabel() }} · {{ cashLabel() }}</small></span><i [style.background]="'linear-gradient(90deg, var(--green) ' + invested() * 100 + '%, #dce6e1 ' + invested() * 100 + '%)'"></i></div>
 		<button type="button" class="submit-order" [disabled]="submitting() || !selectedInstrument || quantity <= 0 || overSelling" (click)="submitOrder()">{{ submitting() ? 'Submitting…' : (mode === 'buy' ? 'Buy' : 'Sell') }}</button>
 		@if (result(); as result) {
 			<p class="order-result" [class.error]="!result.ok" role="status">{{ result.message }}</p>

@@ -32,6 +32,7 @@ export interface OpenAccountRequest {
 export interface AccountSummary {
   accountId: string;
   investmentValue: number;
+  portfolioValue: number;
   cashBalance: number;
   costBasis: number;
 }
