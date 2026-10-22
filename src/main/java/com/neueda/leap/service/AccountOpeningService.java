@@ -30,10 +30,14 @@ public class AccountOpeningService {
      */
     @Transactional
     public void openAccount(Long userId, OpenAccountRequestDTO request) {
+        // checked first, so a user who already has an account isn't told their own email is taken
+        if (accountOpeningMapper.findClientIdByUserId(userId) != null) {
+            throw new IllegalStateException("User " + userId + " already has an account");
+        }
         Long clientId = accountOpeningMapper.insertClient(request.firstName().trim(), request.lastName().trim(),
                 request.email().trim(), request.birthDate());
         if (accountOpeningMapper.linkUserToClient(userId, clientId) == 0) {
-            // rolls back the client inserted above
+            // another request linked the user meanwhile; rolls back the client inserted above
             throw new IllegalStateException("User " + userId + " already has an account");
         }
         Long accountId = accountOpeningMapper.insertAccount();
