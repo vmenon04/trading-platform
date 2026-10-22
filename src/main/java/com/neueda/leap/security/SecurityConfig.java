@@ -11,6 +11,8 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
+import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.security.web.SecurityFilterChain;
 
 @Configuration
@@ -25,6 +27,18 @@ public class SecurityConfig {
     return NimbusJwtDecoder.withSecretKey(key).build();
   }
 
+  // auth-service puts the user's roles in a "roles" claim (e.g. ["CLIENT"]). Spring only reads "scope" by default,
+  // so without this every user has no roles and hasRole(...) always fails with 403. CLIENT -> ROLE_CLIENT
+  @Bean
+  public JwtAuthenticationConverter jwtAuthenticationConverter() {
+    JwtGrantedAuthoritiesConverter roles = new JwtGrantedAuthoritiesConverter();
+    roles.setAuthoritiesClaimName("roles");
+    roles.setAuthorityPrefix("ROLE_");
+    JwtAuthenticationConverter converter = new JwtAuthenticationConverter();
+    converter.setJwtGrantedAuthoritiesConverter(roles);
+    return converter;
+  }
+
   @Bean
   public SecurityFilterChain securityFilterChain(HttpSecurity http) {
     http.authorizeHttpRequests(auth -> auth
@@ -33,7 +47,8 @@ public class SecurityConfig {
         .requestMatchers("/actuator/health").permitAll()
         .requestMatchers("/auth/register").permitAll()
         .requestMatchers("/auth/login").permitAll()
-        .requestMatchers("/v1/clients/**").hasRole("USER")
+        // only client logins; ADMIN and ANALYST use the reporting dashboard instead
+        .requestMatchers("/v1/clients/**").hasRole("CLIENT")
         .anyRequest().authenticated())
         .exceptionHandling(ex -> ex
             .authenticationEntryPoint((req, res, e) -> res.sendError(401))
