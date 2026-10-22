@@ -22,6 +22,7 @@ import java.net.URI;
 import java.util.UUID;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
@@ -77,7 +78,7 @@ class TradeControllerTest {
     void submitOrder_validRequest_passesDtoAndUserIdToService_andReturns202WithTradeLocation() throws Exception {
         UUID accountId = UUID.randomUUID();
         URI location = URI.create("/api/accounts/%s/trades/%s".formatted(accountId, UUID.randomUUID()));
-        when(recipientService.publishOrder(any(TradeRequestDTO.class)))
+        when(recipientService.publishOrder(any(TradeRequestDTO.class), eq(1L)))
                 .thenReturn(ResponseEntity.accepted().location(location).build());
 
         mockMvc.perform(post("/api/v1/accounts/{accountId}/trades", accountId)
@@ -96,7 +97,7 @@ class TradeControllerTest {
                 .andExpect(header().string("Location", location.toString()));
 
         // the user ID comes from the token's subject, not from the request body
-        verify(recipientService).publishOrder(any(TradeRequestDTO.class));
+        verify(recipientService).publishOrder(any(TradeRequestDTO.class), eq(1L));
     }
 
     private static JwtAuthenticationToken authentication() {
