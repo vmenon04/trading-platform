@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import org.springframework.security.access.AccessDeniedException;
 
@@ -17,6 +18,7 @@ import java.net.URI;
 import java.util.UUID;
 
 @Service
+@Validated
 public class RecipientService {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(RecipientService.class);
