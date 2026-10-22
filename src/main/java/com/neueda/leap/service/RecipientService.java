@@ -26,26 +26,19 @@ public class RecipientService {
     private final TradeEventProducer tradeEventProducer;
     private final InstrumentService instrumentService;
     private final MarketDataClient marketDataClient;
-    private final TradeAuthorizationService tradeAuthorizationService;
     private final AccountTradeMapper accountTradeMapper;
 
     public RecipientService(TradeEventProducer tradeEventProducer,
                             InstrumentService instrumentService,
                             MarketDataClient marketDataClient,
-                            TradeAuthorizationService tradeAuthorizationService,
                             AccountTradeMapper accountTradeMapper) {
         this.tradeEventProducer = tradeEventProducer;
         this.instrumentService = instrumentService;
         this.marketDataClient = marketDataClient;
-        this.tradeAuthorizationService = tradeAuthorizationService;
         this.accountTradeMapper = accountTradeMapper;
     }
 
     public ResponseEntity<Void> publishOrder(@Valid TradeRequestDTO dto, Long userId) throws AccessDeniedException {
-        if (!tradeAuthorizationService.isValidUserId(dto, userId)) {
-            throw new AccessDeniedException("You are not authorized to perform this action.");
-        }
-
         UUID externalTradeId = UUID.randomUUID();
         while(checkTradeIdExists(externalTradeId)){
              LOGGER.info("Trade ID {} already exists in the database, regenerating.", externalTradeId);

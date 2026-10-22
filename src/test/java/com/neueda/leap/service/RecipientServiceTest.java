@@ -43,9 +43,6 @@ class RecipientServiceTest {
     private MarketDataClient marketDataClient;
 
     @Mock
-    private TradeAuthorizationService tradeAuthorizationService;
-
-    @Mock
     private AccountTradeMapper accountTradeMapper;
 
     @InjectMocks
@@ -75,7 +72,6 @@ class RecipientServiceTest {
                 new BigDecimal("25.5")
         );
 
-        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
         when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
@@ -106,7 +102,6 @@ class RecipientServiceTest {
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
-        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
 
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
@@ -133,7 +128,6 @@ class RecipientServiceTest {
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
-        when(tradeAuthorizationService.isValidUserId(dto, 2L)).thenReturn(true);
 
         Instrument instrument = new Instrument();
         instrument.setTicker("MSFT");
