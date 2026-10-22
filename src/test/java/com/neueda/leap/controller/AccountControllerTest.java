@@ -13,7 +13,6 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
-import com.neueda.leap.service.TradeAuthorizationService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -69,9 +68,6 @@ class AccountControllerTest {
     @Mock
     private InstrumentService instrumentService;
 
-    @Mock
-    private TradeAuthorizationService tradeAuthorizationService;
-
     @InjectMocks
     private AccountController accountController;
 
@@ -117,22 +113,14 @@ class AccountControllerTest {
     @Test
     void deposit_ownedAccount_returnsNoContentAndCreditsIt() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(true);
 
         postDeposit().andExpect(status().isNoContent());
 
         verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
     }
 
-    @Test
-    void deposit_accountOwnedBySomeoneElse_returns403AndDepositsNothing() throws Exception {
-        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-        when(tradeAuthorizationService.ownsAccount(USER_ID, ACCOUNT_ID)).thenReturn(false);
-
-        postDeposit().andExpect(status().isForbidden());
-
-        verify(accountService, never()).deposit(any(), any());
-    }
+    // depositing into someone else's account (the @PreAuthorize ownership check) is tested in
+    // OwnershipAuthorizationTest: this plain MockMvc setup doesn't apply @PreAuthorize
 
     @Test
     void deposit_unknownAccount_returns404() throws Exception {
@@ -141,7 +129,6 @@ class AccountControllerTest {
 
         postDeposit().andExpect(status().isNotFound());
 
-        verifyNoInteractions(tradeAuthorizationService);
     }
 
     @Test
@@ -156,7 +143,6 @@ class AccountControllerTest {
                                 """))
                 .andExpect(status().isBadRequest());
 
-        verifyNoInteractions(tradeAuthorizationService);
         verify(accountService, never()).deposit(any(), any());
     }
 

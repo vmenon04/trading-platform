@@ -12,10 +12,10 @@ import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
-import com.neueda.leap.service.TradeAuthorizationService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,37 +41,31 @@ public class AccountController {
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
-    private final TradeAuthorizationService tradeAuthorizationService;
 
     public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
-                             InstrumentService instrumentService,
-                             TradeAuthorizationService tradeAuthorizationService) {
+                             InstrumentService instrumentService) {
         this.accountService = accountService;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
-        this.tradeAuthorizationService = tradeAuthorizationService;
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @PostMapping("/{accountId}/deposits")
     public ResponseEntity<Void> deposit(@AuthenticationPrincipal Jwt jwt,
                                         @PathVariable UUID accountId,
                                         @Valid @RequestBody DepositRequestDTO request) {
         // the depositor is the logged-in user from the token, never an ID the caller puts in the request
-        Long userId = Long.parseLong(jwt.getSubject());
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-
-        if (!tradeAuthorizationService.ownsAccount(userId, accountInternalId)) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
-        }
-
         accountService.deposit(accountInternalId, request.amount());
         return ResponseEntity.noContent().build();
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}")
-    public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
+    public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId,
+                                                                @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         BigDecimal cashBalance = accountService.getBalance(internalId);
 
@@ -93,8 +87,10 @@ public class AccountController {
         return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue,  portfolioValue, cashBalance, costBasis));
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/holdings")
-    public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId) {
+    public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId,
+                                                                       @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         List<AccountHolding> holdings = activeHoldings(internalId);
         Map<Long, Instrument> instruments = instrumentsOf(holdings);
@@ -109,9 +105,11 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/orders")
     public ResponseEntity<List<TradeResponseDTO>> getOrders(@PathVariable UUID accountId,
-                                                              @RequestParam(required = false) String side) {
+                                                              @RequestParam(required = false) String side,
+                                                            @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         List<TradeResponseDTO> response = accountTradeMapper.findByAccountId(internalId).stream()
                 .filter(trade -> side == null || trade.getTradeSide().name().equalsIgnoreCase(side))
@@ -120,9 +118,11 @@ public class AccountController {
         return ResponseEntity.ok(response);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/tasks/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTask(@PathVariable UUID accountId,
-                                                          @PathVariable UUID externalTradeId) {
+                                                          @PathVariable UUID externalTradeId,
+                                                          @AuthenticationPrincipal Jwt jwt) {
 
         Long taskInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
         AccountTrade task = accountTradeMapper.findById(taskInternalId);
@@ -132,7 +132,7 @@ public class AccountController {
         }
 
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-        
+
         if (!accountInternalId.equals(task.getAccountId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }
@@ -140,11 +140,13 @@ public class AccountController {
         return ResponseEntity.ok(responseDTO);
     }
 
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
     @GetMapping("/{accountId}/trades/{externalTradeId}")
     public ResponseEntity<TradeResponseDTO> getTrade(@PathVariable UUID accountId,
-                                                          @PathVariable UUID externalTradeId) {
+                                                          @PathVariable UUID externalTradeId,
+                                                          @AuthenticationPrincipal Jwt jwt) {
 
-        
+
         Long tradeInternalId = accountTradeMapper.findTradeIdByExternalTradeId(externalTradeId);
         AccountTrade trade = accountTradeMapper.findById(tradeInternalId);
 
@@ -153,7 +155,7 @@ public class AccountController {
         }
 
         Long accountInternalId = accountService.getAccountIdByExternalAccountId(accountId);
-        
+
         if (!accountInternalId.equals(trade.getAccountId())) {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).build();
         }

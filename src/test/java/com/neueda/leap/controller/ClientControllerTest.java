@@ -59,7 +59,8 @@ class ClientControllerTest {
         mockMvc = MockMvcBuilders.standaloneSetup(clientController)
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
-        // @AuthenticationPrincipal reads the logged-in user from the security context
+        // @AuthenticationPrincipal reads the logged-in user from the security context; who may see which
+        // client (@PreAuthorize) is tested in OwnershipAuthorizationTest
         Jwt jwt = Jwt.withTokenValue("token")
                 .header("alg", "none")
                 .claim("sub", USER_ID.toString())

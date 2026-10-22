@@ -4,8 +4,8 @@ import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.TradeSide;
-import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.external.MarketDataClient;
+import com.neueda.leap.repository.AccountTradeMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -13,6 +13,8 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -25,6 +27,7 @@ import java.util.UUID;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
@@ -42,7 +45,7 @@ class RecipientServiceTest {
     private MarketDataClient marketDataClient;
 
     @Mock
-    private TradeAuthorizationService tradeAuthorizationService;
+    private AccountTradeMapper accountTradeMapper;
 
     @InjectMocks
     private RecipientService recipientService;
@@ -61,14 +64,46 @@ class RecipientServiceTest {
     }
 
     @Test
-    void publishOrder_returnsAcceptedWithTradeLocation() {
+    void publishOrderRegeneratesTradeIdWhenGeneratedIdAlreadyExists() {
+        UUID existingTradeId = UUID.fromString("11111111-1111-1111-1111-111111111111");
+        UUID regeneratedTradeId = UUID.fromString("22222222-2222-2222-2222-222222222222");
         TradeRequestDTO dto = new TradeRequestDTO(
                 UUID.randomUUID(),
                 10L,
                 TradeSide.BUY,
                 new BigDecimal("25.5")
         );
-        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
+
+        Instrument instrument = new Instrument();
+        instrument.setTicker("AAPL");
+        when(instrumentService.getInstrumentById(10L)).thenReturn(instrument);
+        when(marketDataClient.getPrice("AAPL")).thenReturn(new BigDecimal("101.25"));
+        when(accountTradeMapper.findTradeIdByExternalTradeId(existingTradeId)).thenReturn(1L);
+        when(accountTradeMapper.findTradeIdByExternalTradeId(regeneratedTradeId)).thenReturn(null);
+
+        try (MockedStatic<UUID> mockedUuid = Mockito.mockStatic(UUID.class)) {
+            mockedUuid.when(UUID::randomUUID)
+                    .thenReturn(existingTradeId, regeneratedTradeId)
+                    .thenThrow(new AssertionError("Trade ID generation should stop after finding an unused ID"));
+            recipientService.publishOrder(dto, 1L);
+        }
+
+        ArgumentCaptor<TradeSubmittedDTO> captor = ArgumentCaptor.forClass(TradeSubmittedDTO.class);
+        verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
+        assertEquals(regeneratedTradeId, captor.getValue().externalTradeId());
+        verify(accountTradeMapper).findTradeIdByExternalTradeId(existingTradeId);
+        verify(accountTradeMapper).findTradeIdByExternalTradeId(regeneratedTradeId);
+    }
+
+    @Test
+    void publishOrder_returnsAcceptedWithTradeLocation() {
+        when(accountTradeMapper.findTradeIdByExternalTradeId(any(UUID.class))).thenReturn(null);
+        TradeRequestDTO dto = new TradeRequestDTO(
+                UUID.randomUUID(),
+                10L,
+                TradeSide.BUY,
+                new BigDecimal("25.5")
+        );
 
         Instrument instrument = new Instrument();
         instrument.setTicker("AAPL");
@@ -85,23 +120,25 @@ class RecipientServiceTest {
                 response.getHeaders().getLocation().getPath());
     }
 
+    // the global handler turns this into the generic 500
     @Test
-    void publishOrder_noMarketPrice_throwsInvalidTradeAndPublishesNothing() {
+    void publishOrder_noMarketPrice_throwsAndPublishesNothing() {
         TradeRequestDTO dto = new TradeRequestDTO(UUID.randomUUID(), 22L, TradeSide.BUY, new BigDecimal("1"));
-        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
+        // a new trade id (an unstubbed Long would be 0, which reads as "already exists" and never ends)
+        when(accountTradeMapper.findTradeIdByExternalTradeId(any(UUID.class))).thenReturn(null);
         Instrument instrument = new Instrument();
         instrument.setTicker("ORCL");
         when(instrumentService.getInstrumentById(22L)).thenReturn(instrument);
         when(marketDataClient.getPrice("ORCL")).thenReturn(null);
 
-        InvalidTradeException e = assertThrows(InvalidTradeException.class, () -> recipientService.publishOrder(dto, 1L));
+        assertThrows(IllegalStateException.class, () -> recipientService.publishOrder(dto, 1L));
 
-        assertEquals("No current market price for ORCL. Try again in a moment.", e.getMessage());
         verifyNoInteractions(tradeEventProducer);
     }
 
     @Test
     void publishOrder_publishesTradeSubmittedWithExpectedPayload() {
+        when(accountTradeMapper.findTradeIdByExternalTradeId(any(UUID.class))).thenReturn(null);
         UUID accountId = UUID.randomUUID();
         TradeRequestDTO dto = new TradeRequestDTO(
                 accountId,
@@ -109,7 +146,6 @@ class RecipientServiceTest {
                 TradeSide.SELL,
                 new BigDecimal("7")
         );
-        when(tradeAuthorizationService.isValidUserId(dto, 2L)).thenReturn(true);
 
         Instrument instrument = new Instrument();
         instrument.setTicker("MSFT");

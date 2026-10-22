@@ -265,14 +265,16 @@ SELECT
 FROM generate_series(0, 9999) AS i;
 
 -- users: one CLIENT login per client (e.g. james.smith1), plus one ADMIN and one ANALYST.
--- password_hash is a placeholder; real hashes come from the app's sign-up flow.
+-- The CLIENT password_hash is a placeholder; real client hashes come from the app's sign-up flow.
 INSERT INTO users (external_user_id, username, password_hash, client_id)
 SELECT gen_random_uuid(), lower(first_name || '.' || last_name) || client_id, 'placeholder-not-a-real-hash', client_id
 FROM clients;
 
+-- Sign-up only ever makes CLIENT logins, so the reporting dashboard's logins exist only here.
+-- Development passwords (bcrypt, 10 rounds like auth-service): admin / admin123 and analyst / analyst123
 INSERT INTO users (external_user_id, username, password_hash)
-VALUES (gen_random_uuid(), 'admin', 'placeholder-not-a-real-hash'),
-       (gen_random_uuid(), 'analyst', 'placeholder-not-a-real-hash');
+VALUES (gen_random_uuid(), 'admin', '$2b$10$IVW3R3jHj/CpeF5AHHjMwe0bafieNQngdOm.fBngozkWoLZCAq/Pi'),
+       (gen_random_uuid(), 'analyst', '$2b$10$wS5HzknbcrNdOfA64jJ0ueMyuzi7PGce77KVGqXPcFqwRqynxWfZy');
 
 -- roles: what each login may do
 INSERT INTO roles (user_id, role)
