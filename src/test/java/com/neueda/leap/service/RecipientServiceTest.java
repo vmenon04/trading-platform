@@ -26,8 +26,10 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -116,6 +118,22 @@ class RecipientServiceTest {
         verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
         assertEquals("/api/accounts/123/trades/" + captor.getValue().externalTradeId(),
                 response.getHeaders().getLocation().getPath());
+    }
+
+    // the global handler turns this into the generic 500
+    @Test
+    void publishOrder_noMarketPrice_throwsAndPublishesNothing() {
+        TradeRequestDTO dto = new TradeRequestDTO(UUID.randomUUID(), 22L, TradeSide.BUY, new BigDecimal("1"));
+        // a new trade id (an unstubbed Long would be 0, which reads as "already exists" and never ends)
+        when(accountTradeMapper.findTradeIdByExternalTradeId(any(UUID.class))).thenReturn(null);
+        Instrument instrument = new Instrument();
+        instrument.setTicker("ORCL");
+        when(instrumentService.getInstrumentById(22L)).thenReturn(instrument);
+        when(marketDataClient.getPrice("ORCL")).thenReturn(null);
+
+        assertThrows(IllegalStateException.class, () -> recipientService.publishOrder(dto, 1L));
+
+        verifyNoInteractions(tradeEventProducer);
     }
 
     @Test

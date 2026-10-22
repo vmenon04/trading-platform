@@ -6,6 +6,7 @@ import com.neueda.leap.entity.Client;
 import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
+import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.ClientService;
 import com.neueda.leap.service.InstrumentService;
@@ -81,6 +82,11 @@ class OwnershipAuthorizationTest {
         @Bean
         ClientService clientService() {
             return mock(ClientService.class);
+        }
+
+        @Bean
+        AccountOpeningService accountOpeningService() {
+            return mock(AccountOpeningService.class);
         }
 
         @Bean

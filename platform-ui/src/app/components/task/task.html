@@ -1,0 +1,29 @@
+<aside class="task-card">
+	<div class="task-heading">
+		<div class="task-icon">▤</div>
+		<div><span class="eyebrow">Order activity</span><h2>Recent orders</h2></div>
+	</div>
+
+	<div class="task-list" role="list" aria-label="Recent orders">
+		@if (account.orders.isLoading() && !account.orders.hasValue()) {
+			<p class="task-empty">Loading orders…</p>
+		} @else if (account.orders.error()) {
+			<p class="task-empty">Couldn't load your orders.</p>
+		} @else {
+			@for (task of tasks(); track task.key) {
+				<div class="task-row" role="listitem">
+					<div class="ticker-badge"><app-ticker-logo [ticker]="task.ticker" /></div>
+					<strong class="ticker">{{ task.ticker }}</strong>
+					<span class="quantity">{{ task.quantity }}</span>
+					<span class="side" [class.sell]="task.side === 'Sell'">{{ task.side }}</span>
+					<strong class="quoted-price">{{ task.price }}</strong>
+					<span class="status" [class]="'status ' + task.status">● {{ task.status }}</span>
+				</div>
+			} @empty {
+				<p class="task-empty">No orders yet. Orders you place appear here.</p>
+			}
+		}
+	</div>
+
+	<a routerLink="/orders">View order history <span>›</span></a>
+</aside>

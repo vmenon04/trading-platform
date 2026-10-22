@@ -30,6 +30,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -149,12 +150,14 @@ class AccountControllerTest {
     void getSummary_returnsCashBalance() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("0.00"));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.accountId").value(externalAccountId.toString()))
                 .andExpect(jsonPath("$.cashBalance").value(2500.00))
                 .andExpect(jsonPath("$.investmentValue").value(0))
+                .andExpect(jsonPath("$.portfolioValue").value(2500.00))
                 .andExpect(jsonPath("$.costBasis").value(0));
     }
 
@@ -173,6 +176,64 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$[0].name").value("Apple Inc"))
                 .andExpect(jsonPath("$[0].ticker").value("AAPL"))
                 .andExpect(jsonPath("$[0].quantity").value(10));
+    }
+
+    @Test
+    void getHoldings_includesCurrentMarketPrice() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        // one batch of display prices for all the holdings, not a price lookup per holding
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].price").value(150.25));
+    }
+
+    @Test
+    void getHoldings_priceUnavailable_returnsNullPriceInsteadOfFailing() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        // getCurrentPrices leaves out an instrument with no price (and returns nothing if Fauxnance is down)
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of());
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].ticker").value("AAPL"))
+                .andExpect(jsonPath("$[0].price").doesNotExist());
+    }
+
+    @Test
+    void getSummary_investmentValueIsMarketValueOfActiveHoldings() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE),
+                new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("4"), ActivityStatus.INACTIVE)));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.investmentValue").value(1502.50))
+                .andExpect(jsonPath("$.portfolioValue").value(4002.50))
+                .andExpect(jsonPath("$.cashBalance").value(2500.00));
+    }
+
+    @Test
+    void getSummary_costBasisIsWhatWasPaidForTheSharesStillHeld() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        // how it's worked out is tested in AccountServiceTest
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("900.00"));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.costBasis").value(900.00));
     }
 
     @Test

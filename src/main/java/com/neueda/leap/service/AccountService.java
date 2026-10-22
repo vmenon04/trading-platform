@@ -1,7 +1,14 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.entity.AccountTrade;
+import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountMapper;
+import com.neueda.leap.repository.AccountTradeMapper;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.UUID;
 
@@ -14,14 +21,17 @@ import org.springframework.stereotype.Service;
 public class AccountService {
 
     private final AccountMapper accountMapper;
+    private final AccountTradeMapper accountTradeMapper;
 
     /**
-     * Creates an account service backed by the account mapper.
+     * Creates an account service backed by the account and trade mappers.
      *
      * @param accountMapper mapper used to query and update account balances
+     * @param accountTradeMapper mapper used to read the account's trades (for the cost basis)
      */
-    public AccountService(AccountMapper accountMapper) {
+    public AccountService(AccountMapper accountMapper, AccountTradeMapper accountTradeMapper) {
         this.accountMapper = accountMapper;
+        this.accountTradeMapper = accountTradeMapper;
     }
 
 
@@ -109,6 +119,60 @@ public class AccountService {
             BigDecimal balance = getBalance(accountId);
             throw new IllegalStateException(
                     "Insufficient funds in account " + accountId + ": balance " + balance + ", requested " + amount);
+        }
+    }
+
+    /**
+     * Returns what the account paid for the shares it still holds, by the average cost method: a buy adds its total
+     * price to the instrument's cost, and a sell removes the sold shares' share of that cost. Only FULFILLED trades
+     * with a price count, so holdings with no priced trades (e.g. sample data) add no cost.
+     *
+     * @param accountId account identifier
+     * @return the cost basis of the shares still held, to the cent
+     */
+    public BigDecimal getCostBasis(Long accountId) {
+        Map<Long, Position> positions = new HashMap<>();
+        // oldest first, so each sell takes the average cost of the buys before it
+        for (AccountTrade trade : accountTradeMapper.findByAccountId(accountId)) {
+            if (trade.getStatus() != TradeStatus.FULFILLED || trade.getTotalPrice() == null) {
+                continue;
+            }
+            Position position = positions.computeIfAbsent(trade.getInstrumentId(), id -> new Position());
+            if (trade.getTradeSide() == TradeSide.BUY) {
+                position.buy(trade.getQuantity(), trade.getTotalPrice());
+            } else {
+                position.sell(trade.getQuantity());
+            }
+        }
+        return positions.values().stream()
+                .map(position -> position.cost)
+                .reduce(BigDecimal.ZERO, BigDecimal::add)
+                .setScale(2, RoundingMode.HALF_UP);
+    }
+
+    // shares held of one instrument and what they cost in total
+    private static final class Position {
+        private BigDecimal quantity = BigDecimal.ZERO;
+        private BigDecimal cost = BigDecimal.ZERO;
+
+        void buy(BigDecimal shares, BigDecimal totalPrice) {
+            quantity = quantity.add(shares);
+            cost = cost.add(totalPrice);
+        }
+
+        void sell(BigDecimal shares) {
+            if (quantity.signum() <= 0) {
+                return;
+            }
+            if (shares.compareTo(quantity) >= 0) {
+                quantity = BigDecimal.ZERO;
+                cost = BigDecimal.ZERO;
+                return;
+            }
+            // the sold shares take their average cost with them
+            BigDecimal soldCost = cost.multiply(shares).divide(quantity, 10, RoundingMode.HALF_UP);
+            cost = cost.subtract(soldCost);
+            quantity = quantity.subtract(shares);
         }
     }
 

@@ -180,7 +180,10 @@ WITH real_instruments AS (
     ('Vanguard Dividend ETF', 'VYM', 'ETF'), ('iShares Select Dividend', 'DVYD', 'ETF'), ('SPDR S&P Dividend ETF', 'SPDV', 'ETF')
   ) AS t(instrument_name, ticker_symbol, asset_class)
 )
-SELECT instrument_name, ticker_symbol, asset_class
+-- crypto is stored as Fauxnance symbols (BTC -> X:BTC-USD): on Fauxnance a bare BTC is a different, stock symbol
+SELECT instrument_name,
+       CASE WHEN asset_class = 'CRYPTO' THEN 'X:' || ticker_symbol || '-USD' ELSE ticker_symbol END,
+       asset_class
 FROM real_instruments
 LIMIT 334;
 

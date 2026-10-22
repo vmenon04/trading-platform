@@ -1,6 +1,7 @@
 package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.TradeRequestDTO;
+import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.service.RecipientService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +27,7 @@ import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @ExtendWith(MockitoExtension.class)
@@ -98,6 +100,32 @@ class TradeControllerTest {
 
         // the user ID comes from the token's subject, not from the request body
         verify(recipientService).publishOrder(any(TradeRequestDTO.class), eq(1L));
+    }
+
+    // e.g. the day's Fauxnance quota is used up: the global handler turns it into a generic 500, without the details
+    @Test
+    void submitOrder_priceLookupFails_returnsGeneric500() throws Exception {
+        UUID accountId = UUID.randomUUID();
+        when(recipientService.publishOrder(any(TradeRequestDTO.class), eq(1L))).thenThrow(new IllegalStateException(
+                "Fauxnance's daily quota is used up; prices are available again after midnight UTC"));
+        MockMvc withErrorHandling = MockMvcBuilders.standaloneSetup(tradeController)
+                .setControllerAdvice(new GlobalExceptionHandler())
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .build();
+
+        withErrorHandling.perform(post("/api/v1/accounts/{accountId}/trades", accountId)
+                        .contextPath("/api")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "accountId": "%s",
+                                  "instrumentId": 10,
+                                  "side": "BUY",
+                                  "quantity": 25.5
+                                }
+                                """.formatted(accountId)))
+                .andExpect(status().isInternalServerError())
+                .andExpect(jsonPath("$.message").value("an unexpected error occurred"));
     }
 
     private static JwtAuthenticationToken authentication() {

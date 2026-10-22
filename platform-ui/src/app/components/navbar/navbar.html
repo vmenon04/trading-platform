@@ -1,0 +1,22 @@
+<nav class="navbar" aria-label="Primary navigation">
+  <a class="navbar-brand" routerLink="/dashboard" aria-label="F-trade dashboard" (click)="onLogoClick()">
+    <img src="assets/nav-bar-logo.png" alt="F-trade logo">
+  </a>
+
+  <app-account-selector></app-account-selector>
+
+  <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+  <a routerLink="/trade" routerLinkActive="active">Trade</a>
+  <a routerLink="/portfolio" routerLinkActive="active">Portfolio</a>
+  <a routerLink="/orders" routerLinkActive="active">Orders</a>
+  <button type="button" class="profile-button" (click)="openAccount()" aria-label="Open account">
+    <span class="profile-avatar">{{ initials() }}</span>
+    <span class="profile-copy"><strong>{{ account.clientName() || 'Your account' }}</strong><small>View account</small></span>
+    <span class="profile-arrow" aria-hidden="true">↗</span>
+  </button>
+  <button type="button" class="logout-button" (click)="logout()">Log out</button>
+</nav>
+
+@if (showEasterEgg()) {
+  <div class="easter-egg" role="status" (click)="showEasterEgg.set(false)">Made with ❤️ by Annie's Amphibians 🐸</div>
+}

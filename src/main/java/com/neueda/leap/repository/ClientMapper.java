@@ -23,17 +23,17 @@ public interface ClientMapper {
     @Select("SELECT client_id as clientId FROM clients WHERE external_client_id = #{externalClientId}")
     Long findInternalIdByExternalClientId(@Param("externalClientId") UUID externalClientId);
 
-    @Select("SELECT accounts.external_account_id::text FROM accounts "
-        + "JOIN client_accounts ON accounts.account_id = client_accounts.account_id "
-        + "WHERE client_accounts.client_id = #{clientId} "
-        + "ORDER BY accounts.external_account_id")
-    List<String> findExternalAccountIdStringsByClientId(@Param("clientId") Long clientId);
+    // null when the user has no client yet
+    @Select("SELECT clients.external_client_id FROM clients "
+            + "JOIN users ON users.client_id = clients.client_id "
+            + "WHERE users.user_id = #{userId}")
+    UUID findExternalClientIdByUserId(@Param("userId") Long userId);
 
-    default List<UUID> findExternalAccountIdsByClientId(Long clientId) {
-        return findExternalAccountIdStringsByClientId(clientId).stream()
-                .map(UUID::fromString)
-                .toList();
-    }
+    @Select("SELECT accounts.external_account_id FROM accounts "
+            + "JOIN client_accounts ON accounts.account_id = client_accounts.account_id "
+            + "WHERE client_accounts.client_id = #{clientId} "
+            + "ORDER BY accounts.external_account_id")
+    List<UUID> findExternalAccountIdsByClientId(@Param("clientId") Long clientId);
 
     @Select("SELECT " + COLUMNS + " FROM clients")
     List<Client> findAll();
