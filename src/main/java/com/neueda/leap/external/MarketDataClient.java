@@ -13,6 +13,7 @@ public interface MarketDataClient {
     // a ticker with no price right now is left out of the map
     Map<String, PriceQuote> getPrices(Collection<String> tickers);
 
-    // name and type of a symbol, or null if the market data API doesn't know it
+    // name and type of a symbol, or null if the market data API doesn't know it; throws if it can't say right now
+    // (e.g. the symbol is still being fetched)
     SymbolInfo getSymbol(String symbol);
 }

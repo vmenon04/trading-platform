@@ -124,7 +124,7 @@ public class InstrumentService {
         try {
             Map<String, BigDecimal> prices = new HashMap<>();
             marketDataClient.getPrices(tickers).forEach((ticker, quote) -> {
-                if (quote.price().compareTo(BigDecimal.ZERO) > 0) {
+                if (quote.price() != null && quote.price().compareTo(BigDecimal.ZERO) > 0) {
                     prices.put(ticker, quote.price());
                 }
             });
