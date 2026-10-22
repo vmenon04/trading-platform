@@ -10,14 +10,25 @@ servers:
 paths:
   /instruments:
     get:
-      summary: List instruments
+      summary: List instruments, or look one up by symbol
+      description: >
+        Without search: every instrument looked up or traded so far, sorted by ticker. With search: that symbol,
+        looked up in the catalogue and then the market data API (which adds it to the catalogue), or an empty list if
+        the symbol is unknown. Prices are for showing: a stale quote keeps its last known price, and price is null
+        when there is no price right now (orders are priced separately and reject stale quotes).
       tags: [instruments]
-      parameters: []
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: A symbol, case-insensitive, e.g. ORCL or BTC-USD
+          schema:
+            type: string
       security:
         - bearerAuth: []
       responses:
         '200':
-          description: List of instruments
+          description: Instruments with their current price
           content:
             application/json:
               schema:
@@ -25,35 +36,29 @@ paths:
                 items:
                   $ref: '#/components/schemas/Instrument'
               example:
-                - instrument_id: 44
+                - instrumentId: 44
                   ticker: "AAPL"
                   name: "Apple Inc."
                   price: 151.23
-                - instrument_id: 12
-                  ticker: "MSFT"
-                  name: "Microsoft Corp."
-                  price: 305.40
+                  assetClass: "STOCK"
+                - instrumentId: 12
+                  ticker: "BTC-USD"
+                  name: "Bitcoin"
+                  price: null
+                  assetClass: "CRYPTO"
         '401':
           description: Unauthorized
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
 
 components:
   schemas:
     Instrument:
       type: object
-      required: [instrument_id, ticker, name, price]
+      required: [instrumentId, ticker, name, assetClass]
       properties:
-        instrument_id:
+        instrumentId:
           type: integer
+          format: int64
+          description: The id to trade the instrument with
         ticker:
           type: string
         name:
@@ -61,19 +66,14 @@ components:
         price:
           type: number
           format: double
-
-    ErrorResponse:
-      type: object
-      required: [error, message]
-      properties:
-        error:
+          nullable: true
+          description: Current price, the last known one if the quote is stale; null when there is none right now
+        assetClass:
           type: string
-        message:
-          type: string
+          enum: [STOCK, ETF, FOREX, CRYPTO, BOND]
 
   securitySchemes:
     bearerAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-
