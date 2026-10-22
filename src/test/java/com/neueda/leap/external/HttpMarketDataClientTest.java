@@ -151,10 +151,10 @@ class HttpMarketDataClientTest {
                 """.formatted(symbol, stale, symbol, price);
     }
 
-    private static String batchError(String symbol) {
+    private static String batchError(String symbol, String code) {
         return """
-                {"symbol": "%s", "error": {"code": "SYMBOL_NOT_FOUND", "message": "Unknown", "details": {}}}
-                """.formatted(symbol);
+                {"symbol": "%s", "error": {"code": "%s", "message": "Error", "details": {}}}
+                """.formatted(symbol, code);
     }
 
     @Test
@@ -174,16 +174,30 @@ class HttpMarketDataClientTest {
 
     // prices for display: a stale quote keeps its last known price, marked stale
     @Test
-    void getPrices_keepsStaleQuotesMarkedStaleAndLeavesOutErroredSymbols() {
+    void getPrices_keepsStaleQuotesMarkedStale() {
         server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
-                .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", true),
-                        batchError("NOPE")), MediaType.APPLICATION_JSON));
+                .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", true)),
+                        MediaType.APPLICATION_JSON));
 
-        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "MSFT", "NOPE"));
+        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "MSFT"));
 
-        assertEquals(Set.of("AAPL", "MSFT"), prices.keySet());
         assertFalse(prices.get("AAPL").stale());
         assertTrue(prices.get("MSFT").stale());
+    }
+
+    // an unknown symbol comes back with no price, so the cache can remember it; a symbol that is only
+    // being fetched right now (or failed another way) is left out, to be asked for again
+    @Test
+    void getPrices_unknownSymbolHasNoPriceAndOtherErrorsAreLeftOut() {
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false),
+                        batchError("NOPE", "SYMBOL_NOT_FOUND"), batchError("NEWCO", "BACKFILL_IN_PROGRESS")),
+                        MediaType.APPLICATION_JSON));
+
+        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "NOPE", "NEWCO"));
+
+        assertEquals(Set.of("AAPL", "NOPE"), prices.keySet());
+        assertNull(prices.get("NOPE").price());
     }
 
     @Test
@@ -222,6 +236,15 @@ class HttpMarketDataClientTest {
                         .contentType(MediaType.APPLICATION_JSON).body(errorJson("SYMBOL_NOT_FOUND")));
 
         assertNull(client.getSymbol("NOPE"));
+    }
+
+    // not "unknown": it will be known once Fauxnance has fetched it, so the cache mustn't remember it as unknown
+    @Test
+    void getSymbol_stillBeingFetched_throws() {
+        server.expect(requestTo(BASE_URL + "/symbols/NEWCO"))
+                .andRespond(withStatus(HttpStatus.ACCEPTED));
+
+        assertThrows(IllegalStateException.class, () -> client.getSymbol("NEWCO"));
     }
 
     @Test

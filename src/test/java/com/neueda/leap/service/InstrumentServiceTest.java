@@ -134,6 +134,14 @@ class InstrumentServiceTest {
                 instrumentService.getCurrentPrices(List.of("AAPL", "MSFT", "AAPL")));
     }
 
+    // the caching client leaves unknown symbols out, but a quote with no price must never break the listing
+    @Test
+    void getCurrentPricesSkipsQuotesWithNoPrice() {
+        when(marketDataClient.getPrices(List.of("NOPE"))).thenReturn(Map.of("NOPE", new PriceQuote(null, false)));
+
+        assertEquals(Map.of(), instrumentService.getCurrentPrices(List.of("NOPE")));
+    }
+
     // getCurrentPrices is for showing prices, so a stale quote still shows its last known price
     @Test
     void getCurrentPricesKeepsStalePrices() {
