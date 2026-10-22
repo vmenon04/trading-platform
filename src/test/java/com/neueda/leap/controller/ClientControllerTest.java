@@ -3,12 +3,17 @@ package com.neueda.leap.controller;
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.dto.AccountDTO;
 import com.neueda.leap.service.ClientService;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
@@ -33,7 +38,25 @@ class ClientControllerTest {
 
     @BeforeEach
     void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(clientController).build();
+        mockMvc = MockMvcBuilders.standaloneSetup(clientController)
+                .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
+                .build();
+        // @AuthenticationPrincipal reads the logged-in user from the security context; who may see which
+        // client (@PreAuthorize) is tested in OwnershipAuthorizationTest
+        SecurityContextHolder.getContext().setAuthentication(loggedInAs(42L));
+    }
+
+    @AfterEach
+    void clearSecurityContext() {
+        SecurityContextHolder.clearContext();
+    }
+
+    private static JwtAuthenticationToken loggedInAs(Long userId) {
+        Jwt jwt = Jwt.withTokenValue("token")
+                .header("alg", "none")
+                .claim("sub", userId.toString())
+                .build();
+        return new JwtAuthenticationToken(jwt);
     }
 
     @Test

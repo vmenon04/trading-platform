@@ -118,14 +118,8 @@ class AccountControllerTest {
         verify(accountService).deposit(ACCOUNT_ID, new BigDecimal("250.50"));
     }
 
-    @Test
-    void deposit_accountOwnedBySomeoneElse_returns403AndDepositsNothing() throws Exception {
-        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
-
-        postDeposit().andExpect(status().isForbidden());
-
-        verify(accountService, never()).deposit(any(), any());
-    }
+    // depositing into someone else's account (the @PreAuthorize ownership check) is tested in
+    // OwnershipAuthorizationTest: this plain MockMvc setup doesn't apply @PreAuthorize
 
     @Test
     void deposit_unknownAccount_returns404() throws Exception {
