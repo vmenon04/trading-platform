@@ -164,6 +164,7 @@ class AccountControllerTest {
     void getSummary_returnsCashBalance() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("0.00"));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
@@ -241,11 +242,8 @@ class AccountControllerTest {
     void getSummary_costBasisIsWhatWasPaidForTheSharesStillHeld() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
-        // bought 10 for 1500 (the trade() fixture), then sold 4: 6 left at an average of 150 = 900
-        AccountTrade sell = new AccountTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.SELL, new BigDecimal("4"),
-                new BigDecimal("160.00"), new BigDecimal("640.00"));
-        sell.setTradeStatus(TradeStatus.FULFILLED);
-        when(accountTradeMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(trade(ACCOUNT_ID, TradeSide.BUY), sell));
+        // how it's worked out is tested in AccountServiceTest
+        when(accountService.getCostBasis(ACCOUNT_ID)).thenReturn(new BigDecimal("900.00"));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
