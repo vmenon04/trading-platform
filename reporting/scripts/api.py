@@ -16,6 +16,12 @@ The type written next to each parameter is enforced before our code runs:
 - `Period` (below) only allows the five words listed, so "hour" or "1; DROP TABLE" is rejected.
 - `Query(ge=1)` means "greater than or equal to 1".
 Anything that doesn't fit gets an automatic "422 Unprocessable Entity" error.
+
+Who may call what
+-----------------
+Every /api/... address needs a login token (see auth.py). `dependencies=[ANALYST_OR_ADMIN]`
+on an endpoint lets analysts and admins in; `dependencies=[ADMIN]` only admins.
+Logging in itself (/api/auth/...) is the one thing that works without a token.
 """
 import json
 import math
@@ -27,8 +33,10 @@ import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 
 import transform as tf
+from auth import ADMIN, ANALYST_OR_ADMIN, call_auth_service, staff_tokens
 from database_connection import REPORTING_DIR, get_analytics_engine
 
 MAX_ROWS = 50                      # the most rows any endpoint returns at once
@@ -93,10 +101,37 @@ def chart_filters(
 
 
 # ---------------------------------------------------------------------------
+# Logging in (the only endpoints that work without a token)
+# ---------------------------------------------------------------------------
+
+class Login(BaseModel):
+    username: str
+    password: str
+
+
+class Refresh(BaseModel):
+    refreshToken: str
+
+
+@app.post("/api/auth/login")
+def login(body: Login):
+    """Checks the password with auth-service; returns its tokens and the user's roles."""
+    status, tokens = call_auth_service("/auth/login", {"username": body.username, "password": body.password})
+    return staff_tokens(status, tokens, "Wrong username or password")
+
+
+@app.post("/api/auth/refresh")
+def refresh(body: Refresh):
+    """Swaps a refresh token for a new pair; each refresh token works only once."""
+    status, tokens = call_auth_service("/auth/refresh", {"refreshToken": body.refreshToken})
+    return staff_tokens(status, tokens, "Your session has ended; log in again")
+
+
+# ---------------------------------------------------------------------------
 # Used by every page
 # ---------------------------------------------------------------------------
 
-@app.get("/api/status")
+@app.get("/api/status", dependencies=[ANALYST_OR_ADMIN])
 def status():
     """When the data was last synced, and the default date range for the pages."""
     sync = tf.last_sync(engine)
@@ -118,17 +153,17 @@ def status():
     }
 
 
-@app.get("/api/asset-classes")
+@app.get("/api/asset-classes", dependencies=[ANALYST_OR_ADMIN])
 def asset_classes():
     return tf.asset_classes(engine)
 
 
-@app.get("/api/clients")
+@app.get("/api/clients", dependencies=[ANALYST_OR_ADMIN])
 def search_clients(q: str, limit: int = 20):
     return to_json(tf.search_clients(engine, q.strip(), cap(limit)))
 
 
-@app.get("/api/instruments")
+@app.get("/api/instruments", dependencies=[ANALYST_OR_ADMIN])
 def search_instruments(q: str, asset_class: str | None = None, limit: int = 20):
     return to_json(tf.search_instruments(engine, q.strip(), cap(limit), asset_class))
 
@@ -137,37 +172,37 @@ def search_instruments(q: str, asset_class: str | None = None, limit: int = 20):
 # Analyst pages: charts
 # ---------------------------------------------------------------------------
 
-@app.get("/api/analyst/volume")
+@app.get("/api/analyst/volume", dependencies=[ANALYST_OR_ADMIN])
 def volume(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.trade_volume_by_period(engine, filters, period))
 
 
-@app.get("/api/analyst/buy-sell")
+@app.get("/api/analyst/buy-sell", dependencies=[ANALYST_OR_ADMIN])
 def buy_sell(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.volume_by_trade_type(engine, filters, period))
 
 
-@app.get("/api/analyst/price")
+@app.get("/api/analyst/price", dependencies=[ANALYST_OR_ADMIN])
 def price(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.price_by_period(engine, filters, period))
 
 
-@app.get("/api/analyst/by-asset-class")
+@app.get("/api/analyst/by-asset-class", dependencies=[ANALYST_OR_ADMIN])
 def by_asset_class(filters=Depends(chart_filters)):
     return to_json(tf.volume_by_asset_class(engine, filters))
 
 
-@app.get("/api/analyst/top-clients")
+@app.get("/api/analyst/top-clients", dependencies=[ANALYST_OR_ADMIN])
 def top_clients(filters=Depends(chart_filters), limit: int = 10):
     return to_json(tf.top_clients(engine, filters, cap(limit)))
 
 
-@app.get("/api/analyst/top-instruments")
+@app.get("/api/analyst/top-instruments", dependencies=[ANALYST_OR_ADMIN])
 def top_instruments(filters=Depends(chart_filters), limit: int = 10):
     return to_json(tf.top_instruments(engine, filters, cap(limit)))
 
 
-@app.get("/api/analyst/portfolios")
+@app.get("/api/analyst/portfolios", dependencies=[ANALYST_OR_ADMIN])
 def portfolios(
     client_id: int | None = None,
     min_value: float | None = Query(default=None, ge=0),
@@ -189,12 +224,12 @@ def portfolios(
     }
 
 
-@app.get("/api/analyst/portfolio-tiers")
+@app.get("/api/analyst/portfolio-tiers", dependencies=[ANALYST_OR_ADMIN])
 def portfolio_tiers():
     return to_json(tf.portfolio_tiers(engine))
 
 
-@app.get("/api/analyst/trades")
+@app.get("/api/analyst/trades", dependencies=[ANALYST_OR_ADMIN])
 def recent_trades(
     client_id: int | None = None,
     asset_class: str | None = None,
@@ -210,7 +245,7 @@ def recent_trades(
 # Admin page: order history
 # ---------------------------------------------------------------------------
 
-@app.get("/api/admin/orders")
+@app.get("/api/admin/orders", dependencies=[ADMIN])
 def orders(
     trade_id: int | None = None,
     client_id: int | None = None,
@@ -252,7 +287,7 @@ def orders(
     }
 
 
-@app.get("/api/admin/orders/{trade_id}/history")
+@app.get("/api/admin/orders/{trade_id}/history", dependencies=[ADMIN])
 def order_status_history(trade_id: int):
     df = tf.order_status_history(engine, trade_id)
     if df.empty:
@@ -264,12 +299,13 @@ def order_status_history(trade_id: int):
 # The Angular web pages
 #
 # Angular is a "single page app": index.html is the only real page, and Angular
-# itself decides what to show for /analyst, /analyst/clients or /admin. So each of
+# itself decides what to show for /login, /analyst, /analyst/clients or /admin. So each of
 # those addresses just gets index.html, and every other file (the .js and .css
 # files) is served straight from the build folder.
 # ---------------------------------------------------------------------------
 
 if WEB_BUILD.exists():
+    @app.get("/login")
     @app.get("/analyst")
     @app.get("/analyst/{page}")
     @app.get("/admin")

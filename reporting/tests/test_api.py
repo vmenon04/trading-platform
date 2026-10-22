@@ -4,13 +4,20 @@ TestClient sends pretend web requests to the app, without starting a real server
 There's no database in tests, so any transform function an endpoint needs is
 swapped for a fake with monkeypatch.
 """
+import time
+
+import jwt
 import pandas as pd
 import pytest
 from fastapi.testclient import TestClient
 
 import api
+import auth
 
-client = TestClient(api.app)
+# an admin may call every endpoint; who may call what is tested in test_auth.py
+ADMIN_TOKEN = jwt.encode({"sub": "1", "roles": ["ADMIN"], "exp": int(time.time()) + 3600},
+                         auth.SECRET, algorithm="HS256")
+client = TestClient(api.app, headers={"Authorization": f"Bearer {ADMIN_TOKEN}"})
 
 DATES = "start=2026-01-01&end=2026-02-01"   # given in full so the API doesn't ask the database for defaults
 
