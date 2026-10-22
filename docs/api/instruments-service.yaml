@@ -12,16 +12,17 @@ paths:
     get:
       summary: List instruments, or look one up by symbol
       description: >
-        Without search: every instrument looked up or traded so far, sorted by ticker. With search: that symbol,
-        looked up in the catalogue and then the market data API (which adds it to the catalogue), or an empty list if
-        the symbol is unknown. Prices are for showing: a stale quote keeps its last known price, and price is null
-        when there is no price right now (orders are priced separately and reject stale quotes).
+        Without search: every instrument in the database, sorted by ticker. With search: that symbol, looked up in the
+        database and then the market data API (which adds it to the database), or an empty list if the symbol is
+        unknown. Crypto symbols are Fauxnance's, e.g. X:BTC-USD (a bare BTC is a different, stock symbol). Prices
+        are for showing: a stale quote keeps its last known price, and price is null when there is no price right now
+        (orders are priced separately and reject stale quotes).
       tags: [instruments]
       parameters:
         - name: search
           in: query
           required: false
-          description: A symbol, case-insensitive, e.g. ORCL or BTC-USD
+          description: A Fauxnance symbol, case-insensitive, e.g. ORCL or X:BTC-USD
           schema:
             type: string
       security:
@@ -42,7 +43,7 @@ paths:
                   price: 151.23
                   assetClass: "STOCK"
                 - instrumentId: 12
-                  ticker: "BTC-USD"
+                  ticker: "X:BTC-USD"
                   name: "Bitcoin"
                   price: null
                   assetClass: "CRYPTO"

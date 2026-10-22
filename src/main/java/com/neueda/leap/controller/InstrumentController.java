@@ -26,14 +26,14 @@ public class InstrumentController {
         this.instrumentCatalog = instrumentCatalog;
     }
 
-    // Instruments from the catalogue in Redis, each with its current price (Redis first, then the API in batches).
-    // Without search: every instrument looked up or traded so far. With search=ORCL: that symbol, looked up in
-    // Redis and then the market data API (which adds it to the catalogue), or an empty list if it's unknown.
+    // Instruments with their price to show (cached in Redis, then the API in batches; the last known price if there's
+    // no fresh one). Without search: every instrument in the database. With search=ORCL: that symbol, looked up in
+    // the database and then the market data API (which adds it to the database), or an empty list if it's unknown.
     @GetMapping
     public ResponseEntity<List<InstrumentResponseDTO>> getInstruments(@RequestParam(required = false) String search) {
         List<CatalogInstrument> instruments;
         if (search == null || search.isBlank()) {
-            instruments = instrumentCatalog.known();
+            instruments = instrumentCatalog.all();
         } else {
             CatalogInstrument found = instrumentCatalog.lookup(search);
             instruments = found == null ? List.of() : List.of(found);

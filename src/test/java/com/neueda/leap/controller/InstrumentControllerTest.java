@@ -49,7 +49,7 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_listsTheCatalogueWithCurrentPrices() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of(APPLE, BITCOIN));
+        when(instrumentCatalog.all()).thenReturn(List.of(APPLE, BITCOIN));
         when(instrumentService.getCurrentPrices(List.of("AAPL", "BTC-USD"))).thenReturn(Map.of(
                 "AAPL", new BigDecimal("189.50"), "BTC-USD", new BigDecimal("64000.00")));
 
@@ -69,7 +69,7 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_instrumentWithoutPrice_isStillListedWithNullPrice() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of(APPLE, BITCOIN));
+        when(instrumentCatalog.all()).thenReturn(List.of(APPLE, BITCOIN));
         when(instrumentService.getCurrentPrices(List.of("AAPL", "BTC-USD"))).thenReturn(Map.of("AAPL", new BigDecimal("189.50")));
 
         mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
@@ -81,7 +81,7 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_emptyCatalogue_returnsEmptyList() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of());
+        when(instrumentCatalog.all()).thenReturn(List.of());
         when(instrumentService.getCurrentPrices(List.of())).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
@@ -101,7 +101,7 @@ class InstrumentControllerTest {
                 .andExpect(jsonPath("$[0].instrumentId").value(22))
                 .andExpect(jsonPath("$[0].ticker").value("ORCL"))
                 .andExpect(jsonPath("$[0].price").value(130.16));
-        verify(instrumentCatalog, never()).known();
+        verify(instrumentCatalog, never()).all();
     }
 
     @Test
