@@ -55,6 +55,15 @@ export class AuthService {
         return this.rotateTokenPair(user, refreshToken);
     }
 
+    async logout(refreshToken: string): Promise<{ loggedOut: true }> {
+        const user = await this.findByRefreshToken(refreshToken);
+        if (!user) {
+            throw new UnauthorizedException("invalid or expired refresh token");
+        }
+        await this.tokenRepository.revokeByHash(this.hashRefreshToken(refreshToken));
+        return { loggedOut: true };
+    }
+
     private issueAccessToken(userId: bigint, roles: string[]): string {
         return jwt.sign({ sub: userId.toString(), roles }, this.getJwtSecret(), {
             algorithm: "HS256",
@@ -105,12 +114,10 @@ export class AuthService {
 
     private async findByRefreshToken(refreshToken: string): Promise<UserRecord | null> {
         const hashedToken = this.hashRefreshToken(refreshToken);
-
         const token = await this.tokenRepository.findActiveByHash(hashedToken);
         if (!token) {
             return null;
         }
-
         const user = await this.userRepository.findById(token.userId);
         if (!user) {
             return null;
