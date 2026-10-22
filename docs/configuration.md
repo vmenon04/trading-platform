@@ -15,6 +15,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | | 8086 | Redis Insight, web UI for Redis (`trading-redis-insight`, `tools` profile only) |
 | | 8087 | Kafbat UI, web UI for Kafka (`trading-kafka-ui`, `tools` profile only) |
 | | 8088 | Adminer, web UI for Postgres (`trading-adminer`, `tools` profile only) |
+| | 8089 | Web app (`trading-frontend`, nginx → 80 inside): platform-ui, plus `/v1`, `/auth` and `/api` forwarded to the trade API, auth-service and the reporting API |
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
@@ -25,13 +26,17 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Service | Image | Does |
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
-| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) once, only when its volume is empty |
+| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) + `reporting/analytics_database.sql` (creates the `analytics` database) once, only when its volume is empty |
 | `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
 | `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
 | `execution` | same | `trade.recorded` → `trade.finished` |
+| `frontend` | `trading-platform-frontend` (built from `platform-ui/Dockerfile`) | The web app (nginx); forwards `/v1`, `/auth` and `/api` to `api`, `auth-service` and `reporting-api` |
+| `reporting-api` | `trading-platform-reporting` (built from `reporting/Dockerfile`) | The analyst and admin pages' API (`api.py`); checks login tokens with `JWT_SHARED_SECRET`. Not published: reached through `frontend` at `/api` |
+| `reporting-sync` | same | `sync.py` every hour: copies the trading database into `analytics` (everything the first time) |
+| `reporting-consumer` | same | `consumer.py`: adds trades to `analytics` as they happen, from `trade.recorded` and `trade.finished` |
 | `redis-insight` | `redis/redisinsight:3.8` | Web UI for Redis, already connected to `redis`. `tools` profile only |
 | `kafka-ui` | `ghcr.io/kafbat/kafka-ui:v1.5.0` | Web UI for Kafka topics, messages and consumer groups (read-only). `tools` profile only |
 | `adminer` | `adminer:6.1.2` | Web UI for Postgres: browse tables, run SQL. Log in with `POSTGRES_USER` / `POSTGRES_PASSWORD`. `tools` profile only |
@@ -54,7 +59,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app and the reporting API) with, at least 32 characters |
 | `AUTH_PORT` | Host port for auth-service (`8084`) |
 | `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT`, `ADMINER_PORT` | Host ports for the web UIs (`8086`, `8087`, `8088`) |
-| `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |
+| `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting run by hand (`reporting/scripts`): trading database (read-only) and analytics database. Compose sets both itself from the Postgres settings |
 
 ### Environment variables set on the app containers
 
