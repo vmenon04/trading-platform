@@ -1,0 +1,16 @@
+.app-shell {
+	display: flex;
+	min-height: 100vh;
+	background: #f3f6f4;
+}
+
+.app-content {
+	flex: 1;
+	min-width: 0;
+}
+
+@media (max-width: 640px) {
+	.app-shell {
+		display: block;
+	}
+}

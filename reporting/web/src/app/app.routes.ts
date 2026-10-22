@@ -1,11 +1,9 @@
 import { Component } from '@angular/core';
 import { Routes } from '@angular/router';
 
-import { requireRole } from './core/auth.guard';
 import { AdminPage } from './pages/admin';
 import { ClientsPage } from './pages/clients';
 import { InstrumentsPage } from './pages/instruments';
-import { LoginPage } from './pages/login';
 import { AreaLayout } from './shared/area-layout';
 
 /** Any address outside the two areas. Deliberately links to neither. */
@@ -16,14 +14,10 @@ import { AreaLayout } from './shared/area-layout';
 class NotFoundPage {}
 
 // Two separate areas. Each has its own layout and tabs, and neither links to the other.
-// Analysts and admins may use the analyst area; only admins the admin area (the API checks the same).
 export const routes: Routes = [
-  { path: '', redirectTo: 'login', pathMatch: 'full' },
-  { path: 'login', component: LoginPage, title: 'Log in · F-Trade Analytics' },
   {
     path: 'analyst',
     component: AreaLayout,
-    canActivate: [requireRole('ANALYST', 'ADMIN')],
     data: {
       area: 'Analyst',
       links: [
@@ -40,7 +34,6 @@ export const routes: Routes = [
   {
     path: 'admin',
     component: AreaLayout,
-    canActivate: [requireRole('ADMIN')],
     data: { area: 'Admin' },
     children: [
       { path: '', component: AdminPage, title: 'Order history · F-Trade Admin' },

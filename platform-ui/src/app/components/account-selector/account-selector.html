@@ -1,0 +1,45 @@
+<section class="account-selector">
+  <button type="button" class="account-trigger" (click)="toggle()" [attr.aria-expanded]="isOpen" aria-haspopup="listbox">
+    <span class="account-icon">▥</span>
+    <span class="account-copy">
+      <strong>{{ accountType }}</strong>
+      <small>{{ selectedLabel() }}</small>
+    </span>
+    <span class="account-chevron" [class.open]="isOpen" aria-hidden="true">⌄</span>
+  </button>
+
+  @if (isOpen) {
+    <div class="account-menu" role="listbox" aria-label="Investment accounts">
+      @for (option of account.accounts(); track option.accountId) {
+        <button type="button" class="account-option" [class.selected]="option.accountId === account.accountId()" (click)="selectAccount(option.accountId)" role="option" [attr.aria-selected]="option.accountId === account.accountId()">
+          <span class="account-icon">▥</span>
+          <span class="account-copy"><strong>{{ accountType }}</strong><small>{{ accountNumber(option.accountId) }}</small></span>
+        </button>
+      } @empty {
+        <p class="account-empty">No trading account yet</p>
+      }
+      @if (account.accounts().length > 0) {
+        <button type="button" class="account-option open-account" (click)="askToOpenAccount()">
+          <span class="account-icon">+</span>
+          <span class="account-copy"><strong>Open new account</strong><small>{{ accountType }}</small></span>
+        </button>
+      }
+    </div>
+  }
+</section>
+
+@if (confirming()) {
+  <div class="dialog-backdrop" (click)="cancelOpenAccount()" (keydown.escape)="cancelOpenAccount()">
+    <section class="confirm-dialog" role="alertdialog" aria-modal="true" aria-labelledby="open-account-title" aria-describedby="open-account-text" (click)="$event.stopPropagation()">
+      <h2 id="open-account-title">Open a new account?</h2>
+      <p id="open-account-text">This opens another {{ accountType }} account. It starts with $0.00, and you can switch between your accounts from this menu.</p>
+      @if (openError()) {
+        <p class="confirm-error" role="alert">{{ openError() }}</p>
+      }
+      <div class="dialog-actions">
+        <button type="button" (click)="cancelOpenAccount()" [disabled]="opening()">Cancel</button>
+        <button type="button" class="primary" (click)="confirmOpenAccount()" [disabled]="opening()" autofocus>{{ opening() ? 'Opening…' : 'Yes, open account' }}</button>
+      </div>
+    </section>
+  </div>
+}

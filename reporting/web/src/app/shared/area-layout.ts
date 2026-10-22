@@ -1,7 +1,6 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
-import { AuthService } from '../core/auth.service';
 import { dateTime, minutesAgo } from '../core/format';
 import { StatusService } from '../core/status.service';
 
@@ -30,7 +29,6 @@ export interface AreaLink {
         </nav>
       }
       <p class="freshness" [class.stale]="stale()">{{ freshness() }}</p>
-      <button type="button" (click)="auth.logout()">Log out</button>
     </header>
     <router-outlet />
   `,
@@ -54,7 +52,6 @@ export class AreaLayout {
   // the router sets an input missing from the route data to undefined, so default it here
   readonly links = input<AreaLink[], AreaLink[] | undefined>([], { transform: (links) => links ?? [] });
 
-  protected readonly auth = inject(AuthService);
   private readonly status = inject(StatusService).status;
 
   protected readonly stale = computed(() => !this.status.hasValue() || this.status.value().stale);

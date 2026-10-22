@@ -25,6 +25,10 @@ public interface InstrumentMapper {
     @Select("SELECT " + COLUMNS + " FROM instruments WHERE ticker = #{ticker}")
     Instrument findByTicker(String ticker);
 
+    // the id an instrument already has in our database, or null; the oldest row if a ticker appears twice
+    @Select("SELECT instrument_id FROM instruments WHERE ticker = #{ticker} ORDER BY instrument_id LIMIT 1")
+    Long findIdByTicker(String ticker);
+
     @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType})")
     @Options(useGeneratedKeys = true, keyProperty = "instrumentId", keyColumn = "instrument_id")
     void insert(Instrument instrument);

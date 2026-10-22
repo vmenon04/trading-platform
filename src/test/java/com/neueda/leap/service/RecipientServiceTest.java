@@ -4,6 +4,7 @@ import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.external.MarketDataClient;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -23,7 +24,9 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,6 +83,21 @@ class RecipientServiceTest {
         verify(tradeEventProducer).publishTradeSubmitted(captor.capture());
         assertEquals("/api/accounts/123/trades/" + captor.getValue().externalTradeId(),
                 response.getHeaders().getLocation().getPath());
+    }
+
+    @Test
+    void publishOrder_noMarketPrice_throwsInvalidTradeAndPublishesNothing() {
+        TradeRequestDTO dto = new TradeRequestDTO(UUID.randomUUID(), 22L, TradeSide.BUY, new BigDecimal("1"));
+        when(tradeAuthorizationService.isValidUserId(dto, 1L)).thenReturn(true);
+        Instrument instrument = new Instrument();
+        instrument.setTicker("ORCL");
+        when(instrumentService.getInstrumentById(22L)).thenReturn(instrument);
+        when(marketDataClient.getPrice("ORCL")).thenReturn(null);
+
+        InvalidTradeException e = assertThrows(InvalidTradeException.class, () -> recipientService.publishOrder(dto, 1L));
+
+        assertEquals("No current market price for ORCL. Try again in a moment.", e.getMessage());
+        verifyNoInteractions(tradeEventProducer);
     }
 
     @Test

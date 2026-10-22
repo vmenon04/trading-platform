@@ -1,0 +1,24 @@
+.page-header { display: flex; justify-content: space-between; align-items: center; min-height: 76px; padding: 0 36px; border-bottom: 1px solid var(--line); background: var(--surface); }.page-header h1 { margin: 0 0 4px; font-size: 1rem; }.page-header span { color: var(--muted); font-size: 0.65rem; }.market-status { padding: 9px 12px; border-radius: 9px; background: var(--green-soft); color: var(--green) !important; }
+.portfolio-page { display: grid; gap: 20px; max-width: 1100px; margin: 0 auto; padding: 38px 36px; }.portfolio-intro { display: flex; justify-content: space-between; align-items: end; gap: 20px; }.eyebrow { display: block; color: var(--green); font-size: 0.68rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; }.portfolio-intro strong { display: block; margin-top: 10px; font-size: 2rem; letter-spacing: -0.04em; }.portfolio-intro p { margin: 8px 0 0; color: var(--muted); font-size: 0.75rem; }.portfolio-intro p b { margin-left: 8px; color: var(--green); }.intro-actions { display: flex; gap: 10px; }.intro-actions button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; }.intro-actions button.primary { border-color: var(--green); background: var(--green); color: #fff; }.metrics-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+@media (max-width: 720px) { .portfolio-page { padding: 24px 18px; }.portfolio-intro { align-items: start; flex-direction: column; }.metrics-grid { grid-template-columns: 1fr; }.page-header { padding: 0 18px; } }
+.intro-actions button, .dialog-actions button, .quick-amounts button, .open-account-form button { cursor: pointer; }
+.load-error, .form-error { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--red-soft); color: var(--red); font-size: 0.75rem; }
+.deposit-success { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--green-soft); color: var(--green); font-size: 0.75rem; font-weight: 700; }
+.open-account { display: grid; gap: 10px; max-width: 520px; padding: 24px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.open-account h2 { margin: 0; font-size: 1.1rem; }
+.open-account p { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.open-account-form { display: grid; gap: 12px; margin-top: 6px; }
+.open-account-form label, .deposit-dialog label { display: grid; gap: 4px; color: var(--ink); font-size: 0.75rem; font-weight: 700; }
+.open-account-form input, .deposit-dialog input { min-height: 38px; padding: 0 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font: inherit; }
+.open-account-form button.primary, .dialog-actions button.primary { min-height: 40px; padding: 0 16px; border: 1px solid var(--green); border-radius: 9px; background: var(--green); color: #fff; font-weight: 700; }
+button:disabled { opacity: 0.6; cursor: wait; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: #10231d66; }
+.deposit-dialog { display: grid; gap: 12px; width: min(420px, 100%); padding: 24px; border-radius: var(--radius); background: var(--surface); box-shadow: 0 20px 50px #10231d33; }
+.deposit-dialog h2 { margin: 0; font-size: 1.1rem; }
+.deposit-dialog p { margin: 0; color: var(--muted); font-size: 0.8rem; }
+.deposit-dialog form { display: grid; gap: 12px; }
+.deposit-dialog input { min-height: 44px; font-size: 1.1rem; }
+.quick-amounts { display: flex; gap: 8px; }
+.quick-amounts button { flex: 1; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 700; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
+.dialog-actions button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; }

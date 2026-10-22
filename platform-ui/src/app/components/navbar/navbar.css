@@ -1,0 +1,146 @@
+:host {
+  display: block;
+  flex: 0 0 clamp(180px, 15vw, 240px);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: var(--color-navigation);
+}
+
+.navbar-brand {
+  display: flex;
+  justify-content: center;
+  padding: 4px 4px 18px;
+}
+
+.navbar-brand:hover,
+.navbar-brand.active {
+  background: transparent;
+}
+
+.navbar-brand img {
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+}
+
+app-account-selector {
+  margin-bottom: 10px;
+}
+
+.navbar a {
+  padding: 12px 14px;
+  border-radius: 4px;
+  color: #b9cec5;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.navbar a:hover,
+.navbar a.active {
+  background: #245443;
+  color: #ffffff;
+}
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+  padding: 12px 6px 0;
+  border: 0;
+  border-top: 1px solid #ffffff1f;
+  background: transparent;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-section { padding: 0 14px 4px; color: #8be7c5; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.profile-button.staff { cursor: default; }
+
+.profile-avatar { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #dcebe5; color: var(--color-navigation); font-size: 0.68rem; font-weight: 700; }
+.profile-copy { display: grid; flex: 1; gap: 3px; }.profile-copy strong { font-size: 0.72rem; }.profile-copy small { color: #8eaaa0; font-size: 0.58rem; }.profile-arrow { font-size: 0.9rem; }
+
+.easter-egg {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 1000;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--color-navigation);
+  box-shadow: 0 8px 24px #10231d40;
+  color: #8be7c5;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: easter-egg-in 240ms ease-out;
+}
+
+@keyframes easter-egg-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 640px) {
+  :host {
+    flex-basis: auto;
+  }
+
+  .navbar {
+    position: static;
+    min-height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .navbar-brand {
+    flex: 0 0 100%;
+    padding: 2px 4px 8px;
+  }
+
+  .navbar-brand img {
+    width: 80px;
+  }
+
+  .navbar a {
+    padding: 9px 10px;
+    font-size: 0.85rem;
+  }
+
+  .profile-button { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
+}
+
+.logout-button {
+  padding: 12px 14px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #b9cec5;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.logout-button:hover {
+  background: #245443;
+  color: #ffffff;
+}

@@ -1,1 +1,57 @@
-<p>portfolio works!</p>
+<header class="page-header"><div><h1>Portfolio</h1><span>Your investment overview</span></div><span class="market-status">● Markets open</span></header>
+<main class="portfolio-page">
+	@if (account.hasNoAccount()) {
+		<section class="open-account">
+			<h2>Open your trading account</h2>
+			<p>Your login is set up. Add your details to open a practice trading account, then deposit funds to start trading.</p>
+			<form class="open-account-form" (ngSubmit)="openAccount()" novalidate>
+				<label>First name<input name="firstName" [(ngModel)]="firstName" autocomplete="given-name"></label>
+				<label>Last name<input name="lastName" [(ngModel)]="lastName" autocomplete="family-name"></label>
+				<label>Email<input name="email" type="email" [(ngModel)]="email" autocomplete="email"></label>
+				<label>Birth date<input name="birthDate" type="date" [(ngModel)]="birthDate"></label>
+				@if (openError()) {
+					<p class="form-error" role="alert">{{ openError() }}</p>
+				}
+				<button type="submit" class="primary" [disabled]="opening()">{{ opening() ? 'Opening…' : 'Open account' }}</button>
+			</form>
+		</section>
+	} @else {
+		@if (account.client.error() || account.summary.error()) {
+			<p class="load-error">Couldn't load your account. Is the backend running?</p>
+		}
+		@if (depositSuccess()) {
+			<p class="deposit-success" role="status">{{ depositSuccess() }}</p>
+		}
+		<section class="portfolio-intro"><div><span class="eyebrow">Investment account · •••• {{ (account.accountId() ?? '').slice(-4) }}</span><strong>{{ totalValue() }}</strong><p>Total portfolio value</p></div><div class="intro-actions"><button type="button" (click)="openDeposit()">Deposit funds</button><button type="button" class="primary" routerLink="/trade">↗ Trade</button></div></section>
+		<div class="metrics-grid"><app-financial-card label="Investments" [value]="investments()" change="Market value of holdings"></app-financial-card><app-financial-card label="Cash balance" [value]="cashBalance()" change="Ready to invest"></app-financial-card><app-financial-card label="Cost basis" [value]="costBasis()" change="Total amount invested"></app-financial-card></div>
+		@if (account.holdings.error()) {
+			<p class="load-error">Couldn't load your holdings.</p>
+		}
+		<app-holdings-summary [showAll]="true" [showLink]="false" [data]="account.holdings.value() ?? []"></app-holdings-summary>
+	}
+</main>
+
+@if (depositOpen()) {
+	<div class="dialog-backdrop" (click)="closeDeposit()">
+		<section class="deposit-dialog" role="dialog" aria-modal="true" aria-labelledby="deposit-title" (click)="$event.stopPropagation()">
+			<h2 id="deposit-title">Deposit funds</h2>
+			<p>Add practice cash to your account. Current cash balance: <strong>{{ cashBalance() }}</strong></p>
+			<form (ngSubmit)="submitDeposit()" novalidate>
+				<label for="deposit-amount">Amount (USD)</label>
+				<input id="deposit-amount" name="amount" type="number" min="0.01" [max]="maxDeposit" step="0.01" placeholder="0.00" [(ngModel)]="depositAmount" autofocus>
+				<div class="quick-amounts">
+					@for (amount of quickAmounts; track amount) {
+						<button type="button" (click)="depositAmount = amount">+{{ amount.toLocaleString('en-US') }}</button>
+					}
+				</div>
+				@if (depositError()) {
+					<p class="form-error" role="alert">{{ depositError() }}</p>
+				}
+				<div class="dialog-actions">
+					<button type="button" (click)="closeDeposit()" [disabled]="depositing()">Cancel</button>
+					<button type="submit" class="primary" [disabled]="depositing()">{{ depositing() ? 'Depositing…' : 'Deposit' }}</button>
+				</div>
+			</form>
+		</section>
+	</div>
+}

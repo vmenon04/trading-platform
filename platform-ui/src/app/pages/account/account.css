@@ -1,0 +1,29 @@
+.account-page { display: grid; gap: 24px; max-width: 1100px; margin: 0 auto; padding: 38px 36px; }
+.account-intro { display: flex; justify-content: space-between; align-items: end; gap: 20px; }
+.account-intro h2 { margin: 10px 0 0; font-size: 1.8rem; letter-spacing: -0.03em; }
+.account-intro p { margin: 8px 0 0; color: var(--muted); font-size: 0.75rem; }
+.logout-button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; }
+.account-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.account-card { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.card-heading { padding: 18px; border-bottom: 1px solid var(--line); }
+.card-heading h2 { margin: 0 0 5px; font-size: 0.95rem; }
+.card-heading span { color: var(--muted); font-size: 0.68rem; }
+.account-details dl { display: grid; gap: 0; margin: 0; padding: 4px 18px; }
+.account-details dl div { display: flex; justify-content: space-between; gap: 20px; padding: 15px 0; border-bottom: 1px solid var(--line); font-size: 0.75rem; }
+.account-details dl div:last-child { border-bottom: 0; }
+dt { color: var(--muted); } dd { margin: 0; color: var(--ink); font-weight: 700; text-align: right; }
+.cash-card { padding-bottom: 20px; }
+.balance { display: block; margin: 24px 18px; font-size: 2rem; letter-spacing: -0.04em; }
+.balance.loading { color: var(--muted); }
+.account-label { display: block; margin: 0 18px 8px; color: var(--muted); font-size: 0.68rem; font-weight: 700; }
+select { width: calc(100% - 36px); min-height: 40px; margin: 0 18px 20px; padding: 0 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font: inherit; }
+form { display: grid; gap: 8px; padding: 0 18px; }
+form label { color: var(--muted); font-size: 0.68rem; font-weight: 700; }
+.deposit-row { display: flex; align-items: center; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+.currency { padding-left: 12px; color: var(--muted); font-weight: 700; }
+input { min-width: 0; flex: 1; padding: 11px 8px; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; }
+.deposit-row button { min-height: 40px; padding: 0 14px; border: 0; background: var(--green); color: #fff; font-weight: 700; cursor: pointer; }
+.deposit-row button:disabled { cursor: wait; opacity: 0.6; }
+.form-message { margin: 12px 18px 0; font-size: 0.68rem; line-height: 1.45; }
+.form-message.success { color: var(--green); }.form-message.error { color: var(--red); }
+@media (max-width: 720px) { .account-page { padding: 24px 18px; }.account-intro { align-items: start; flex-direction: column; }.account-grid { grid-template-columns: 1fr; } }

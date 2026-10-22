@@ -6,13 +6,17 @@ import com.neueda.leap.dto.DepositRequestDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
+import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
+import com.neueda.leap.service.CostBasis;
 import com.neueda.leap.service.InstrumentService;
 import com.neueda.leap.service.TradeAuthorizationService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -24,6 +28,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.client.RestClientException;
 import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
@@ -33,6 +38,8 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/v1/accounts")
 public class AccountController {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(AccountController.class);
 
     private final AccountService accountService;
     private final AccountHoldingMapper accountHoldingMapper;
@@ -71,20 +78,31 @@ public class AccountController {
     public ResponseEntity<AccountSummaryResponseDTO> getSummary(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         BigDecimal cashBalance = accountService.getBalance(internalId);
-        
-        // TODO: calculate cost basis and investment value 
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, new BigDecimal(0), cashBalance, new BigDecimal(0)));
+
+        // market value of the active holdings; a holding with no price available counts as 0
+        BigDecimal investmentValue = activeHoldings(internalId).stream()
+                .map(holding -> {
+                    BigDecimal price = marketPrice(holding.getInstrumentId());
+                    return price == null ? BigDecimal.ZERO : holding.getQuantity().multiply(price);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // what was paid for the shares still held (average cost of the filled trades)
+        BigDecimal costBasis = CostBasis.of(accountTradeMapper.findByAccountId(internalId));
+
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, costBasis));
     }
 
     @GetMapping("/{accountId}/holdings")
     public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
-                .map(holding -> new AccountHoldingResponseDTO(accountId, instrumentService.getInstrumentById(holding.getInstrumentId()).getName(),
-                        instrumentService.getInstrumentById(holding.getInstrumentId()).getTicker(), holding.getQuantity(),
-                        new BigDecimal(0)))
+                .map(holding -> {
+                    Instrument instrument = instrumentService.getInstrumentById(holding.getInstrumentId());
+                    return new AccountHoldingResponseDTO(accountId, instrument.getName(), instrument.getTicker(),
+                            holding.getQuantity(), marketPrice(holding.getInstrumentId()), holding.getInstrumentId());
+                })
                 .toList();
-                // TODO: add market price
         return ResponseEntity.ok(response);
     }
 
@@ -141,6 +159,17 @@ public class AccountController {
     }
 
 
+    // current price (cached in Redis), or null if there's no price for it right now, so one instrument
+    // without a quote doesn't fail the whole portfolio
+    private BigDecimal marketPrice(Long instrumentId) {
+        try {
+            return instrumentService.getCurrentPrice(instrumentId);
+        } catch (IllegalStateException | RestClientException e) {
+            LOGGER.warn("No market price for instrument {}: {}", instrumentId, e.getMessage());
+            return null;
+        }
+    }
+
     private List<AccountHolding> activeHoldings(Long accountId) {
         return accountHoldingMapper.findByAccountId(accountId).stream()
                 .filter(holding -> holding.getStatus() == ActivityStatus.ACTIVE)
@@ -148,8 +177,9 @@ public class AccountController {
     }
 
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
+        var instrument = instrumentService.getInstrumentById(trade.getInstrumentId());
         return new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
+            instrument.getTicker(), instrument.getName(), trade.getExternalTradeId(),
                 trade.getTradeSide().name(), trade.getQuantity(), trade.getPPU(), trade.getTotalPrice(), trade.getStatus().name(), null);
     }
 }

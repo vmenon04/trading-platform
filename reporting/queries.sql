@@ -181,6 +181,7 @@ SELECT *,
        SUM(portfolio_value) OVER ()::float AS matching_value
 FROM ({portfolios}) ranked
 WHERE (%(client_id)s IS NULL OR client_id = %(client_id)s)
+  AND (%(client_ids)s::bigint[] IS NULL OR client_id = ANY(%(client_ids)s::bigint[]))
   AND (%(min_value)s IS NULL OR portfolio_value >= %(min_value)s)
   AND (%(max_value)s IS NULL OR portfolio_value <= %(max_value)s)
   AND (%(quartile)s IS NULL OR quartile = %(quartile)s)
@@ -196,6 +197,62 @@ SELECT quartile,
 FROM ({portfolios}) ranked
 GROUP BY quartile
 ORDER BY quartile DESC;
+
+-- name: portfolio_distribution
+-- A histogram: the clients that pass the filters, split into 10 equal-width portfolio-value bands from the
+-- smallest of them to the largest, so the bands follow the filters. width_bucket says which band a value is
+-- in; the largest value lands in band 11, so LEAST puts it back in band 10. If every client has the same
+-- value there is one band. LEFT JOIN keeps the bands nobody falls in.
+WITH matching AS (
+    SELECT portfolio_value
+    FROM ({portfolios}) ranked
+    WHERE (%(client_ids)s::bigint[] IS NULL OR client_id = ANY(%(client_ids)s::bigint[]))
+      AND (%(min_value)s IS NULL OR portfolio_value >= %(min_value)s)
+      AND (%(max_value)s IS NULL OR portfolio_value <= %(max_value)s)
+),
+value_range AS (
+    SELECT MIN(portfolio_value) AS low, MAX(portfolio_value) AS high FROM matching
+),
+bands AS (
+    SELECT band,
+           low + (high - low) * (band - 1) / 10 AS low,
+           low + (high - low) * band / 10       AS high
+    FROM value_range, generate_series(1, CASE WHEN high > low THEN 10 ELSE 1 END) AS band
+    WHERE high IS NOT NULL
+),
+banded AS (
+    SELECT m.portfolio_value,
+           CASE WHEN r.high > r.low THEN LEAST(width_bucket(m.portfolio_value, r.low, r.high, 10), 10) ELSE 1 END AS band
+    FROM matching m, value_range r
+)
+SELECT b.band,
+       b.low::float,
+       b.high::float,
+       COUNT(x.portfolio_value)                    AS clients,
+       COALESCE(SUM(x.portfolio_value), 0)::float  AS total_value
+FROM bands b
+LEFT JOIN banded x ON x.band = b.band
+GROUP BY b.band, b.low, b.high
+ORDER BY b.band;
+
+
+-- ===========================================================================
+-- Several clients side by side
+-- ===========================================================================
+
+-- name: volume_by_client
+-- {where} already keeps only the picked clients' accounts; the ca.client_id check stops a joint account's
+-- trades counting for its other owner too.
+SELECT date_trunc(%(grain)s, t.trade_time)::date AS period,
+       ca.client_id,
+       COUNT(*)               AS trade_count,
+       SUM(t.notional)::float AS notional
+FROM trades t
+JOIN client_accounts ca ON ca.account_id = t.account_id
+{where} AND t.status IN ('ACCEPTED', 'FULFILLED')
+  AND ca.client_id = ANY(%(client_ids)s)
+GROUP BY period, ca.client_id
+ORDER BY period;
 
 
 -- ===========================================================================

@@ -18,14 +18,14 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | | 9092 | Kafka (`trading-kafka`, KRaft; controller on 9093 inside only) |
 | Windows VM | 8081 | The app when run locally (`server.port`; 8080 is taken by another Jenkins) |
 | Local | 8050 | Reporting API (`reporting/scripts/api.py`, 127.0.0.1) |
-| | 4200 | Reporting dashboard dev server (`ng serve`, proxies `/api` to 8050) |
+| | 4200 | platform-ui dev server (`ng serve`): proxies `/v1` and `/auth` to the Linux machine and `/api` to 8050 (`REPORTING_HOST` / `REPORTING_PORT`) |
 
 ## Docker Compose (`../docker-compose.yml`, Linux machine)
 
 | Service | Image | Does |
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
-| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` once, only when its volume is empty |
+| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) once, only when its volume is empty |
 | `redis` | `redis:7.4-alpine` | Fauxnance price cache; password-protected, nothing saved to disk |
 | `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
@@ -51,7 +51,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
-| `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app) with, at least 32 characters |
+| `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app and the reporting API) with, at least 32 characters |
 | `AUTH_PORT` | Host port for auth-service (`8084`) |
 | `REDIS_INSIGHT_PORT`, `KAFKA_UI_PORT`, `ADMINER_PORT` | Host ports for the web UIs (`8086`, `8087`, `8088`) |
 | `MISSION_DB_URL`, `ANALYTICS_DB_URL` | Reporting: trading database (read-only) and analytics database. Not in `.env.example` yet |

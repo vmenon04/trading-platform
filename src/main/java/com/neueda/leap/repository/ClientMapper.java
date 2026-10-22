@@ -23,6 +23,12 @@ public interface ClientMapper {
     @Select("SELECT client_id as clientId FROM clients WHERE external_client_id = #{externalClientId}")
     Long findInternalIdByExternalClientId(@Param("externalClientId") UUID externalClientId);
 
+    // read as text: MyBatis has no type handler to read a uuid column
+    @Select("SELECT clients.external_client_id::text FROM clients "
+            + "JOIN users ON users.client_id = clients.client_id "
+            + "WHERE users.user_id = #{userId}")
+    String findExternalClientIdByUserId(@Param("userId") Long userId);
+
         @Select("SELECT accounts.external_account_id FROM accounts "
             + "JOIN client_accounts ON accounts.account_id = client_accounts.account_id "
             + "WHERE client_accounts.client_id = #{clientId} "

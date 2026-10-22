@@ -19,27 +19,32 @@ Anything that doesn't fit gets an automatic "422 Unprocessable Entity" error.
 
 Who may call what
 -----------------
-Every /api/... address needs a login token (see auth.py). `dependencies=[ANALYST_OR_ADMIN]`
-on an endpoint lets analysts and admins in; `dependencies=[ADMIN]` only admins.
-Logging in itself (/api/auth/...) is the one thing that works without a token.
+Every /api/... address needs the login token auth-service hands out, sent as
+"Authorization: Bearer <token>" (platform-ui does this for you). The token says which roles
+the user has: /api/analyst/... needs ANALYST, /api/admin/... needs ADMIN, and the lookups
+every page uses (status, search boxes) take either. A missing or bad token gets 401, the
+wrong role 403. Tokens are checked with JWT_SHARED_SECRET from the root .env, the same
+secret auth-service signs them with.
 """
 import json
 import math
+import os
 from datetime import date, timedelta
 from typing import Literal
 
+import jwt
 import pandas as pd
 import uvicorn
 from fastapi import Depends, FastAPI, HTTPException, Query
 from fastapi.responses import FileResponse
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
 
 import transform as tf
-from auth import ADMIN, ANALYST_OR_ADMIN, call_auth_service, staff_tokens
 from database_connection import REPORTING_DIR, get_analytics_engine
 
 MAX_ROWS = 50                      # the most rows any endpoint returns at once
+MAX_CLIENTS = 8                    # the most clients the analyst can compare at once (one chart colour each)
 SYNC_EVERY = timedelta(hours=1)    # how often sync.py is expected to run
 WEB_BUILD = REPORTING_DIR / "web" / "dist" / "web" / "browser"   # made by `npm run build` in reporting/web
 
@@ -71,18 +76,53 @@ def cap(limit):
     return max(1, min(limit, MAX_ROWS))
 
 
+bearer = HTTPBearer(auto_error=False)
+
+
+def require_role(*allowed):
+    """A dependency that lets a request through only if its login token has one of the `allowed` roles.
+
+    Used as `dependencies=ANALYST` on a route. The token is the JWT auth-service signs:
+    {"sub": "<user id>", "roles": ["ANALYST"], "exp": ...}. jwt.decode checks the signature
+    and the expiry, so a forged or old token is refused.
+    """
+    def check(credentials: HTTPAuthorizationCredentials | None = Depends(bearer)):
+        secret = os.environ.get("JWT_SHARED_SECRET")
+        if not secret:
+            raise HTTPException(503, "JWT_SHARED_SECRET is not set, so logins can't be checked")
+        if credentials is None:
+            raise HTTPException(401, "Log in first", headers={"WWW-Authenticate": "Bearer"})
+        try:
+            claims = jwt.decode(credentials.credentials, secret, algorithms=["HS256"])
+        except jwt.InvalidTokenError:
+            raise HTTPException(401, "Invalid or expired login token", headers={"WWW-Authenticate": "Bearer"})
+        if not set(claims.get("roles", [])) & set(allowed):
+            raise HTTPException(403, f"Needs the {' or '.join(allowed)} role")
+
+    return [Depends(check)]
+
+
+ANALYST = require_role("ANALYST")
+ADMIN = require_role("ADMIN")
+STAFF = require_role("ANALYST", "ADMIN")
+
+
 def chart_filters(
     start: date | None = None,
     end: date | None = None,
     client_id: int | None = None,
+    client_ids: list[int] = Query(default=[], max_length=MAX_CLIENTS),   # ?client_ids=1&client_ids=2
+    min_portfolio: float | None = Query(default=None, ge=0),
+    max_portfolio: float | None = Query(default=None, ge=0),
     asset_class: str | None = None,
     instrument_id: int | None = None,
 ):
     """The filters every chart accepts, as one dictionary.
 
-    Chart endpoints say `filters=Depends(chart_filters)`. FastAPI then reads these five
+    Chart endpoints say `filters=Depends(chart_filters)`. FastAPI then reads these
     values from the URL, calls this function, and passes the dictionary it returns.
-    Missing dates default to the last 12 months of trades.
+    min_portfolio / max_portfolio keep only the trades of clients whose portfolio value
+    (cash + holdings, right now) is in that range. Missing dates default to the last 12 months of trades.
     """
     if start is None or end is None:
         default_start, default_end = tf.reporting_window(engine)
@@ -95,43 +135,19 @@ def chart_filters(
         "start": start,
         "end": end,
         "client_id": client_id,
+        "client_ids": client_ids,
+        "min_portfolio": min_portfolio,
+        "max_portfolio": max_portfolio,
         "asset_class": asset_class,
         "instrument_id": instrument_id,
     }
 
 
 # ---------------------------------------------------------------------------
-# Logging in (the only endpoints that work without a token)
-# ---------------------------------------------------------------------------
-
-class Login(BaseModel):
-    username: str
-    password: str
-
-
-class Refresh(BaseModel):
-    refreshToken: str
-
-
-@app.post("/api/auth/login")
-def login(body: Login):
-    """Checks the password with auth-service; returns its tokens and the user's roles."""
-    status, tokens = call_auth_service("/auth/login", {"username": body.username, "password": body.password})
-    return staff_tokens(status, tokens, "Wrong username or password")
-
-
-@app.post("/api/auth/refresh")
-def refresh(body: Refresh):
-    """Swaps a refresh token for a new pair; each refresh token works only once."""
-    status, tokens = call_auth_service("/auth/refresh", {"refreshToken": body.refreshToken})
-    return staff_tokens(status, tokens, "Your session has ended; log in again")
-
-
-# ---------------------------------------------------------------------------
 # Used by every page
 # ---------------------------------------------------------------------------
 
-@app.get("/api/status", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/status", dependencies=STAFF)
 def status():
     """When the data was last synced, and the default date range for the pages."""
     sync = tf.last_sync(engine)
@@ -153,17 +169,17 @@ def status():
     }
 
 
-@app.get("/api/asset-classes", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/asset-classes", dependencies=STAFF)
 def asset_classes():
     return tf.asset_classes(engine)
 
 
-@app.get("/api/clients", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/clients", dependencies=STAFF)
 def search_clients(q: str, limit: int = 20):
     return to_json(tf.search_clients(engine, q.strip(), cap(limit)))
 
 
-@app.get("/api/instruments", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/instruments", dependencies=STAFF)
 def search_instruments(q: str, asset_class: str | None = None, limit: int = 20):
     return to_json(tf.search_instruments(engine, q.strip(), cap(limit), asset_class))
 
@@ -172,39 +188,40 @@ def search_instruments(q: str, asset_class: str | None = None, limit: int = 20):
 # Analyst pages: charts
 # ---------------------------------------------------------------------------
 
-@app.get("/api/analyst/volume", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/volume", dependencies=ANALYST)
 def volume(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.trade_volume_by_period(engine, filters, period))
 
 
-@app.get("/api/analyst/buy-sell", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/buy-sell", dependencies=ANALYST)
 def buy_sell(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.volume_by_trade_type(engine, filters, period))
 
 
-@app.get("/api/analyst/price", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/price", dependencies=ANALYST)
 def price(filters=Depends(chart_filters), period: Period = "month"):
     return to_json(tf.price_by_period(engine, filters, period))
 
 
-@app.get("/api/analyst/by-asset-class", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/by-asset-class", dependencies=ANALYST)
 def by_asset_class(filters=Depends(chart_filters)):
     return to_json(tf.volume_by_asset_class(engine, filters))
 
 
-@app.get("/api/analyst/top-clients", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/top-clients", dependencies=ANALYST)
 def top_clients(filters=Depends(chart_filters), limit: int = 10):
     return to_json(tf.top_clients(engine, filters, cap(limit)))
 
 
-@app.get("/api/analyst/top-instruments", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/top-instruments", dependencies=ANALYST)
 def top_instruments(filters=Depends(chart_filters), limit: int = 10):
     return to_json(tf.top_instruments(engine, filters, cap(limit)))
 
 
-@app.get("/api/analyst/portfolios", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/portfolios", dependencies=ANALYST)
 def portfolios(
     client_id: int | None = None,
+    client_ids: list[int] = Query(default=[], max_length=MAX_CLIENTS),
     min_value: float | None = Query(default=None, ge=0),
     max_value: float | None = Query(default=None, ge=0),
     quartile: int | None = Query(default=None, ge=1, le=4),
@@ -212,7 +229,10 @@ def portfolios(
     page_size: int = MAX_ROWS,
 ):
     # No date range here: portfolio value is what clients hold right now.
-    filters = {"client_id": client_id, "min_value": min_value, "max_value": max_value, "quartile": quartile}
+    filters = {
+        "client_id": client_id, "client_ids": client_ids,
+        "min_value": min_value, "max_value": max_value, "quartile": quartile,
+    }
     page_size = cap(page_size)
     summary, df = tf.client_portfolios(engine, filters, page, page_size)
     return {
@@ -224,20 +244,42 @@ def portfolios(
     }
 
 
-@app.get("/api/analyst/portfolio-tiers", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/portfolio-tiers", dependencies=ANALYST)
 def portfolio_tiers():
     return to_json(tf.portfolio_tiers(engine))
 
 
-@app.get("/api/analyst/trades", dependencies=[ANALYST_OR_ADMIN])
+@app.get("/api/analyst/portfolio-distribution", dependencies=ANALYST)
+def portfolio_distribution(
+    client_ids: list[int] = Query(default=[], max_length=MAX_CLIENTS),
+    min_value: float | None = Query(default=None, ge=0),
+    max_value: float | None = Query(default=None, ge=0),
+):
+    filters = {"client_ids": client_ids, "min_value": min_value, "max_value": max_value}
+    return to_json(tf.portfolio_distribution(engine, filters))
+
+
+@app.get("/api/analyst/volume-by-client", dependencies=ANALYST)
+def volume_by_client(filters=Depends(chart_filters), period: Period = "month"):
+    # one line per client, so it only makes sense for clients that were picked
+    if not filters["client_ids"]:
+        raise HTTPException(422, "Pick at least one client (client_ids)")
+    return to_json(tf.volume_by_client(engine, filters, period))
+
+
+@app.get("/api/analyst/trades", dependencies=ANALYST)
 def recent_trades(
     client_id: int | None = None,
+    client_ids: list[int] = Query(default=[], max_length=MAX_CLIENTS),
     asset_class: str | None = None,
     instrument_id: int | None = None,
     limit: int = MAX_ROWS,
 ):
     # No date range here: the latest trades, whenever they happened.
-    filters = {"client_id": client_id, "asset_class": asset_class, "instrument_id": instrument_id}
+    filters = {
+        "client_id": client_id, "client_ids": client_ids,
+        "asset_class": asset_class, "instrument_id": instrument_id,
+    }
     return to_json(tf.recent_trades(engine, filters, cap(limit)))
 
 
@@ -245,7 +287,7 @@ def recent_trades(
 # Admin page: order history
 # ---------------------------------------------------------------------------
 
-@app.get("/api/admin/orders", dependencies=[ADMIN])
+@app.get("/api/admin/orders", dependencies=ADMIN)
 def orders(
     trade_id: int | None = None,
     client_id: int | None = None,
@@ -287,7 +329,7 @@ def orders(
     }
 
 
-@app.get("/api/admin/orders/{trade_id}/history", dependencies=[ADMIN])
+@app.get("/api/admin/orders/{trade_id}/history", dependencies=ADMIN)
 def order_status_history(trade_id: int):
     df = tf.order_status_history(engine, trade_id)
     if df.empty:
@@ -299,13 +341,12 @@ def order_status_history(trade_id: int):
 # The Angular web pages
 #
 # Angular is a "single page app": index.html is the only real page, and Angular
-# itself decides what to show for /login, /analyst, /analyst/clients or /admin. So each of
+# itself decides what to show for /analyst, /analyst/clients or /admin. So each of
 # those addresses just gets index.html, and every other file (the .js and .css
 # files) is served straight from the build folder.
 # ---------------------------------------------------------------------------
 
 if WEB_BUILD.exists():
-    @app.get("/login")
     @app.get("/analyst")
     @app.get("/analyst/{page}")
     @app.get("/admin")

@@ -1,6 +1,10 @@
 package com.neueda.leap.external;
 
 import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
@@ -9,6 +13,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
+import static org.hamcrest.Matchers.startsWith;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.client.match.MockRestRequestMatchers.*;
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
@@ -64,11 +69,11 @@ class HttpMarketDataClientTest {
     }
 
     @Test
-    void returnsNullForStaleQuote() {
+    void returnsLastKnownPriceForStaleQuote() {
         server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
                 .andRespond(withSuccess(quoteJson("AAPL", "313.53", true), MediaType.APPLICATION_JSON));
 
-        assertNull(client.getPrice("AAPL"));
+        assertEquals(0, new BigDecimal("313.53").compareTo(client.getPrice("AAPL")));
     }
 
     @Test
@@ -129,5 +134,105 @@ class HttpMarketDataClientTest {
                 .andRespond(withSuccess());
 
         assertNull(client.getPrice("AAPL"));
+    }
+
+    // Shape of a GET /quotes?symbols= response, as returned by the live API
+    private static String batchJson(String... entries) {
+        return """
+                {"data": {"quotes": [%s]}, "meta": {"asOf": "2026-10-21T15:24:39Z", "spreadSource": "modelled"}}
+                """.formatted(String.join(",", entries));
+    }
+
+    private static String batchQuote(String symbol, String price, boolean stale) {
+        return """
+                {"symbol": "%s", "source": "cache", "stale": %s,
+                 "quote": {"symbol": "%s", "price": %s, "currency": "USD", "marketState": "open"}}
+                """.formatted(symbol, stale, symbol, price);
+    }
+
+    private static String batchError(String symbol) {
+        return """
+                {"symbol": "%s", "error": {"code": "SYMBOL_NOT_FOUND", "message": "Unknown", "details": {}}}
+                """.formatted(symbol);
+    }
+
+    @Test
+    void getPrices_returnsPricesFromOneBatchRequest() {
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andExpect(queryParam("symbols", "AAPL,MSFT"))
+                .andExpect(header("X-Api-Key", API_KEY))
+                .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", false)),
+                        MediaType.APPLICATION_JSON));
+
+        Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT"));
+
+        assertEquals(0, new BigDecimal("344.07").compareTo(prices.get("AAPL")));
+        assertEquals(0, new BigDecimal("530.45").compareTo(prices.get("MSFT")));
+        server.verify();
+    }
+
+    @Test
+    void getPrices_keepsStaleQuotesAndLeavesOutErroredSymbols() {
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", true),
+                        batchError("NOPE")), MediaType.APPLICATION_JSON));
+
+        Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT", "NOPE"));
+
+        assertEquals(Set.of("AAPL", "MSFT"), prices.keySet());
+    }
+
+    @Test
+    void getPrices_splitsIntoBatchesOf25() {
+        List<String> tickers = IntStream.range(0, 30).mapToObj(i -> "T" + i).toList();
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andExpect(queryParam("symbols", String.join(",", tickers.subList(0, 25))))
+                .andRespond(withSuccess(batchJson(batchQuote("T0", "1", false)), MediaType.APPLICATION_JSON));
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andExpect(queryParam("symbols", String.join(",", tickers.subList(25, 30))))
+                .andRespond(withSuccess(batchJson(batchQuote("T29", "2", false)), MediaType.APPLICATION_JSON));
+
+        Map<String, BigDecimal> prices = client.getPrices(tickers);
+
+        assertEquals(Set.of("T0", "T29"), prices.keySet());
+        server.verify();
+    }
+
+    @Test
+    void getSymbol_returnsNameAndType() {
+        server.expect(requestTo(BASE_URL + "/symbols/ORCL"))
+                .andExpect(header("X-Api-Key", API_KEY))
+                .andRespond(withSuccess("""
+                        {"data": {"symbol": "ORCL", "name": "Oracle Corporation", "type": "equity", "exchange": "US",
+                                  "currency": "USD", "active": true},
+                         "meta": {"symbol": "ORCL", "source": "stored"}}
+                        """, MediaType.APPLICATION_JSON));
+
+        assertEquals(new SymbolInfo("ORCL", "Oracle Corporation", "equity"), client.getSymbol("ORCL"));
+    }
+
+    @Test
+    void getSymbol_unknownSymbol_returnsNull() {
+        server.expect(requestTo(BASE_URL + "/symbols/NOPE"))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON).body(errorJson("SYMBOL_NOT_FOUND")));
+
+        assertNull(client.getSymbol("NOPE"));
+    }
+
+    @Test
+    void getSymbol_throwsWhenFauxnanceFails() {
+        server.expect(requestTo(BASE_URL + "/symbols/ORCL"))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThrows(IllegalStateException.class, () -> client.getSymbol("ORCL"));
+    }
+
+    @Test
+    void getPrices_throwsWhenFauxnanceFails() {
+        server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
+                .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        assertThrows(IllegalStateException.class, () -> client.getPrices(List.of("AAPL")));
     }
 }
