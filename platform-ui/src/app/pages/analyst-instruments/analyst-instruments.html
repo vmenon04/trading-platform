@@ -1,0 +1,131 @@
+<header class="analytics-header">
+  <div><h1>Instruments</h1><span>What was traded, and how</span></div>
+  <app-data-freshness />
+</header>
+
+<main class="analytics">
+  <div class="intro">
+    <span class="eyebrow">Analyst</span>
+    <h2>Instruments</h2>
+    <p>Trading across every instrument or one asset class. Open an instrument from the list or the search box to see its own view.</p>
+  </div>
+
+  <section class="filter-card" aria-label="Filters">
+    <form class="filters" (submit)="$event.preventDefault()">
+      <div class="field">Asset class
+        <div class="chips">
+          <button type="button" [class.active]="!assetClass()" (click)="pickClass(null)">All classes</button>
+          @for (name of classes.hasValue() ? classes.value() : []; track name) {
+            <button type="button" [class.active]="name === assetClass()" (click)="pickClass(name)">{{ name }}</button>
+          }
+        </div>
+      </div>
+      <app-search-box label="Instrument" placeholder="All instruments — search ticker or name" url="/api/instruments"
+                      [params]="searchParams()" [describe]="describe" [pickedText]="pickedText()" [(selected)]="instrumentId" />
+    </form>
+    <form class="filters" (submit)="$event.preventDefault()">
+      <div class="field">Time period
+        <div class="chips">
+          @for (months of periods; track months) {
+            <button type="button" [class.active]="dates.isLastMonths(months)" (click)="dates.lastMonths(months)">
+              {{ months === 12 ? '1 year' : months + (months === 1 ? ' month' : ' months') }}
+            </button>
+          }
+        </div>
+      </div>
+      <app-date-range [(start)]="dates.start" [(end)]="dates.end" [(grain)]="dates.grain" />
+    </form>
+  </section>
+
+  @if (problem(); as message) { <p class="problem">{{ message }}</p> }
+
+  @if (one()) {
+    <section class="instrument-hero">
+      <span class="logo">
+        @if (instrument(); as picked) { <app-ticker-logo [ticker]="picked.ticker" [assetClass]="picked.asset_class" /> }
+      </span>
+      <div>
+        <h3>{{ instrument()?.ticker ?? 'Instrument #' + instrumentId() }} <small>{{ instrument()?.asset_class }}</small></h3>
+        <span>{{ instrument()?.name || 'No trades in this period' }}</span>
+      </div>
+      @if (instrument()?.avg_price; as price) {
+        <div class="hero-price"><span>Average traded price</span><strong>{{ moneyExact.format(price) }}</strong></div>
+      }
+      <button type="button" (click)="back()">← All instruments</button>
+    </section>
+  }
+
+  <app-tiles [tiles]="tiles()" />
+
+  <section class="grid">
+    @if (one()) {
+      <figure class="card wide">
+        <figcaption>Average traded price<small>Volume-weighted, per period; the tooltip shows the low and high</small></figcaption>
+        <app-chart [config]="priceChart()" [height]="300" />
+      </figure>
+    }
+
+    <figure class="card" [class.wide]="!one()">
+      <figcaption>Traded value over time<small>{{ scopeName() }}</small></figcaption>
+      <app-chart [config]="volumeChart()" [height]="one() ? 280 : 300" />
+    </figure>
+
+    <figure class="card">
+      <figcaption>Buy vs sell<small>{{ scopeName() }}</small></figcaption>
+      <app-chart [config]="buySellChart()" />
+    </figure>
+
+    @if (!one()) {
+      @if (!assetClass()) {
+        <figure class="card">
+          <figcaption>Traded value by asset class</figcaption>
+          @if (classChart(); as config) { <app-chart [config]="config" /> }
+          @else { <p class="chart-empty">No trades in this period.</p> }
+        </figure>
+      }
+
+      <figure class="card wide">
+        <figcaption>Most traded {{ assetClass() ?? '' }} instruments<small>Click one to open it</small></figcaption>
+        <div class="table-scroll">
+          <table>
+            <thead>
+              <tr><th>Instrument</th><th>Class</th><th class="num">Trades</th><th class="num">Accounts</th><th class="num">Avg price</th><th class="num">Traded value</th></tr>
+            </thead>
+            <tbody>
+              @for (row of instrumentRows(); track row.instrument_id) {
+                <tr class="pick" tabindex="0" (click)="open(row)" (keydown.enter)="open(row)">
+                  <td>
+                    <span class="name">
+                      <span class="logo small"><app-ticker-logo [ticker]="row.ticker" [assetClass]="row.asset_class" /></span>
+                      <span><strong>{{ row.ticker }}</strong><small>{{ row.name }}</small></span>
+                    </span>
+                  </td>
+                  <td>{{ row.asset_class }}</td>
+                  <td class="num">{{ count.format(row.trade_count) }}</td>
+                  <td class="num">{{ count.format(row.accounts) }}</td>
+                  <td class="num">{{ moneyExact.format(row.avg_price) }}</td>
+                  <td class="num">{{ moneyExact.format(row.notional) }}</td>
+                </tr>
+              } @empty {
+                <tr><td colspan="6" class="empty">No trades in this period.</td></tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </figure>
+    }
+
+    <figure class="card wide">
+      <figcaption>Top {{ clientCount() }} clients trading {{ scopeName() }}<small>By traded value in the period</small></figcaption>
+      @if (clientChart(); as config) { <app-chart [config]="config" [height]="rankingHeight(clientCount())" /> }
+      @else { <p class="chart-empty">No trades in this period.</p> }
+    </figure>
+
+    @if (one()) {
+      <figure class="card wide">
+        <figcaption>Latest trades<small>The newest {{ tradeRows().length }} orders in {{ scopeName() }}, in any status</small></figcaption>
+        <app-trades-table [rows]="tradeRows()" />
+      </figure>
+    }
+  </section>
+</main>

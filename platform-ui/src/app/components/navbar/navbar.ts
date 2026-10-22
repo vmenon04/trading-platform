@@ -16,12 +16,20 @@ export class Navbar {
   private logoClickTimer?: ReturnType<typeof setTimeout>;
   private easterEggTimer?: ReturnType<typeof setTimeout>;
 
-  private readonly auth = inject(AuthService);
+  protected readonly auth = inject(AuthService);
   protected readonly account = inject(AccountService);
 
   // e.g. "Efe Test" -> "ET"
   protected readonly initials = computed(() =>
     this.account.clientName().split(' ').filter(Boolean).map((part) => part[0].toUpperCase()).slice(0, 2).join('') || '?');
+
+  // analysts and admins have no client, so the profile corner shows their role instead of a name
+  protected readonly staffTitle = computed(() => (this.auth.role() === 'ADMIN' ? 'Administrator' : 'Analyst'));
+  protected readonly staffInitials = computed(() => (this.auth.role() === 'ADMIN' ? 'AD' : 'AN'));
+
+  protected homeUrl(): string {
+    return this.auth.homeUrl();
+  }
 
   constructor(private readonly router: Router) {}
 

@@ -67,6 +67,9 @@ app-account-selector {
   cursor: pointer;
 }
 
+.nav-section { padding: 0 14px 4px; color: #8be7c5; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.profile-button.staff { cursor: default; }
+
 .profile-avatar { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #dcebe5; color: var(--color-navigation); font-size: 0.68rem; font-weight: 700; }
 .profile-copy { display: grid; flex: 1; gap: 3px; }.profile-copy strong { font-size: 0.72rem; }.profile-copy small { color: #8eaaa0; font-size: 0.58rem; }.profile-arrow { font-size: 0.9rem; }
 

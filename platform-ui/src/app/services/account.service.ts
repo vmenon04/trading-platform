@@ -19,8 +19,9 @@ export class AccountService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  // the logged-in user's client and their trading accounts (GET /v1/clients/me); 404 = no accounts yet
-  readonly client = httpResource<ClientProfile>(() => (this.auth.isLoggedIn() ? '/v1/clients/me' : undefined));
+  // the logged-in user's client and their trading accounts (GET /v1/clients/me); 404 = no accounts yet.
+  // Only for CLIENT users: analysts and admins have no client of their own
+  readonly client = httpResource<ClientProfile>(() => (this.auth.isClient() ? '/v1/clients/me' : undefined));
 
   // the user's name for display, each word capitalized ("efe test" -> "Efe Test"); the backend keeps it as typed
   readonly clientName = computed(() => capitalizeWords(this.client.value()?.clientName ?? ''));

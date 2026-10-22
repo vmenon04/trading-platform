@@ -38,7 +38,9 @@ export class Login {
     try {
       await this.auth.login(this.username, this.password);
       this.submitted = false;
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
+      // a returnUrl for another role's page (e.g. an old /dashboard link opened by an analyst) is bounced by
+      // roleGuard to the user's own home page
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? this.auth.homeUrl();
       this.router.navigateByUrl(returnUrl);
     } catch (error) {
       this.message.set(this.errorMessage(error));

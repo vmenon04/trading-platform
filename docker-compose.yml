@@ -94,6 +94,8 @@ services:
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
       - ./src/main/resources/sample-data.sql:/docker-entrypoint-initdb.d/2-sample-data.sql:ro
       - ./src/main/resources/auth_test_data.sql:/docker-entrypoint-initdb.d/3-auth_test_data.sql:ro
+      # the analyst and admin logins, which registration can't create
+      - ./src/main/resources/staff_users.sql:/docker-entrypoint-initdb.d/4-staff_users.sql:ro
     healthcheck:
       # $$ so the variables are read inside the container, not by compose
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
