@@ -9,10 +9,21 @@ export interface TokenPair {
   refreshToken: string;
 }
 
+// the roles auth-service puts in the access token. Registration only makes CLIENTs; ANALYST and ADMIN users
+// are inserted into the database (src/main/resources/staff_users.sql)
+export type Role = 'CLIENT' | 'ANALYST' | 'ADMIN';
+
+// where each role lands after logging in, and what the "/" address opens
+const HOME: Record<Role, string> = {
+  CLIENT: '/dashboard',
+  ANALYST: '/analyst/clients',
+  ADMIN: '/admin/orders',
+};
+
 const STORAGE_KEY = 'ftrade.tokens';
 
 // Logs in against auth-service and keeps the token pair. The access token lasts 15 minutes;
-// authInterceptor attaches it to /v1 calls and uses the refresh token when it expires.
+// authInterceptor attaches it to /v1 and /api calls and uses the refresh token when it expires.
 @Injectable({ providedIn: 'root' })
 export class AuthService {
   private http = inject(HttpClient);
@@ -21,6 +32,24 @@ export class AuthService {
   private tokens = signal<TokenPair | null>(loadTokens());
 
   readonly isLoggedIn = computed(() => this.tokens() !== null);
+
+  // read from the access token, only to pick which pages to show: the backends check the token's signature
+  // themselves, so editing it in the browser gets nothing but 401s and 403s
+  readonly roles = computed(() => rolesIn(this.tokens()?.accessToken));
+
+  // the one role the app is laid out for; a user with several gets the most senior one's pages
+  readonly role = computed<Role | null>(() => {
+    const roles = this.roles();
+    return (['ADMIN', 'ANALYST', 'CLIENT'] as const).find((role) => roles.includes(role)) ?? null;
+  });
+
+  readonly isClient = computed(() => this.role() === 'CLIENT');
+
+  // the first page for the logged-in user's role ("/login" when logged out)
+  homeUrl(): string {
+    const role = this.role();
+    return role ? HOME[role] : '/login';
+  }
 
   get accessToken(): string | null {
     return this.tokens()?.accessToken ?? null;
@@ -68,6 +97,20 @@ export class AuthService {
     } catch {
       // storage unavailable (private window etc.): the session just won't survive a reload
     }
+  }
+}
+
+// the "roles" claim of a JWT. A JWT is header.payload.signature, each part base64url-encoded JSON
+function rolesIn(accessToken: string | undefined): Role[] {
+  if (!accessToken) {
+    return [];
+  }
+  try {
+    const payload = accessToken.split('.')[1].replace(/-/g, '+').replace(/_/g, '/');
+    const claims = JSON.parse(atob(payload)) as { roles?: unknown };
+    return Array.isArray(claims.roles) ? (claims.roles as Role[]) : [];
+  } catch {
+    return [];
   }
 }
 

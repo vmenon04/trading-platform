@@ -3,10 +3,11 @@ import { inject } from '@angular/core';
 import { catchError, from, switchMap, throwError } from 'rxjs';
 import { AuthService } from './auth.service';
 
-// Adds "Authorization: Bearer <access token>" to every backend (/v1) call. On a 401 it refreshes the
-// token once and retries; if that fails the user is logged out and sent to /login.
+// Adds "Authorization: Bearer <access token>" to every backend call: /v1 (the trade API) and /api (the
+// reporting API behind the analyst and admin pages). On a 401 it refreshes the token once and retries; if
+// that fails the user is logged out and sent to /login.
 export const authInterceptor: HttpInterceptorFn = (request, next) => {
-  if (!request.url.startsWith('/v1')) {
+  if (!request.url.startsWith('/v1') && !request.url.startsWith('/api')) {
     return next(request);
   }
   const auth = inject(AuthService);
