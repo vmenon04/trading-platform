@@ -91,33 +91,49 @@ class CachingMarketDataClientTest {
         assertEquals(new BigDecimal("189.25"), client.getPrice(TICKER));
     }
 
+    private static PriceQuote fresh(String price) {
+        return new PriceQuote(new BigDecimal(price), false);
+    }
+
     @Test
     void getPrices_usesRedisFirstAndOnlyAsksTheApiForMisses() {
         when(values.multiGet(List.of("price:AAPL", "price:MSFT", "price:NVDA"))).thenReturn(Arrays.asList("189.25", null, null));
-        when(delegate.getPrices(List.of("MSFT", "NVDA"))).thenReturn(Map.of("MSFT", new BigDecimal("410.10")));
+        when(delegate.getPrices(List.of("MSFT", "NVDA"))).thenReturn(Map.of("MSFT", fresh("410.10")));
 
-        Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT", "NVDA"));
+        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "MSFT", "NVDA"));
 
-        assertEquals(Map.of("AAPL", new BigDecimal("189.25"), "MSFT", new BigDecimal("410.10")), prices);
+        // a cached price is fresh: only fresh prices are cached
+        assertEquals(Map.of("AAPL", fresh("189.25"), "MSFT", fresh("410.10")), prices);
         // the fetched price is cached; NVDA had no price, so nothing is cached for it
         verify(values).set("price:MSFT", "410.10", TTL);
         verify(values, never()).set(eq("price:NVDA"), anyString(), any(Duration.class));
+    }
+
+    // getPrice prices trades from the same keys, so a stale price must never be cached
+    @Test
+    void getPrices_staleQuoteIsReturnedButNotCached() {
+        PriceQuote stale = new PriceQuote(new BigDecimal("410.10"), true);
+        when(values.multiGet(List.of("price:MSFT"))).thenReturn(Arrays.asList((String) null));
+        when(delegate.getPrices(List.of("MSFT"))).thenReturn(Map.of("MSFT", stale));
+
+        assertEquals(Map.of("MSFT", stale), client.getPrices(List.of("MSFT")));
+        verify(values, never()).set(anyString(), anyString(), any(Duration.class));
     }
 
     @Test
     void getPrices_allCached_doesNotCallTheApi() {
         when(values.multiGet(List.of("price:AAPL"))).thenReturn(List.of("189.25"));
 
-        assertEquals(Map.of("AAPL", new BigDecimal("189.25")), client.getPrices(List.of("AAPL")));
+        assertEquals(Map.of("AAPL", fresh("189.25")), client.getPrices(List.of("AAPL")));
         verifyNoInteractions(delegate);
     }
 
     @Test
     void getPrices_redisDown_fetchesEverythingFromTheApi() {
         when(values.multiGet(List.of("price:AAPL"))).thenThrow(new RedisConnectionFailureException("Redis down"));
-        when(delegate.getPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("189.25")));
+        when(delegate.getPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", fresh("189.25")));
 
-        assertEquals(Map.of("AAPL", new BigDecimal("189.25")), client.getPrices(List.of("AAPL")));
+        assertEquals(Map.of("AAPL", fresh("189.25")), client.getPrices(List.of("AAPL")));
     }
 
     @Test

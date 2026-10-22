@@ -15,8 +15,6 @@ import com.neueda.leap.service.CostBasis;
 import com.neueda.leap.service.InstrumentService;
 import com.neueda.leap.service.TradeAuthorizationService;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -28,18 +26,17 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.client.RestClientException;
 import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
 @RequestMapping("/v1/accounts")
 public class AccountController {
-
-    private static final Logger LOGGER = LoggerFactory.getLogger(AccountController.class);
 
     private final AccountService accountService;
     private final AccountHoldingMapper accountHoldingMapper;
@@ -80,9 +77,12 @@ public class AccountController {
         BigDecimal cashBalance = accountService.getBalance(internalId);
 
         // market value of the active holdings; a holding with no price available counts as 0
-        BigDecimal investmentValue = activeHoldings(internalId).stream()
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        BigDecimal investmentValue = holdings.stream()
                 .map(holding -> {
-                    BigDecimal price = marketPrice(holding.getInstrumentId());
+                    BigDecimal price = prices.get(instruments.get(holding.getInstrumentId()).getTicker());
                     return price == null ? BigDecimal.ZERO : holding.getQuantity().multiply(price);
                 })
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
@@ -97,11 +97,14 @@ public class AccountController {
     @GetMapping("/{accountId}/holdings")
     public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        List<AccountHoldingResponseDTO> response = holdings.stream()
                 .map(holding -> {
-                    Instrument instrument = instrumentService.getInstrumentById(holding.getInstrumentId());
+                    Instrument instrument = instruments.get(holding.getInstrumentId());
                     return new AccountHoldingResponseDTO(accountId, instrument.getName(), instrument.getTicker(),
-                            holding.getQuantity(), marketPrice(holding.getInstrumentId()), holding.getInstrumentId());
+                            holding.getQuantity(), prices.get(instrument.getTicker()), holding.getInstrumentId());
                 })
                 .toList();
         return ResponseEntity.ok(response);
@@ -160,15 +163,18 @@ public class AccountController {
     }
 
 
-    // current price (cached in Redis), or null if there's no price for it right now, so one instrument
-    // without a quote doesn't fail the whole portfolio
-    private BigDecimal marketPrice(Long instrumentId) {
-        try {
-            return instrumentService.getCurrentPrice(instrumentId);
-        } catch (IllegalStateException | RestClientException e) {
-            LOGGER.warn("No market price for instrument {}: {}", instrumentId, e.getMessage());
-            return null;
-        }
+    // each holding's instrument, looked up once
+    private Map<Long, Instrument> instrumentsOf(List<AccountHolding> holdings) {
+        Map<Long, Instrument> instruments = new HashMap<>();
+        holdings.forEach(holding -> instruments.computeIfAbsent(holding.getInstrumentId(),
+                instrumentService::getInstrumentById));
+        return instruments;
+    }
+
+    // prices to show, by ticker, in one batch (cached in Redis): a stale quote shows its last known price, and an
+    // instrument with no price right now is left out, so one instrument without a quote doesn't fail the portfolio
+    private Map<String, BigDecimal> displayPrices(Map<Long, Instrument> instruments) {
+        return instrumentService.getCurrentPrices(instruments.values().stream().map(Instrument::getTicker).toList());
     }
 
     private List<AccountHolding> activeHoldings(Long accountId) {

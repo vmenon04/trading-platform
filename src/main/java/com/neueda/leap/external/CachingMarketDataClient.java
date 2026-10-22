@@ -43,12 +43,12 @@ public class CachingMarketDataClient implements MarketDataClient {
         return price;
     }
 
-    // Redis first for every ticker; only the ones not in the cache go to the API (in batches), and the
-    // prices that come back are cached for next time
+    // Redis first for every ticker; only the ones not in the cache go to the API (in batches). Fresh prices that
+    // come back are cached for next time; stale ones are not, because getPrice prices trades from the same keys
     @Override
-    public Map<String, BigDecimal> getPrices(Collection<String> tickers) {
+    public Map<String, PriceQuote> getPrices(Collection<String> tickers) {
         List<String> symbols = List.copyOf(tickers);
-        Map<String, BigDecimal> prices = new HashMap<>();
+        Map<String, PriceQuote> prices = new HashMap<>();
         List<String> misses = new ArrayList<>();
 
         List<String> cached = readCache(symbols.stream().map(CachingMarketDataClient::key).toList());
@@ -57,13 +57,18 @@ public class CachingMarketDataClient implements MarketDataClient {
             if (value == null) {
                 misses.add(symbols.get(i));
             } else {
-                prices.put(symbols.get(i), new BigDecimal(value));
+                // only fresh prices are ever cached
+                prices.put(symbols.get(i), new PriceQuote(new BigDecimal(value), false));
             }
         }
 
         if (!misses.isEmpty()) {
-            Map<String, BigDecimal> fetched = delegate.getPrices(misses);
-            fetched.forEach((ticker, price) -> writeCache(key(ticker), price));
+            Map<String, PriceQuote> fetched = delegate.getPrices(misses);
+            fetched.forEach((ticker, quote) -> {
+                if (!quote.stale()) {
+                    writeCache(key(ticker), quote.price());
+                }
+            });
             prices.putAll(fetched);
         }
         return prices;

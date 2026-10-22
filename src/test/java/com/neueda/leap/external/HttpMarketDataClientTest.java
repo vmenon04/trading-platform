@@ -68,12 +68,13 @@ class HttpMarketDataClientTest {
         server.verify();
     }
 
+    // getPrice prices trades, which must not use a price past Fauxnance's freshness window
     @Test
-    void returnsLastKnownPriceForStaleQuote() {
+    void returnsNullForStaleQuote() {
         server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
                 .andRespond(withSuccess(quoteJson("AAPL", "313.53", true), MediaType.APPLICATION_JSON));
 
-        assertEquals(0, new BigDecimal("313.53").compareTo(client.getPrice("AAPL")));
+        assertNull(client.getPrice("AAPL"));
     }
 
     @Test
@@ -164,22 +165,25 @@ class HttpMarketDataClientTest {
                 .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", false)),
                         MediaType.APPLICATION_JSON));
 
-        Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT"));
+        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "MSFT"));
 
-        assertEquals(0, new BigDecimal("344.07").compareTo(prices.get("AAPL")));
-        assertEquals(0, new BigDecimal("530.45").compareTo(prices.get("MSFT")));
+        assertEquals(0, new BigDecimal("344.07").compareTo(prices.get("AAPL").price()));
+        assertEquals(0, new BigDecimal("530.45").compareTo(prices.get("MSFT").price()));
         server.verify();
     }
 
+    // prices for display: a stale quote keeps its last known price, marked stale
     @Test
-    void getPrices_keepsStaleQuotesAndLeavesOutErroredSymbols() {
+    void getPrices_keepsStaleQuotesMarkedStaleAndLeavesOutErroredSymbols() {
         server.expect(requestTo(startsWith(BASE_URL + "/quotes?")))
                 .andRespond(withSuccess(batchJson(batchQuote("AAPL", "344.07", false), batchQuote("MSFT", "530.45", true),
                         batchError("NOPE")), MediaType.APPLICATION_JSON));
 
-        Map<String, BigDecimal> prices = client.getPrices(List.of("AAPL", "MSFT", "NOPE"));
+        Map<String, PriceQuote> prices = client.getPrices(List.of("AAPL", "MSFT", "NOPE"));
 
         assertEquals(Set.of("AAPL", "MSFT"), prices.keySet());
+        assertFalse(prices.get("AAPL").stale());
+        assertTrue(prices.get("MSFT").stale());
     }
 
     @Test
@@ -192,7 +196,7 @@ class HttpMarketDataClientTest {
                 .andExpect(queryParam("symbols", String.join(",", tickers.subList(25, 30))))
                 .andRespond(withSuccess(batchJson(batchQuote("T29", "2", false)), MediaType.APPLICATION_JSON));
 
-        Map<String, BigDecimal> prices = client.getPrices(tickers);
+        Map<String, PriceQuote> prices = client.getPrices(tickers);
 
         assertEquals(Set.of("T0", "T29"), prices.keySet());
         server.verify();

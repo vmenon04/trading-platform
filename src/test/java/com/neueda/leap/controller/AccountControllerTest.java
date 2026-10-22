@@ -31,6 +31,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -196,7 +197,8 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
         when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+        // one batch of display prices for all the holdings, not a price lookup per holding
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
@@ -209,7 +211,8 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE)));
         when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenThrow(new IllegalStateException("No price available for AAPL"));
+        // getCurrentPrices leaves out an instrument with no price (and returns nothing if Fauxnance is down)
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}/holdings", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())
@@ -224,7 +227,8 @@ class AccountControllerTest {
         when(accountHoldingMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("10"), ActivityStatus.ACTIVE),
                 new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, null, new BigDecimal("4"), ActivityStatus.INACTIVE)));
-        when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(new BigDecimal("150.25"));
+        when(instrumentService.getInstrumentById(INSTRUMENT_ID)).thenReturn(apple());
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("150.25")));
 
         mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
                 .andExpect(status().isOk())

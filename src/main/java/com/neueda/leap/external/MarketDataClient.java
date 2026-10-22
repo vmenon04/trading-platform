@@ -9,8 +9,9 @@ public interface MarketDataClient {
 
     BigDecimal getPrice(String ticker);
 
-    // prices for several tickers at once; a ticker with no price right now is left out of the map
-    Map<String, BigDecimal> getPrices(Collection<String> tickers);
+    // prices for several tickers at once, for showing (stale quotes included and marked stale);
+    // a ticker with no price right now is left out of the map
+    Map<String, PriceQuote> getPrices(Collection<String> tickers);
 
     // name and type of a symbol, or null if the market data API doesn't know it
     SymbolInfo getSymbol(String symbol);
