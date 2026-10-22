@@ -32,4 +32,8 @@ public interface AccountOpeningMapper {
     // only links a user who has no client yet; returns 0 if the user already has one (or doesn't exist)
     @Update("UPDATE users SET client_id = #{clientId} WHERE user_id = #{userId} AND client_id IS NULL")
     int linkUserToClient(@Param("userId") Long userId, @Param("clientId") Long clientId);
+
+    // null when the user has no client yet
+    @Select("SELECT client_id FROM users WHERE user_id = #{userId}")
+    Long findClientIdByUserId(@Param("userId") Long userId);
 }

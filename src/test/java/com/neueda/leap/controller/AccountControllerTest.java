@@ -234,6 +234,21 @@ class AccountControllerTest {
     }
 
     @Test
+    void getSummary_costBasisIsWhatWasPaidForTheSharesStillHeld() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(accountService.getBalance(ACCOUNT_ID)).thenReturn(new BigDecimal("2500.00"));
+        // bought 10 for 1500 (the trade() fixture), then sold 4: 6 left at an average of 150 = 900
+        AccountTrade sell = new AccountTrade(ACCOUNT_ID, INSTRUMENT_ID, TradeSide.SELL, new BigDecimal("4"),
+                new BigDecimal("160.00"), new BigDecimal("640.00"));
+        sell.setTradeStatus(TradeStatus.FULFILLED);
+        when(accountTradeMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(trade(ACCOUNT_ID, TradeSide.BUY), sell));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.costBasis").value(900.00));
+    }
+
+    @Test
     void getOrders_withoutSide_returnsAllTrades() throws Exception {
         when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
         when(accountTradeMapper.findByAccountId(ACCOUNT_ID)).thenReturn(List.of(

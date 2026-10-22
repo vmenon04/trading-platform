@@ -60,4 +60,22 @@ class AccountOpeningServiceTest {
         verify(accountOpeningMapper, never()).insertAccount();
         verify(accountOpeningMapper, never()).linkClientToAccount(anyLong(), anyLong());
     }
+
+    @Test
+    void openAdditionalAccount_linksANewAccountToTheUsersClient() {
+        when(accountOpeningMapper.findClientIdByUserId(USER_ID)).thenReturn(CLIENT_ID);
+        when(accountOpeningMapper.insertAccount()).thenReturn(ACCOUNT_ID);
+
+        accountOpeningService.openAdditionalAccount(USER_ID);
+
+        verify(accountOpeningMapper).linkClientToAccount(CLIENT_ID, ACCOUNT_ID);
+    }
+
+    @Test
+    void openAdditionalAccount_userWithoutClient_throwsAndCreatesNothing() {
+        when(accountOpeningMapper.findClientIdByUserId(USER_ID)).thenReturn(null);
+
+        assertThrows(java.util.NoSuchElementException.class, () -> accountOpeningService.openAdditionalAccount(USER_ID));
+        verify(accountOpeningMapper, never()).insertAccount();
+    }
 }

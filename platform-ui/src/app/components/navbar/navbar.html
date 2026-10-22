@@ -10,8 +10,8 @@
   <a routerLink="/portfolio" routerLinkActive="active">Portfolio</a>
   <a routerLink="/orders" routerLinkActive="active">Orders</a>
   <button type="button" class="profile-button" (click)="openAccount()" aria-label="Open account">
-    <span class="profile-avatar">AI</span>
-    <span class="profile-copy"><strong>Alex Investor</strong><small>alex@example.com</small></span>
+    <span class="profile-avatar">{{ initials() }}</span>
+    <span class="profile-copy"><strong>{{ account.clientName() || 'Your account' }}</strong><small>View account</small></span>
     <span class="profile-arrow" aria-hidden="true">↗</span>
   </button>
   <button type="button" class="logout-button" (click)="logout()">Log out</button>

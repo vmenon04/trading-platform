@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { TickerLogo } from '../ticker-logo/ticker-logo';
 import { AccountHolding } from '../../models/account.models';
 
 interface HoldingRow {
@@ -14,7 +15,7 @@ const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' 
 const shares = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
 @Component({
-  imports: [],
+  imports: [TickerLogo],
   selector: 'app-holdings-summary',
   styleUrl: './holdings-summary.css',
   templateUrl: './holdings-summary.html',

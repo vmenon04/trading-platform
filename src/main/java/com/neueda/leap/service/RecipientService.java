@@ -2,6 +2,7 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeRequestDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
+import com.neueda.leap.exception.InvalidTradeException;
 import com.neueda.leap.external.MarketDataClient;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -40,7 +41,8 @@ public class RecipientService {
         String ticker = instrumentService.getInstrumentById(dto.instrumentId()).getTicker();
         BigDecimal quote = marketDataClient.getPrice(ticker);
         if (quote == null || quote.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("No valid market price for " + ticker);
+            // a 400 with this message (GlobalExceptionHandler), so the user sees why instead of a generic 500
+            throw new InvalidTradeException("No current market price for " + ticker + ". Try again in a moment.");
         }
 
         TradeSubmittedDTO tradeSubmitted = new TradeSubmittedDTO(

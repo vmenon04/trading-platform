@@ -4,6 +4,15 @@
 export type TradeSide = 'BUY' | 'SELL';
 export type TradeStatus = 'PENDING' | 'ACCEPTED' | 'REJECTED' | 'FULFILLED';
 
+// GET /v1/instruments; price is null when there's no current price, assetClass is e.g. STOCK, ETF, CRYPTO
+export interface InstrumentQuote {
+  instrumentId: number;
+  ticker: string;
+  name: string;
+  price: number | null;
+  assetClass: string | null;
+}
+
 // GET /v1/clients/me
 export interface ClientProfile {
   clientId: string;
@@ -36,6 +45,8 @@ export interface AccountHolding {
   quantity: number;
   // current market price; null when no quote is available right now
   price: number | null;
+  // the id to sell this holding with
+  instrumentId: number;
 }
 
 // POST /v1/accounts/{accountId}/trades (accountId is also required in the body)

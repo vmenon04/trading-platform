@@ -1,4 +1,5 @@
 import { Component, input } from '@angular/core';
+import { TickerLogo } from '../ticker-logo/ticker-logo';
 
 export interface OrderItemData {
   symbol: string;
@@ -12,7 +13,7 @@ export interface OrderItemData {
 }
 
 @Component({
-  imports: [],
+  imports: [TickerLogo],
   selector: 'app-order-item',
   styleUrl: './order-item.css',
   templateUrl: './order-item.html',

@@ -25,6 +25,7 @@ import java.time.LocalDate;
 import java.util.UUID;
 import java.util.List;
 
+import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
@@ -132,6 +133,31 @@ class ClientControllerTest {
                 """)
                 .andExpect(status().isBadRequest());
         verify(accountOpeningService, never()).openAccount(any(), any());
+    }
+
+    @Test
+    void openAdditionalAccount_existingClient_returns201WithAllAccounts() throws Exception {
+        UUID clientId = UUID.randomUUID();
+        UUID first = UUID.randomUUID();
+        UUID second = UUID.randomUUID();
+        when(clientService.getExternalClientIdForUser(USER_ID)).thenReturn(clientId);
+        when(clientService.getClientByExternalId(clientId))
+                .thenReturn(new Client("Ada", "Lovelace", "ada@example.com", null));
+        when(clientService.getTradingAccounts(clientId)).thenReturn(List.of(new AccountDTO(first), new AccountDTO(second)));
+
+        mockMvc.perform(post("/api/v1/clients/me/accounts").contextPath("/api"))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.tradingAccounts", hasSize(2)));
+        verify(accountOpeningService).openAdditionalAccount(USER_ID);
+    }
+
+    @Test
+    void openAdditionalAccount_userWithoutClient_returns404() throws Exception {
+        doThrow(new java.util.NoSuchElementException("no client"))
+                .when(accountOpeningService).openAdditionalAccount(USER_ID);
+
+        mockMvc.perform(post("/api/v1/clients/me/accounts").contextPath("/api"))
+                .andExpect(status().isNotFound());
     }
 
     private ResultActions postOpenAccount(String json) throws Exception {

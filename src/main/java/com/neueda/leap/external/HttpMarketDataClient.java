@@ -1,10 +1,17 @@
 package com.neueda.leap.external;
 
 import java.math.BigDecimal;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.springframework.web.client.RestClient;
 
-// MarketDataClient backed by the Fauxnance API (GET /quotes/{symbol})
+// MarketDataClient backed by the Fauxnance API (GET /quotes/{symbol}, and GET /quotes?symbols= for batches)
 public class HttpMarketDataClient implements MarketDataClient {
+
+    // Fauxnance allows up to 25 symbols per batch request, and a batch counts as one request against the quota
+    static final int MAX_BATCH = 25;
 
     private final RestClient restClient;
 
@@ -30,20 +37,79 @@ public class HttpMarketDataClient implements MarketDataClient {
                         throw new IllegalStateException("Fauxnance returned " + status + " for " + ticker);
                     }
                     QuoteResponse body = response.bodyTo(QuoteResponse.class);
-                    if (body == null || body.meta().stale()) {
+                    // a stale quote (past Fauxnance's freshness window) still carries the last known price,
+                    // which is the price this practice platform trades at
+                    if (body == null || body.data() == null) {
                         return null;
                     }
                     return body.data().price();
                 });
     }
 
+    // Same rules as getPrice: a symbol that errors (unknown, still being fetched) gets no price, a stale quote
+    // keeps its last known price. The request fails as a whole only if Fauxnance itself does (bad key, quota, outage).
+    @Override
+    public Map<String, BigDecimal> getPrices(Collection<String> tickers) {
+        List<String> symbols = List.copyOf(tickers);
+        Map<String, BigDecimal> prices = new HashMap<>();
+        for (int start = 0; start < symbols.size(); start += MAX_BATCH) {
+            String batch = String.join(",", symbols.subList(start, Math.min(start + MAX_BATCH, symbols.size())));
+            BatchQuoteResponse body = restClient.get()
+                    .uri(uri -> uri.path("/quotes").queryParam("symbols", batch).build())
+                    .exchange((request, response) -> {
+                        if (response.getStatusCode().isError()) {
+                            throw new IllegalStateException("Fauxnance returned " + response.getStatusCode().value()
+                                    + " for a batch quote");
+                        }
+                        return response.bodyTo(BatchQuoteResponse.class);
+                    });
+            if (body == null || body.data() == null || body.data().quotes() == null) {
+                continue;
+            }
+            for (BatchEntry entry : body.data().quotes()) {
+                if (entry.quote() != null && entry.quote().price() != null) {
+                    prices.put(entry.symbol(), entry.quote().price());
+                }
+            }
+        }
+        return prices;
+    }
+
+    // GET /symbols/{symbol}; 404 (unknown symbol) or 202 (still being fetched) means no symbol right now
+    @Override
+    public SymbolInfo getSymbol(String symbol) {
+        return restClient.get()
+                .uri("/symbols/{symbol}", symbol)
+                .exchange((request, response) -> {
+                    int status = response.getStatusCode().value();
+                    if (status == 404 || status == 202) {
+                        return null;
+                    }
+                    if (response.getStatusCode().isError()) {
+                        throw new IllegalStateException("Fauxnance returned " + status + " for symbol " + symbol);
+                    }
+                    SymbolResponse body = response.bodyTo(SymbolResponse.class);
+                    return body == null ? null : body.data();
+                });
+    }
+
     // take the fields we use from the JSON response
-    record QuoteResponse(Quote data, Meta meta) {
+    record QuoteResponse(Quote data) {
+    }
+
+    record SymbolResponse(SymbolInfo data) {
+    }
+
+    // GET /quotes?symbols=: {"data": {"quotes": [{"symbol", "quote": {"price"}} or {"symbol", "error"}]}}
+    record BatchQuoteResponse(BatchData data) {
+    }
+
+    record BatchData(List<BatchEntry> quotes) {
+    }
+
+    record BatchEntry(String symbol, Quote quote) {
     }
 
     record Quote(BigDecimal price) {
-    }
-
-    record Meta(boolean stale) {
     }
 }

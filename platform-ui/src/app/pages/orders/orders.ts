@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, inject } from '@angular/core';
 import { OrderItem, OrderItemData } from '../../components/order-item/order-item';
 import { AccountService } from '../../services/account.service';
 
@@ -15,7 +15,10 @@ export class Orders {
   protected account = inject(AccountService);
 
   constructor() {
+    // the page opens on "All"; the side filter is shared with the Trade page's order list, so clear it on leaving
+    this.account.orderSide.set(null);
     this.account.refresh();
+    inject(DestroyRef).onDestroy(() => this.account.orderSide.set(null));
   }
 
   activeFilter: 'All' | 'Buy' | 'Sell' = 'All';

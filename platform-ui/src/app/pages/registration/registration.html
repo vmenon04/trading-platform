@@ -43,6 +43,19 @@
       </div>
 
       <div class="field">
+        <label for="confirm-password">Retype password</label>
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          id="confirm-password"
+          name="confirmPassword"
+          required
+          autocomplete="new-password"
+          [(ngModel)]="confirmPassword"
+          [class.invalid]="submitted && confirmPassword !== password"
+        />
+      </div>
+
+      <div class="field">
         <label for="first-name">First Name</label>
         <input
           type="text"
@@ -93,6 +106,7 @@
           id="dob"
           name="dob"
           required
+          [max]="latestBirthDate"
           [(ngModel)]="dob"
           #dobField="ngModel"
           [class.invalid]="submitted && dobField.invalid"

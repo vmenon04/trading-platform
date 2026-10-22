@@ -19,6 +19,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -54,6 +55,18 @@ public class ClientController {
             return conflict("You already have a trading account");
         } catch (DuplicateKeyException e) {
             return conflict("That email is already used by another client");
+        }
+        return ResponseEntity.status(HttpStatus.CREATED).body(getLoggedInClient(jwt).getBody());
+    }
+
+    // opens another individual brokerage account (with no cash) for a user who already has one
+    @PostMapping("/me/accounts")
+    public ResponseEntity<?> openAdditionalAccount(@AuthenticationPrincipal Jwt jwt) {
+        try {
+            accountOpeningService.openAdditionalAccount(Long.parseLong(jwt.getSubject()));
+        } catch (NoSuchElementException e) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponseDTO.of(HttpStatus.NOT_FOUND,
+                    "Not Found", "Open your first trading account before adding another"));
         }
         return ResponseEntity.status(HttpStatus.CREATED).body(getLoggedInClient(jwt).getBody());
     }

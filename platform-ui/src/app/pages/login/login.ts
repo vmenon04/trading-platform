@@ -38,7 +38,7 @@ export class Login {
     try {
       await this.auth.login(this.username, this.password);
       this.submitted = false;
-      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/portfolio';
+      const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl') ?? '/dashboard';
       this.router.navigateByUrl(returnUrl);
     } catch (error) {
       this.message.set(this.errorMessage(error));

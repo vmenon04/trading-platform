@@ -8,6 +8,11 @@ import { AuthService } from './auth.service';
 const REFRESH_DELAYS_MS = [3000, 8000, 15000];
 const VALUATION_REFRESH_MS = 10 * 60 * 1000;
 
+// upper-cases only the first letter of each word, so "mcDonald" stays "McDonald"
+function capitalizeWords(name: string): string {
+  return name.trim().split(/\s+/).map((word) => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+}
+
 // Calls the Account & Trade Management Service. URLs are relative (/v1/...) and the
 // dev server forwards them to Spring Boot via proxy.conf.json.
 @Injectable({ providedIn: 'root' })
@@ -18,12 +23,16 @@ export class AccountService {
   // the logged-in user's client and their trading accounts (GET /v1/clients/me); 404 = no accounts yet
   readonly client = httpResource<ClientProfile>(() => (this.auth.isLoggedIn() ? '/v1/clients/me' : undefined));
 
+  // the user's name for display, each word capitalized ("efe test" -> "Efe Test"); the backend keeps it as typed
+  readonly clientName = computed(() => capitalizeWords(this.client.value()?.clientName ?? ''));
+  readonly accounts = computed(() => this.client.value()?.tradingAccounts ?? []);
+
   // the account chosen in the account selector; null = the user's first account
   readonly selectedAccountId = signal<string | null>(null);
 
   // the account being viewed; every resource below re-fetches when it changes, and waits while it's null
   readonly accountId = computed(() => {
-    const accounts = this.client.value()?.tradingAccounts ?? [];
+    const accounts = this.accounts();
     const selected = this.selectedAccountId();
     return accounts.find((account) => account.accountId === selected)?.accountId ?? accounts[0]?.accountId ?? null;
   });
@@ -83,6 +92,18 @@ export class AccountService {
   async openAccount(details: OpenAccountRequest): Promise<void> {
     await firstValueFrom(this.http.post('/v1/clients/me', details));
     this.client.reload();
+  }
+
+  // POST /v1/clients/me/accounts -> 201 with all of the user's accounts; opens another individual brokerage
+  // account (with no cash) and switches the app to it
+  async openAdditionalAccount(): Promise<void> {
+    const before = new Set(this.accounts().map((account) => account.accountId));
+    const profile = await firstValueFrom(this.http.post<ClientProfile>('/v1/clients/me/accounts', {}));
+    const opened = profile.tradingAccounts.find((account) => !before.has(account.accountId));
+    this.client.set(profile);
+    if (opened) {
+      this.selectedAccountId.set(opened.accountId);
+    }
   }
 
   // POST /v1/accounts/{accountId}/deposits -> 204; adds practice cash to the account

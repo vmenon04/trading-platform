@@ -1,4 +1,4 @@
-<article class="metric-card">
+<article class="metric-card" [class.positive]="tone() === 'positive'" [class.negative]="tone() === 'negative'">
 	<span class="metric-label">{{ label() }}</span>
 	<strong>{{ value() }}</strong>
 	<span class="metric-change">{{ change() }}</span>
