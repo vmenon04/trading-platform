@@ -12,6 +12,5 @@ export const routes: Routes = [
     { path: 'login', component: Login },
     { path: 'orders', loadComponent: () => import('./pages/orders/orders').then((m) => m.Orders), canActivate: [authGuard] },
     { path: 'portfolio', loadComponent: () => import('./pages/portfolio/portfolio').then((m) => m.Portfolio), canActivate: [authGuard] },
-    { path: 'profile', loadComponent: () => import('./pages/profile/profile').then((m) => m.Profile), canActivate: [authGuard] },
     { path: 'account', loadComponent: () => import('./pages/account/account').then((m) => m.Account), canActivate: [authGuard] },
     { path: 'registration', component: Registration },];

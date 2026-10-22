@@ -89,8 +89,9 @@ public class AccountController {
 
         // what was paid for the shares still held (average cost of the filled trades)
         BigDecimal costBasis = CostBasis.of(accountTradeMapper.findByAccountId(internalId));
+        BigDecimal portfolioValue = investmentValue.add(cashBalance);
 
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue, cashBalance, costBasis));
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue,  portfolioValue, cashBalance, costBasis));
     }
 
     @GetMapping("/{accountId}/holdings")

@@ -10,6 +10,36 @@
       <h2>Create your account</h2><p class="auth-subtitle">Get started with f-trade today.</p>
 
       <div class="field">
+        <label for="first-name">First Name</label>
+        <input
+          type="text"
+          id="first-name"
+          name="first-name"
+          required
+          minlength="2"
+          [(ngModel)]="firstName"
+          name="firstName"
+          #firstNameField="ngModel"
+          [class.invalid]="submitted && firstNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="last-name">Last Name</label>
+        <input
+          type="text"
+          id="last-name"
+          name="last-name"
+          required
+          minlength="2"
+          [(ngModel)]="lastName"
+          name="lastName"
+          #lastNameField="ngModel"
+          [class.invalid]="submitted && lastNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
         <label for="username">Username</label>
         <input
           type="text"
@@ -52,36 +82,6 @@
           autocomplete="new-password"
           [(ngModel)]="confirmPassword"
           [class.invalid]="submitted && confirmPassword !== password"
-        />
-      </div>
-
-      <div class="field">
-        <label for="first-name">First Name</label>
-        <input
-          type="text"
-          id="first-name"
-          name="first-name"
-          required
-          minlength="2"
-          [(ngModel)]="firstName"
-          name="firstName"
-          #firstNameField="ngModel"
-          [class.invalid]="submitted && firstNameField.invalid"
-        />
-      </div>
-
-      <div class="field">
-        <label for="last-name">Last Name</label>
-        <input
-          type="text"
-          id="last-name"
-          name="last-name"
-          required
-          minlength="2"
-          [(ngModel)]="lastName"
-          name="lastName"
-          #lastNameField="ngModel"
-          [class.invalid]="submitted && lastNameField.invalid"
         />
       </div>
 
