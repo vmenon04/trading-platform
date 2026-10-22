@@ -29,6 +29,11 @@ public interface InstrumentMapper {
     @Options(useGeneratedKeys = true, keyProperty = "instrumentId", keyColumn = "instrument_id")
     void insert(Instrument instrument);
 
+    // adds the instrument unless its ticker is already there (tickers are unique); returns how many rows were added
+    @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType}) "
+            + "ON CONFLICT (ticker) DO NOTHING")
+    int insertIfAbsent(Instrument instrument);
+
     @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{instrumentType} WHERE instrument_id = #{instrumentId}")
     void update(Instrument instrument);
 

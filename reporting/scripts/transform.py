@@ -78,6 +78,19 @@ def load_queries(path):
 
 QUERIES = load_queries(QUERIES_FILE)
 
+# Several clients at once, and clients by what they hold (cash + holdings, the portfolios query).
+# Written here rather than in FILTER_SQL above because they need the portfolios query from queries.sql.
+FILTER_SQL["client_ids"] = (
+    "t.account_id IN (SELECT account_id FROM client_accounts WHERE client_id = ANY(%(client_ids)s))"
+)
+_HOLDS = (
+    "t.account_id IN (SELECT ca.account_id FROM client_accounts ca"
+    " JOIN (" + QUERIES["portfolios"] + ") p ON p.client_id = ca.client_id"
+    " WHERE p.portfolio_value {op} %({name})s)"
+)
+FILTER_SQL["min_portfolio"] = _HOLDS.format(op=">=", name="min_portfolio")
+FILTER_SQL["max_portfolio"] = _HOLDS.format(op="<=", name="max_portfolio")
+
 
 def query(name, **blanks):
     """The SQL for `name` from queries.sql, with its {blanks} filled in.
@@ -230,12 +243,14 @@ def top_instruments(engine, filters, top_n=10):
 def client_portfolios(engine, filters, page=1, page_size=50):
     """One page of clients, highest portfolio value first. Returns (summary, rows).
 
-    `filters` can hold client_id, min_value, max_value (dollars) and quartile (1-4);
-    missing ones are ignored. Each row has cash, invested, portfolio_value and
+    `filters` can hold client_id, client_ids (a list), min_value, max_value (dollars) and
+    quartile (1-4); missing ones are ignored. Each row has cash, invested, portfolio_value and
     quartile (4 = top 25% of clients). `summary` is {"total": clients matching,
     "total_value": their combined portfolio value}.
     """
-    params = {name: filters.get(name) for name in ["client_id", "min_value", "max_value", "quartile"]}
+    params = portfolio_params(filters)
+    params["client_id"] = filters.get("client_id")
+    params["quartile"] = filters.get("quartile")
     params["page_size"] = page_size
     params["offset"] = (page - 1) * page_size
     df = pd.read_sql(query("client_portfolios", portfolios=QUERIES["portfolios"]), engine, params=params)
@@ -251,6 +266,44 @@ def client_portfolios(engine, filters, page=1, page_size=50):
 def portfolio_tiers(engine):
     """How many clients fall in each quartile, and the value range of each, top quartile first."""
     return pd.read_sql(query("portfolio_tiers", portfolios=QUERIES["portfolios"]), engine)
+
+
+def portfolio_params(filters):
+    """client_ids, min_value and max_value for the portfolio queries; an empty list of clients means all of them."""
+    return {
+        "client_ids": filters.get("client_ids") or None,
+        "min_value": filters.get("min_value"),
+        "max_value": filters.get("max_value"),
+    }
+
+
+def portfolio_distribution(engine, filters):
+    """A histogram of the matching clients' portfolio values: 10 equal-width bands from the smallest to the largest.
+
+    `filters` can hold client_ids, min_value and max_value. Every band gets a row, even an empty one,
+    with its `low` and `high` value; no rows if no client matches.
+    """
+    sql = query("portfolio_distribution", portfolios=QUERIES["portfolios"])
+    return pd.read_sql(sql, engine, params=portfolio_params(filters))
+
+
+# ---------------------------------------------------------------------------
+# Several clients side by side
+# ---------------------------------------------------------------------------
+
+def volume_by_client(engine, filters, grain):
+    """Traded value per period for each client in filters["client_ids"], one row per client and period.
+
+    Every client gets a row for every period, so each one's line in a chart runs the whole range.
+    """
+    df = by_period(engine, "volume_by_client", filters, grain)
+    filled = []
+    for client_id in filters["client_ids"]:
+        one = df[df["client_id"] == client_id].drop(columns=["client_id"])
+        one = fill_missing_periods(one, filters["start"], filters["end"], grain)
+        one.insert(1, "client_id", client_id)
+        filled.append(one)
+    return pd.concat(filled, ignore_index=True)
 
 
 # ---------------------------------------------------------------------------

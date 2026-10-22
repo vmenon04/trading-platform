@@ -4,15 +4,22 @@ import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestClientException;
 
 /**
  * Provides instrument lookups and current market price retrieval.
  */
 @Service
 public class InstrumentService {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(InstrumentService.class);
 
     private final InstrumentMapper instrumentMapper;
     private final MarketDataClient marketDataClient;
@@ -102,5 +109,30 @@ public class InstrumentService {
      */
     public BigDecimal getCurrentPrice(Long instrumentId) {
         return getCurrentPrice(getInstrumentById(instrumentId).getTicker());
+    }
+
+    /**
+     * Returns current prices for many instruments at once, for showing: cached prices from Redis, and the rest from
+     * the market data API in batches. A stale quote keeps its last known price (trades use getCurrentPrice, which
+     * rejects stale quotes). Instruments with no valid price right now are left out.
+     *
+     * @param tickers tickers to price
+     * @return positive prices by ticker; empty if the market data API is unavailable
+     */
+    public Map<String, BigDecimal> getCurrentPrices(List<String> tickers) {
+        tickers = tickers.stream().distinct().toList();
+        try {
+            Map<String, BigDecimal> prices = new HashMap<>();
+            marketDataClient.getPrices(tickers).forEach((ticker, quote) -> {
+                if (quote.price() != null && quote.price().compareTo(BigDecimal.ZERO) > 0) {
+                    prices.put(ticker, quote.price());
+                }
+            });
+            return prices;
+        } catch (IllegalStateException | RestClientException e) {
+            // listing instruments still works without prices (bad key, quota used up, API down)
+            LOGGER.warn("No market prices for {} instruments: {}", tickers.size(), e.getMessage());
+            return Map.of();
+        }
     }
 }

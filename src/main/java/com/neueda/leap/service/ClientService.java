@@ -42,6 +42,16 @@ public class ClientService {
         return internalClientId == null ? null : clientMapper.findById(internalClientId);
     }
 
+    /**
+     * Finds the client linked to a logged-in user.
+     *
+     * @param userId user id from the login token
+     * @return the client's external id, or {@code null} when the user has no client (e.g. only registered a login)
+     */
+    public UUID getExternalClientIdForUser(Long userId) {
+        return clientMapper.findExternalClientIdByUserId(userId);
+    }
+
     public List<AccountDTO> getTradingAccounts(UUID externalClientId) {
         Long internalClientId = getInternalClientId(externalClientId);
         if (internalClientId == null) {

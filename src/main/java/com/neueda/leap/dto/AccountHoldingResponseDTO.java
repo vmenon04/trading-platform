@@ -8,5 +8,7 @@ public record AccountHoldingResponseDTO(
         String name,
         String ticker,
         BigDecimal quantity,
-        BigDecimal price
+        BigDecimal price,
+        // the id to sell this holding with (POST /v1/accounts/{accountId}/trades)
+        Long instrumentId
 ) {}

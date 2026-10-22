@@ -109,9 +109,31 @@ def test_window_starts_on_the_1st_but_not_before_the_first_trade(db):
 
 def test_portfolio_filters_are_parameters_not_sql_text(db):
     tf.client_portfolios(None, {"client_id": 7, "min_value": 1_000_000}, page=3, page_size=10)
-    assert db.params == {"client_id": 7, "min_value": 1_000_000, "max_value": None, "quartile": None,
-                         "page_size": 10, "offset": 20}
+    assert db.params == {"client_id": 7, "client_ids": None, "min_value": 1_000_000, "max_value": None,
+                         "quartile": None, "page_size": 10, "offset": 20}
     assert "1000000" not in db.sql
+
+
+def test_no_picked_clients_means_every_client(db):
+    # an empty list would match nobody in SQL, so it is sent as NULL ("no filter")
+    tf.portfolio_distribution(None, {"client_ids": []})
+    assert db.params["client_ids"] is None
+
+
+# --- several clients ----------------------------------------------------------
+
+def test_portfolio_range_filters_trades_by_what_the_client_holds():
+    sql, params = tf.build_where({"min_portfolio": 250_000})
+    assert "portfolio_value >= %(min_portfolio)s" in sql
+    assert params == {"min_portfolio": 250_000}
+
+
+def test_every_picked_client_gets_every_period(db):
+    # client 3 traded in January only, client 9 never: both still get a row for January and February
+    db.result = periods("2026-01-01", client_id=[3], trade_count=[2], notional=[500.0])
+    out = tf.volume_by_client(None, {**JAN_TO_FEB, "client_ids": [3, 9]}, "month")
+    assert out["client_id"].tolist() == [3, 3, 9, 9]
+    assert out["notional"].tolist() == [500.0, 0, 0, 0]
 
 
 def test_quartiles_are_ranked_before_filtering(db):

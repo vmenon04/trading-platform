@@ -6,6 +6,7 @@ import java.util.UUID;
 public record TradeResponseDTO(
         Long instrumentId,
         String ticker,
+        String name,
         UUID tradeId,
         String side,
         BigDecimal quantity,

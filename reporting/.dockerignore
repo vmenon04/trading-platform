@@ -1,0 +1,5 @@
+# only analytics_schema.sql, queries.sql and scripts/ go into the image
+web/
+tests/
+**/__pycache__/
+reports/

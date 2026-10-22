@@ -71,7 +71,8 @@ CREATE TABLE client_accounts (
 CREATE TABLE instruments (
     instrument_id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT NOT NULL,
-    ticker TEXT NOT NULL
+    -- the Fauxnance symbol, e.g. AAPL or X:BTC-USD; one row per symbol, so trades and holdings agree on its id
+    ticker TEXT NOT NULL UNIQUE
         CHECK (UPPER(ticker) = ticker),
     -- same values as the Java InstrumentType enum
     asset_class TEXT NOT NULL

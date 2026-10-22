@@ -6,6 +6,7 @@ import com.neueda.leap.dto.DepositRequestDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
+import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
@@ -27,7 +28,9 @@ import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
 import java.math.BigDecimal;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @RestController
@@ -66,8 +69,22 @@ public class AccountController {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
         BigDecimal cashBalance = accountService.getBalance(internalId);
 
-        // TODO: calculate cost basis and investment value
-        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, new BigDecimal(0), cashBalance, new BigDecimal(0)));
+        // market value of the active holdings; a holding with no price available counts as 0
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        BigDecimal investmentValue = holdings.stream()
+                .map(holding -> {
+                    BigDecimal price = prices.get(instruments.get(holding.getInstrumentId()).getTicker());
+                    return price == null ? BigDecimal.ZERO : holding.getQuantity().multiply(price);
+                })
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        // what was paid for the shares still held (average cost of the filled trades)
+        BigDecimal costBasis = accountService.getCostBasis(internalId);
+        BigDecimal portfolioValue = investmentValue.add(cashBalance);
+
+        return ResponseEntity.ok(new AccountSummaryResponseDTO(accountId, investmentValue,  portfolioValue, cashBalance, costBasis));
     }
 
     @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
@@ -75,12 +92,16 @@ public class AccountController {
     public ResponseEntity<List<AccountHoldingResponseDTO>> getHoldings(@PathVariable UUID accountId,
                                                                        @AuthenticationPrincipal Jwt jwt) {
         Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
-        List<AccountHoldingResponseDTO> response = activeHoldings(internalId).stream()
-                .map(holding -> new AccountHoldingResponseDTO(accountId, instrumentService.getInstrumentById(holding.getInstrumentId()).getName(),
-                        instrumentService.getInstrumentById(holding.getInstrumentId()).getTicker(), holding.getQuantity(),
-                        new BigDecimal(0)))
+        List<AccountHolding> holdings = activeHoldings(internalId);
+        Map<Long, Instrument> instruments = instrumentsOf(holdings);
+        Map<String, BigDecimal> prices = displayPrices(instruments);
+        List<AccountHoldingResponseDTO> response = holdings.stream()
+                .map(holding -> {
+                    Instrument instrument = instruments.get(holding.getInstrumentId());
+                    return new AccountHoldingResponseDTO(accountId, instrument.getName(), instrument.getTicker(),
+                            holding.getQuantity(), prices.get(instrument.getTicker()), holding.getInstrumentId());
+                })
                 .toList();
-                // TODO: add market price
         return ResponseEntity.ok(response);
     }
 
@@ -143,6 +164,20 @@ public class AccountController {
     }
 
 
+    // each holding's instrument, looked up once
+    private Map<Long, Instrument> instrumentsOf(List<AccountHolding> holdings) {
+        Map<Long, Instrument> instruments = new HashMap<>();
+        holdings.forEach(holding -> instruments.computeIfAbsent(holding.getInstrumentId(),
+                instrumentService::getInstrumentById));
+        return instruments;
+    }
+
+    // prices to show, by ticker, in one batch (cached in Redis): a stale quote shows its last known price, and an
+    // instrument with no price right now is left out, so one instrument without a quote doesn't fail the portfolio
+    private Map<String, BigDecimal> displayPrices(Map<Long, Instrument> instruments) {
+        return instrumentService.getCurrentPrices(instruments.values().stream().map(Instrument::getTicker).toList());
+    }
+
     private List<AccountHolding> activeHoldings(Long accountId) {
         return accountHoldingMapper.findByAccountId(accountId).stream()
                 .filter(holding -> holding.getStatus() == ActivityStatus.ACTIVE)
@@ -150,8 +185,9 @@ public class AccountController {
     }
 
     private TradeResponseDTO toTradeResponse(AccountTrade trade) {
+        var instrument = instrumentService.getInstrumentById(trade.getInstrumentId());
         return new TradeResponseDTO(trade.getInstrumentId(),
-                instrumentService.getInstrumentById(trade.getInstrumentId()).getTicker(), trade.getExternalTradeId(),
+            instrument.getTicker(), instrument.getName(), trade.getExternalTradeId(),
                 trade.getTradeSide().name(), trade.getQuantity(), trade.getPPU(), trade.getTotalPrice(), trade.getStatus().name(), null);
     }
 }
