@@ -82,6 +82,12 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.tokens()?.refreshToken;
+    if (refreshToken) {
+      void firstValueFrom(this.http.post('/auth/logout', { refreshToken })).catch(() => {
+        // ignore errors: the refresh token is invalidated on the server, so a 401 or 403 is fine
+      });
+    }
     this.setTokens(null);
     this.router.navigate(['/login']);
   }
