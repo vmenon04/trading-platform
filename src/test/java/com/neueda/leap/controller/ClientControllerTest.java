@@ -2,7 +2,11 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.dto.AccountDTO;
+import com.neueda.leap.dto.ClientDetailsDTO;
 import com.neueda.leap.dto.OpenAccountRequestDTO;
+import com.neueda.leap.exception.AccountConflictException;
+import com.neueda.leap.exception.ClientDetailsRequiredException;
+import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.ClientService;
 import org.junit.jupiter.api.AfterEach;
@@ -16,7 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.web.method.annotation.AuthenticationPrincipalArgumentResolver;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -56,7 +59,9 @@ class ClientControllerTest {
 
     @BeforeEach
     void setUp() {
+        // the advice turns the service's exceptions into error responses, as it does in the running app
         mockMvc = MockMvcBuilders.standaloneSetup(clientController)
+                .setControllerAdvice(new GlobalExceptionHandler())
                 .setCustomArgumentResolvers(new AuthenticationPrincipalArgumentResolver())
                 .build();
         // @AuthenticationPrincipal reads the logged-in user from the security context
@@ -102,41 +107,12 @@ class ClientControllerTest {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.clientName").value("Ada Lovelace"))
                 .andExpect(jsonPath("$.tradingAccounts[0].accountId").value(accountId.toString()));
-        verify(accountOpeningService).openAccount(USER_ID, new OpenAccountRequestDTO(
-                "Ada", "Lovelace", "ada@example.com", LocalDate.of(1990, 1, 1)));
+        verify(accountOpeningService).openAccount(USER_ID, new OpenAccountRequestDTO(new ClientDetailsDTO(
+                "Ada", "Lovelace", "ada@example.com", LocalDate.of(1990, 1, 1))));
     }
 
     @Test
-    void openAccount_userAlreadyHasAccount_returns409() throws Exception {
-        doThrow(new IllegalStateException("already has an account"))
-                .when(accountOpeningService).openAccount(eq(USER_ID), any());
-
-        postOpenAccount(validAccountJson())
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("You already have a trading account"));
-    }
-
-    @Test
-    void openAccount_emailAlreadyUsed_returns409() throws Exception {
-        doThrow(new DuplicateKeyException("clients_email_key"))
-                .when(accountOpeningService).openAccount(eq(USER_ID), any());
-
-        postOpenAccount(validAccountJson())
-                .andExpect(status().isConflict())
-                .andExpect(jsonPath("$.message").value("That email is already used by another client"));
-    }
-
-    @Test
-    void openAccount_missingDetails_returns400AndOpensNothing() throws Exception {
-        postOpenAccount("""
-                {"firstName": "", "lastName": "Lovelace", "email": "not-an-email", "birthDate": "1990-01-01"}
-                """)
-                .andExpect(status().isBadRequest());
-        verify(accountOpeningService, never()).openAccount(any(), any());
-    }
-
-    @Test
-    void openAdditionalAccount_existingClient_returns201WithAllAccounts() throws Exception {
+    void openAccount_existingClientWithoutBody_returns201WithAllAccounts() throws Exception {
         UUID clientId = UUID.randomUUID();
         UUID first = UUID.randomUUID();
         UUID second = UUID.randomUUID();
@@ -148,27 +124,47 @@ class ClientControllerTest {
         mockMvc.perform(post("/api/v1/clients/me/accounts").contextPath("/api"))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.tradingAccounts", hasSize(2)));
-        verify(accountOpeningService).openAdditionalAccount(USER_ID);
+        verify(accountOpeningService).openAccount(USER_ID, null);
     }
 
     @Test
-    void openAdditionalAccount_userWithoutClient_returns404() throws Exception {
-        doThrow(new java.util.NoSuchElementException("no client"))
-                .when(accountOpeningService).openAdditionalAccount(USER_ID);
+    void openAccount_conflict_returns409WithTheMessage() throws Exception {
+        doThrow(new AccountConflictException("That email is already used by another client"))
+                .when(accountOpeningService).openAccount(eq(USER_ID), any());
 
-        mockMvc.perform(post("/api/v1/clients/me/accounts").contextPath("/api"))
-                .andExpect(status().isNotFound());
+        postOpenAccount(validAccountJson())
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.message").value("That email is already used by another client"));
+    }
+
+    @Test
+    void openAccount_newUserWithoutDetails_returns400WithTheMessage() throws Exception {
+        doThrow(new ClientDetailsRequiredException("Enter your details to open your first trading account"))
+                .when(accountOpeningService).openAccount(eq(USER_ID), any());
+
+        postOpenAccount("{}")
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("Enter your details to open your first trading account"));
+    }
+
+    @Test
+    void openAccount_invalidDetails_returns400AndOpensNothing() throws Exception {
+        postOpenAccount("""
+                {"clientDetails": {"firstName": "", "lastName": "Lovelace", "email": "not-an-email", "birthDate": "1990-01-01"}}
+                """)
+                .andExpect(status().isBadRequest());
+        verify(accountOpeningService, never()).openAccount(any(), any());
     }
 
     private ResultActions postOpenAccount(String json) throws Exception {
-        return mockMvc.perform(post("/api/v1/clients/me").contextPath("/api")
+        return mockMvc.perform(post("/api/v1/clients/me/accounts").contextPath("/api")
                 .contentType(APPLICATION_JSON)
                 .content(json));
     }
 
     private static String validAccountJson() {
         return """
-                {"firstName": "Ada", "lastName": "Lovelace", "email": "ada@example.com", "birthDate": "1990-01-01"}
+                {"clientDetails": {"firstName": "Ada", "lastName": "Lovelace", "email": "ada@example.com", "birthDate": "1990-01-01"}}
                 """;
     }
 

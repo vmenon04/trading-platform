@@ -9,6 +9,7 @@ import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -59,5 +60,27 @@ public class GlobalExceptionHandler {
         ErrorResponseDTO body = ErrorResponseDTO.of(
                 HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
         return ResponseEntity.badRequest().body(body);
+    }
+
+    // e.g. a path id that isn't a UUID; without this the catch-all above would answer 500
+    @ExceptionHandler(MethodArgumentTypeMismatchException.class)
+    public ResponseEntity<ErrorResponseDTO> handleTypeMismatch(MethodArgumentTypeMismatchException ex) {
+        ErrorResponseDTO body = ErrorResponseDTO.of(
+                HttpStatus.BAD_REQUEST, "Bad Request", "invalid value for " + ex.getName());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(ClientDetailsRequiredException.class)
+    public ResponseEntity<ErrorResponseDTO> handleClientDetailsRequired(ClientDetailsRequiredException ex) {
+        ErrorResponseDTO body = ErrorResponseDTO.of(
+                HttpStatus.BAD_REQUEST, "Bad Request", ex.getMessage());
+        return ResponseEntity.badRequest().body(body);
+    }
+
+    @ExceptionHandler(AccountConflictException.class)
+    public ResponseEntity<ErrorResponseDTO> handleAccountConflict(AccountConflictException ex) {
+        ErrorResponseDTO body = ErrorResponseDTO.of(
+                HttpStatus.CONFLICT, "Conflict", ex.getMessage());
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(body);
     }
 }

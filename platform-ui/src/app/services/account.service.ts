@@ -81,10 +81,12 @@ export class AccountService {
     this.refreshAfterTrade();
   }
 
-  // POST /v1/clients/me -> opens the logged-in user's first trading account, with no cash
+  // POST /v1/clients/me/accounts with the user's details -> 201 with their client; opens the logged-in user's
+  // first trading account, with no cash
   async openAccount(details: OpenAccountRequest): Promise<void> {
-    await firstValueFrom(this.http.post('/v1/clients/me', details));
-    this.client.reload();
+    const profile = await firstValueFrom(
+      this.http.post<ClientProfile>('/v1/clients/me/accounts', { clientDetails: details }));
+    this.client.set(profile);
   }
 
   // POST /v1/clients/me/accounts -> 201 with all of the user's accounts; opens another individual brokerage
