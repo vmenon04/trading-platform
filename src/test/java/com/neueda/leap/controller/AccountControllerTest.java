@@ -175,7 +175,8 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$[0].accountId").value(externalAccountId.toString()))
                 .andExpect(jsonPath("$[0].name").value("Apple Inc"))
                 .andExpect(jsonPath("$[0].ticker").value("AAPL"))
-                .andExpect(jsonPath("$[0].quantity").value(10));
+                .andExpect(jsonPath("$[0].quantity").value(10))
+                .andExpect(jsonPath("$[0].assetClass").value("STOCK"));
     }
 
     @Test

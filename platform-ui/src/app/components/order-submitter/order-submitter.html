@@ -25,6 +25,13 @@
 			}
 		}
 	</div>
+	@if (paged) {
+		<nav class="pager" aria-label="Instrument pages">
+			<button type="button" [disabled]="!instrumentService.hasPrevious() || listLoading" (click)="instrumentService.previousPage()">‹ Previous</button>
+			<span>{{ pageLabel }}</span>
+			<button type="button" [disabled]="!instrumentService.hasNext() || listLoading" (click)="instrumentService.nextPage()">Next ›</button>
+		</nav>
+	}
 	@if (selectedInstrument; as instrument) {
 		<label class="eyebrow" for="quantity">Selected instrument · market price</label>
 		<app-instrument-summary [instrument]="instrument" variant="selected"></app-instrument-summary>

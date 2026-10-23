@@ -16,3 +16,6 @@
 .submit-order:disabled { background: #a8b2ad; color: #eef1ef; opacity: 1; cursor: not-allowed; }
 .order-result { margin: 0; padding: 10px 12px; border-radius: 7px; background: var(--green-soft); color: var(--green); font-size: 0.68rem; }
 .order-result.error { background: var(--red-soft); color: var(--red); }
+.pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.62rem; }
+.pager button { min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.pager button:disabled { color: #a8b2ad; cursor: not-allowed; }
