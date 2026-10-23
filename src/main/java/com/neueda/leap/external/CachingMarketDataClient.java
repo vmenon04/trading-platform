@@ -60,6 +60,9 @@ public class CachingMarketDataClient implements MarketDataClient {
         if (cached != null) {
             return cached;
         }
+        if (isUnknown(ticker)) {
+            return null;
+        }
         if (!trySpend(1, dailyLimit)) {
             throw new IllegalStateException("Fauxnance's daily quota is used up; prices are available again after "
                     + "midnight UTC");
