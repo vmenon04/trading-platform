@@ -50,9 +50,18 @@ export class AuthService {
     async refresh(refreshToken: string): Promise<TokenPair> {
         const user = await this.findByRefreshToken(refreshToken);
         if (!user) {
-            throw new UnauthorizedException("invalid or expired refresh token");
+            throw new UnauthorizedException("user not currently logged in");
         }
         return this.rotateTokenPair(user, refreshToken);
+    }
+
+    async logout(refreshToken: string): Promise<{ loggedOut: true }> {
+        const user = await this.findByRefreshToken(refreshToken);
+        if (!user) {
+            throw new UnauthorizedException("user not currently logged in");
+        }
+        await this.tokenRepository.revokeByHash(this.hashRefreshToken(refreshToken));
+        return { loggedOut: true };
     }
 
     private issueAccessToken(userId: bigint, roles: string[]): string {
@@ -105,12 +114,10 @@ export class AuthService {
 
     private async findByRefreshToken(refreshToken: string): Promise<UserRecord | null> {
         const hashedToken = this.hashRefreshToken(refreshToken);
-
         const token = await this.tokenRepository.findActiveByHash(hashedToken);
         if (!token) {
             return null;
         }
-
         const user = await this.userRepository.findById(token.userId);
         if (!user) {
             return null;
