@@ -26,14 +26,21 @@ public class InstrumentController {
         this.instrumentCatalog = instrumentCatalog;
     }
 
+    // each instrument listed is priced, so a page is kept small enough to price in a few Fauxnance batches
+    static final int MAX_LIMIT = 100;
+
     // Instruments with their price to show (cached in Redis, then the API in batches; the last known price if there's
-    // no fresh one). Without search: every instrument in the database. With search=ORCL: that symbol, looked up in
-    // the database and then the market data API (which adds it to the database), or an empty list if it's unknown.
+    // no fresh one). Without search: a page (limit, offset) of the instruments in the database whose ticker or name
+    // contains q, or of all of them without q. With search=ORCL: that symbol, looked up in the database and then the
+    // market data API (which adds it to the database), or an empty list if it's unknown.
     @GetMapping
-    public ResponseEntity<List<InstrumentResponseDTO>> getInstruments(@RequestParam(required = false) String search) {
+    public ResponseEntity<List<InstrumentResponseDTO>> getInstruments(@RequestParam(required = false) String search,
+                                                                      @RequestParam(required = false) String q,
+                                                                      @RequestParam(defaultValue = "50") int limit,
+                                                                      @RequestParam(defaultValue = "0") int offset) {
         List<CatalogInstrument> instruments;
         if (search == null || search.isBlank()) {
-            instruments = instrumentCatalog.all();
+            instruments = instrumentCatalog.search(q, Math.max(1, Math.min(limit, MAX_LIMIT)), Math.max(0, offset));
         } else {
             CatalogInstrument found = instrumentCatalog.lookup(search);
             instruments = found == null ? List.of() : List.of(found);

@@ -4,42 +4,46 @@ import { firstValueFrom } from 'rxjs';
 import { InstrumentQuote } from '../models/account.models';
 import { AuthService } from './auth.service';
 
-// The instrument catalogue from GET /v1/instruments: every instrument the backend has in Redis, with current
-// prices. search() looks up a symbol that isn't in it yet (backend: Redis, then Fauxnance, then caches it).
+// the buy list shows at most this many instruments; the backend prices only these, so searching narrows it down
+export const PAGE_SIZE = 50;
+
+// A page of the instrument catalogue from GET /v1/instruments, with current prices: the instruments whose ticker or
+// name contains `query` (all of them when it's blank). search() looks up a symbol that isn't in the database yet
+// (backend: Redis, then Fauxnance, then adds it).
 @Injectable({ providedIn: 'root' })
 export class InstrumentService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  private readonly catalogue = httpResource<InstrumentQuote[]>(() => (this.auth.isLoggedIn() ? '/v1/instruments' : undefined));
+  readonly query = signal('');
 
-  // symbols found by search since the catalogue was loaded
-  private readonly found = signal<InstrumentQuote[]>([]);
+  // a new query cancels the request for the previous one, so an older, slower answer can't replace a newer one
+  private readonly page = httpResource<InstrumentQuote[]>(() => (this.auth.isLoggedIn()
+    ? { url: '/v1/instruments', params: { q: this.query().trim(), limit: PAGE_SIZE } }
+    : undefined));
 
-  readonly isLoading = computed(() => this.catalogue.isLoading());
-  readonly error = computed(() => this.catalogue.error());
+  readonly instruments = computed(() => this.page.value() ?? []);
+  readonly isLoading = computed(() => this.page.isLoading());
+  readonly error = computed(() => this.page.error());
 
-  // catalogue plus searched symbols, one entry per ticker, sorted by ticker
-  readonly instruments = computed(() => {
-    const byTicker = new Map((this.catalogue.value() ?? []).map((instrument) => [instrument.ticker, instrument]));
-    for (const instrument of this.found()) {
-      byTicker.set(instrument.ticker, instrument);
-    }
-    return [...byTicker.values()].sort((a, b) => a.ticker.localeCompare(b.ticker));
-  });
-
-  // GET /v1/instruments?search= -> the instrument, or null if the symbol is unknown
+  // GET /v1/instruments?search= -> the instrument, or null if the symbol is unknown. A symbol that's found is now in
+  // the database, so the page is loaded again to include it
   async search(symbol: string): Promise<InstrumentQuote | null> {
     const results = await firstValueFrom(
       this.http.get<InstrumentQuote[]>('/v1/instruments', { params: { search: symbol.trim() } }));
     const instrument = results[0] ?? null;
     if (instrument) {
-      this.found.update((found) => [...found.filter((other) => other.ticker !== instrument.ticker), instrument]);
+      this.page.reload();
     }
     return instrument;
   }
 
+  // the first page again, with fresh prices
   refresh(): void {
-    this.catalogue.reload();
+    if (this.query()) {
+      this.query.set('');
+    } else {
+      this.page.reload();
+    }
   }
 }

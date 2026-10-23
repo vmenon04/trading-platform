@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
@@ -9,8 +9,8 @@ import { InstrumentService } from '../../services/instrument.service';
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
 
-// the buy list shows at most this many matches; searching narrows it down
-const MAX_LISTED = 50;
+// symbols are letters, digits, '.', '-' and ':' (e.g. BRK.B, BTC-USD, FX:EURUSD)
+const SYMBOL = /^[A-Z0-9.:\-]{1,15}$/;
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
   STOCK: 'Stock', ETF: 'ETF', BOND: 'Bond', FOREX: 'Forex', CRYPTO: 'Crypto',
@@ -34,37 +34,32 @@ export class OrderSubmitter {
   submitting = signal(false);
   result = signal<{ ok: boolean; message: string } | null>(null);
 
-  // buy: the instrument catalogue (GET /v1/instruments) plus any symbols found by searching
+  // buy: a page of the instrument catalogue (GET /v1/instruments), searched by the backend
   private instruments = computed<Instrument[]>(() =>
     this.instrumentService.instruments().map((quote) => this.toInstrument(quote)));
 
   // sell: the account's holdings; each comes with the instrument id the order needs
-  private holdings = computed<Instrument[]>(() => {
-    const byTicker = new Map(this.instrumentService.instruments().map((quote) => [quote.ticker, quote]));
-    return (this.account.holdings.value() ?? []).map((holding) => {
-      const quote = byTicker.get(holding.ticker);
-      const priceValue = holding.price ?? quote?.price ?? null;
-      return {
-        instrumentId: holding.instrumentId,
-        symbol: holding.ticker,
-        name: holding.name,
-        exchange: quote?.assetClass ? ASSET_CLASS_LABELS[quote.assetClass] ?? quote.assetClass : '',
-        price: priceValue === null ? '—' : usd.format(priceValue),
-        change: '',
-        shares: holding.quantity,
-        priceValue,
-        assetClass: quote?.assetClass ?? null,
-      };
-    });
-  });
+  private holdings = computed<Instrument[]>(() =>
+    (this.account.holdings.value() ?? []).map((holding) => ({
+      instrumentId: holding.instrumentId,
+      symbol: holding.ticker,
+      name: holding.name,
+      exchange: holding.assetClass ? ASSET_CLASS_LABELS[holding.assetClass] ?? holding.assetClass : '',
+      price: holding.price === null ? '—' : usd.format(holding.price),
+      change: '',
+      shares: holding.quantity,
+      priceValue: holding.price,
+      assetClass: holding.assetClass,
+    })));
 
   get visibleInstruments(): Instrument[] {
-    const source = this.mode === 'sell' ? this.holdings() : this.instruments();
+    if (this.mode === 'buy') {
+      return this.instruments();
+    }
     const query = this.search.trim().toLowerCase();
-    const matches = query
-      ? source.filter((instrument) => `${instrument.symbol} ${instrument.name}`.toLowerCase().includes(query))
-      : source;
-    return this.mode === 'sell' ? matches : matches.slice(0, MAX_LISTED);
+    return query
+      ? this.holdings().filter((instrument) => `${instrument.symbol} ${instrument.name}`.toLowerCase().includes(query))
+      : this.holdings();
   }
 
   get listLoading(): boolean {
@@ -80,24 +75,33 @@ export class OrderSubmitter {
   searchMiss = signal('');
   private searchTimer?: ReturnType<typeof setTimeout>;
 
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.searchTimer));
+    // once the buy list for a symbol-like search has loaded without that symbol, ask the backend to look it up
+    effect(() => {
+      const symbol = this.instrumentService.query().trim().toUpperCase();
+      if (this.instrumentService.isLoading() || !SYMBOL.test(symbol)
+          || this.instrumentService.instruments().some((quote) => quote.ticker === symbol)) {
+        return;
+      }
+      untracked(() => this.lookUp(symbol));
+    });
+  }
+
+  // buy: the backend searches, once typing pauses; sell: the holdings are filtered as you type
   onSearchChange(value: string): void {
     this.searchMiss.set('');
     clearTimeout(this.searchTimer);
-    const symbol = value.trim().toUpperCase();
-    // symbols are letters, digits, '.', '-' and ':' (e.g. BRK.B, BTC-USD, FX:EURUSD)
-    if (this.mode !== 'buy' || !/^[A-Z0-9.:\-]{1,15}$/.test(symbol)
-        || this.instruments().some((instrument) => instrument.symbol === symbol)) {
-      return;
+    if (this.mode === 'buy') {
+      this.searchTimer = setTimeout(() => this.instrumentService.query.set(value.trim()), 300);
     }
-    this.searchTimer = setTimeout(() => this.lookUp(symbol), 500);
   }
 
   private async lookUp(symbol: string): Promise<void> {
     this.searching.set(true);
     try {
       const found = await this.instrumentService.search(symbol);
-      if (!found && this.search.trim().toUpperCase() === symbol
-          && !this.instruments().some((instrument) => `${instrument.symbol} ${instrument.name}`.toUpperCase().includes(symbol))) {
+      if (!found && this.search.trim().toUpperCase() === symbol && !this.instruments().length) {
         this.searchMiss.set(`No instrument found for "${symbol}".`);
       }
     } catch {
@@ -124,6 +128,8 @@ export class OrderSubmitter {
   setMode(mode: 'buy' | 'sell'): void {
     this.mode = mode;
     this.search = '';
+    clearTimeout(this.searchTimer);
+    this.instrumentService.query.set('');
     this.searchMiss.set('');
     this.selectedInstrument = null;
     this.result.set(null);

@@ -47,6 +47,8 @@ export interface AccountHolding {
   price: number | null;
   // the id to sell this holding with
   instrumentId: number;
+  // e.g. STOCK, ETF, CRYPTO
+  assetClass: string | null;
 }
 
 // POST /v1/accounts/{accountId}/trades (accountId is also required in the body)

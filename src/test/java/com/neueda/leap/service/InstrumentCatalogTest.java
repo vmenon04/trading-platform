@@ -120,14 +120,29 @@ class InstrumentCatalogTest {
     }
 
     @Test
-    void all_listsEveryInstrumentInTheDatabaseSortedByTicker() {
-        when(instrumentMapper.findAll()).thenReturn(List.of(
-                instrument(22L, "ORCL", "Oracle Corporation", InstrumentType.STOCK),
+    void search_findsTickersAndNamesContainingTheQuery() {
+        when(instrumentMapper.search("%apple%", "APPLE", 50, 0)).thenReturn(List.of(
                 instrument(1L, "AAPL", "Apple Inc", InstrumentType.STOCK)));
 
-        assertEquals(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK"),
-                new CatalogInstrument(22L, "ORCL", "Oracle Corporation", "STOCK")), catalog.all());
+        assertEquals(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK")), catalog.search(" apple ", 50, 0));
         verifyNoInteractions(marketDataClient);
+    }
+
+    @Test
+    void search_blankQuery_matchesEveryInstrument() {
+        when(instrumentMapper.search("%%", "", 50, 100)).thenReturn(List.of());
+
+        assertEquals(List.of(), catalog.search(null, 50, 100));
+        verify(instrumentMapper).search("%%", "", 50, 100);
+    }
+
+    @Test
+    void search_wildcardCharacters_areMatchedLiterally() {
+        when(instrumentMapper.search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0)).thenReturn(List.of());
+
+        catalog.search("50%_x\\", 50, 0);
+
+        verify(instrumentMapper).search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0);
     }
 
     @Test
