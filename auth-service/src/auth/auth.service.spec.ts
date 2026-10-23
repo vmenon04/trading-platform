@@ -29,6 +29,7 @@ describe("AuthService", () => {
     beforeEach(() => {
         userRepository = {
             existsByUsername: jest.fn(),
+            existsByEmail: jest.fn(),
             createUser: jest.fn(),
             findByUsername: jest.fn(),
             findById: jest.fn(),
@@ -65,9 +66,10 @@ describe("AuthService", () => {
 
     it("register creates a user with hashed password", async () => {
         userRepository.existsByUsername.mockResolvedValue(false);
+        userRepository.existsByEmail.mockResolvedValue(false);
         (bcrypt.hash as jest.Mock).mockResolvedValue("hashed-pass");
 
-        const result = await service.register("alice", "plain-pass", ["CLIENT"]);
+        const result = await service.register("alice", "plain-pass", "alice@example.com", ["CLIENT"]);
 
         expect(result).toEqual({ username: "alice", registered: true });
         expect(userRepository.createUser).toHaveBeenCalledWith({
@@ -80,8 +82,28 @@ describe("AuthService", () => {
     it("register rejects duplicate usernames", async () => {
         userRepository.existsByUsername.mockResolvedValue(true);
 
-        await expect(service.register("alice", "plain-pass")).rejects.toBeInstanceOf(ConflictException);
+        await expect(service.register("alice", "plain-pass", "alice@example.com")).rejects.toBeInstanceOf(ConflictException);
+        expect(userRepository.existsByEmail).not.toHaveBeenCalled();
+        expect(bcrypt.hash).not.toHaveBeenCalled();
         expect(userRepository.createUser).not.toHaveBeenCalled();
+    });
+
+    it("register rejects duplicate emails before creating a user", async () => {
+        userRepository.existsByUsername.mockResolvedValue(false);
+        userRepository.existsByEmail.mockResolvedValue(true);
+
+        await expect(service.register("alice", "plain-pass", "alice@example.com")).rejects.toBeInstanceOf(ConflictException);
+        expect(bcrypt.hash).not.toHaveBeenCalled();
+        expect(userRepository.createUser).not.toHaveBeenCalled();
+    });
+
+    it("register rejects a uniqueness race instead of creating a duplicate", async () => {
+        userRepository.existsByUsername.mockResolvedValue(false);
+        userRepository.existsByEmail.mockResolvedValue(false);
+        (bcrypt.hash as jest.Mock).mockResolvedValue("hashed-pass");
+        userRepository.createUser.mockRejectedValue({ code: "23505" });
+
+        await expect(service.register("alice", "plain-pass", "alice@example.com")).rejects.toBeInstanceOf(ConflictException);
     });
 
     it("login rejects unknown user", async () => {

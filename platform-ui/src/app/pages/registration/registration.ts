@@ -54,9 +54,6 @@ export class Registration {
   showPassword = signal(false);
   submitted = false;
 
-  // set once the login is created, so a retry after a failed account opening doesn't register again
-  private registeredUsername: string | null = null;
-
   async submit(): Promise<void> {
     this.submitted = true;
 
@@ -70,20 +67,23 @@ export class Registration {
     this.submitting.set(true);
     this.message.set('');
 
-    // step 1: the login (auth-service)
-    if (this.registeredUsername !== this.username) {
-      try {
-        await this.auth.register(this.username, this.password);
-        this.registeredUsername = this.username;
-      } catch (error) {
-        this.showError(this.registerErrorMessage(error));
-        return;
-      }
+    // The auth service checks username and email before creating the client login.
+    try {
+      await this.auth.register(this.username, this.password, this.email.trim());
+    } catch (error) {
+      this.showError(this.registerErrorMessage(error));
+      return;
     }
 
-    // step 2: log in, then open the trading account with the client details (backend)
+    // Log in, then open the trading account with the validated client details.
     try {
       await this.auth.login(this.username, this.password);
+    } catch {
+      this.showError('Your login was created, but sign-in failed. Please contact support.');
+      return;
+    }
+
+    try {
       await this.account.openAccount({
         firstName: this.firstName.trim(),
         lastName: this.lastName.trim(),
@@ -126,7 +126,8 @@ export class Registration {
   private registerErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 409) {
-        return `The username "${this.username}" is already taken.`;
+        const message = error.error?.message;
+        return typeof message === 'string' ? message : 'That username or email is already registered.';
       }
       if (error.status === 400) {
         const message = error.error?.message;
@@ -136,21 +137,18 @@ export class Registration {
         return "Couldn't reach the login service. Is auth-service running?";
       }
     }
-    return 'Registration failed. Please try again.';
+    return 'Registration could not be completed.';
   }
 
-  // the login already exists at this point, so the user can fix the details and submit again
   private openAccountErrorMessage(error: unknown): string {
-    const suffix = ' Your login was created; fix this and press Register again.';
     if (error instanceof HttpErrorResponse) {
       if (error.status === 409) {
-        // e.g. the email belongs to another client, or this user already has an account
-        return (error.error?.message ?? 'Those details are already in use.') + '.' + suffix;
+        return (error.error?.message ?? 'Those details are already in use.') + ' Your login was created; please contact support.';
       }
       if (error.status === 400) {
-        return 'Please check your email and birth date.' + suffix;
+        return 'Your login was created, but account details were rejected.';
       }
     }
-    return "Your login was created but we couldn't open your trading account. Press Register again to retry.";
+    return "Your login was created, but we couldn't open your trading account. Please contact support.";
   }
 }
