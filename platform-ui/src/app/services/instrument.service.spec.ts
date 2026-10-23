@@ -27,13 +27,14 @@ describe('InstrumentService', () => {
 
   afterEach(() => http.verify());
 
-  // the page the service asks for next, answered with `instruments`
-  async function answerPage(q: string, instruments: InstrumentQuote[]): Promise<void> {
+  // the page the service asks for next, answered with `instruments` and `total` matches in all
+  async function answerPage(q: string, instruments: InstrumentQuote[], offset = 0, total = instruments.length): Promise<void> {
     TestBed.tick();
     const request = http.expectOne((req) => req.url === '/v1/instruments' && !req.params.has('search'));
     expect(request.request.params.get('q')).toBe(q);
     expect(request.request.params.get('limit')).toBe(String(PAGE_SIZE));
-    request.flush(instruments);
+    expect(request.request.params.get('offset')).toBe(String(offset));
+    request.flush(instruments, { headers: { 'X-Total-Count': String(total) } });
     await TestBed.inject(ApplicationRef).whenStable();
   }
 
@@ -46,7 +47,7 @@ describe('InstrumentService', () => {
   it('asks the backend for the instruments matching the query', async () => {
     await answerPage('', [APPLE]);
 
-    service.query.set('oracle');
+    service.setQuery('oracle');
     await answerPage('oracle', [ORACLE]);
 
     expect(service.instruments()).toEqual([ORACLE]);
@@ -54,7 +55,7 @@ describe('InstrumentService', () => {
 
   it('loads the page again once a looked-up symbol is found, since it is now in the database', async () => {
     await answerPage('', []);
-    service.query.set('ORCL');
+    service.setQuery('ORCL');
     await answerPage('ORCL', []);
 
     const found = service.search('ORCL');
@@ -75,10 +76,43 @@ describe('InstrumentService', () => {
     http.expectNone('/v1/instruments');
   });
 
+  it('pages through the matches, using the total the backend sends', async () => {
+    await answerPage('', [APPLE], 0, 120);
+    expect(service.total()).toBe(120);
+    expect(service.hasPrevious()).toBe(false);
+    expect(service.hasNext()).toBe(true);
+
+    service.nextPage();
+    await answerPage('', [ORACLE], 50, 120);
+    service.nextPage();
+    await answerPage('', [ORACLE], 100, 120);
+
+    expect(service.hasNext()).toBe(false);
+    service.nextPage();
+    TestBed.tick();
+    http.expectNone('/v1/instruments');
+
+    service.previousPage();
+    await answerPage('', [ORACLE], 50, 120);
+    expect(service.hasPrevious()).toBe(true);
+  });
+
+  it('a new search starts from its first page', async () => {
+    await answerPage('', [APPLE], 0, 120);
+    service.nextPage();
+    await answerPage('', [ORACLE], 50, 120);
+
+    service.setQuery('oracle');
+
+    await answerPage('oracle', [ORACLE]);
+    expect(service.offset()).toBe(0);
+  });
+
   it('refresh goes back to the first page', async () => {
     await answerPage('', [APPLE]);
-    service.query.set('oracle');
+    service.setQuery('oracle');
     await answerPage('oracle', [ORACLE]);
+    service.nextPage();
 
     service.refresh();
 

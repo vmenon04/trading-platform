@@ -4,7 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
 import { ErrorResponse, InstrumentQuote } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
-import { InstrumentService } from '../../services/instrument.service';
+import { InstrumentService, PAGE_SIZE } from '../../services/instrument.service';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
@@ -62,6 +62,18 @@ export class OrderSubmitter {
       : this.holdings();
   }
 
+  // "51–100 of 334" under the buy list
+  get pageLabel(): string {
+    const start = this.instrumentService.offset();
+    const total = this.instrumentService.total();
+    return `${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}`;
+  }
+
+  // only when the matches don't fit on one page
+  get paged(): boolean {
+    return this.mode === 'buy' && this.instrumentService.total() > PAGE_SIZE;
+  }
+
   get listLoading(): boolean {
     return this.mode === 'sell' ? this.account.holdings.isLoading() : this.instrumentService.isLoading();
   }
@@ -79,8 +91,9 @@ export class OrderSubmitter {
     inject(DestroyRef).onDestroy(() => clearTimeout(this.searchTimer));
     // once the buy list for a symbol-like search has loaded without that symbol, ask the backend to look it up
     effect(() => {
-      const symbol = this.instrumentService.query().trim().toUpperCase();
-      if (this.instrumentService.isLoading() || !SYMBOL.test(symbol)
+      const symbol = this.instrumentService.query().toUpperCase();
+      // an exact ticker match comes first, so only the first page can tell that the symbol isn't listed
+      if (this.instrumentService.isLoading() || this.instrumentService.offset() > 0 || !SYMBOL.test(symbol)
           || this.instrumentService.instruments().some((quote) => quote.ticker === symbol)) {
         return;
       }
@@ -93,7 +106,7 @@ export class OrderSubmitter {
     this.searchMiss.set('');
     clearTimeout(this.searchTimer);
     if (this.mode === 'buy') {
-      this.searchTimer = setTimeout(() => this.instrumentService.query.set(value.trim()), 300);
+      this.searchTimer = setTimeout(() => this.instrumentService.setQuery(value), 300);
     }
   }
 
@@ -129,7 +142,7 @@ export class OrderSubmitter {
     this.mode = mode;
     this.search = '';
     clearTimeout(this.searchTimer);
-    this.instrumentService.query.set('');
+    this.instrumentService.setQuery('');
     this.searchMiss.set('');
     this.selectedInstrument = null;
     this.result.set(null);

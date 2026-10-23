@@ -33,6 +33,10 @@ public interface InstrumentMapper {
     List<Instrument> search(@Param("pattern") String pattern, @Param("ticker") String ticker,
                             @Param("limit") int limit, @Param("offset") int offset);
 
+    // how many instruments search matches in all, across every page
+    @Select("SELECT count(*) FROM instruments WHERE ticker ILIKE #{pattern} OR name ILIKE #{pattern}")
+    long countMatching(String pattern);
+
     @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType})")
     @Options(useGeneratedKeys = true, keyProperty = "instrumentId", keyColumn = "instrument_id")
     void insert(Instrument instrument);

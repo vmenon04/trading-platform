@@ -35,6 +35,10 @@ public class InstrumentCatalog {
     public record CatalogInstrument(Long instrumentId, String ticker, String name, String assetClass) {
     }
 
+    // one page of a search, and how many instruments match in all
+    public record Page(List<CatalogInstrument> instruments, long total) {
+    }
+
     /**
      * Finds an instrument by symbol: the database first, then the market data API.
      *
@@ -76,15 +80,15 @@ public class InstrumentCatalog {
      * @param query text to look for; blank matches every instrument
      * @param limit the most instruments to return
      * @param offset how many matches to skip
-     * @return the page of matching instruments
+     * @return the page of matching instruments, with the number of matches across every page
      */
-    public List<CatalogInstrument> search(String query, int limit, int offset) {
+    public Page search(String query, int limit, int offset) {
         String text = query == null ? "" : query.trim();
         // a typed % or _ is matched as itself, not as a wildcard (backslash is ILIKE's escape character)
-        String escaped = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
-        return instrumentMapper.search("%" + escaped + "%", text.toUpperCase(Locale.ROOT), limit, offset).stream()
-                .map(InstrumentCatalog::toCatalogInstrument)
-                .toList();
+        String pattern = "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        List<CatalogInstrument> instruments = instrumentMapper.search(pattern, text.toUpperCase(Locale.ROOT), limit,
+                offset).stream().map(InstrumentCatalog::toCatalogInstrument).toList();
+        return new Page(instruments, instrumentMapper.countMatching(pattern));
     }
 
     // Fauxnance types to the asset classes the instruments table allows

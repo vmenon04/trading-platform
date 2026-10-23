@@ -6,6 +6,7 @@ import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.external.SymbolInfo;
 import com.neueda.leap.repository.InstrumentMapper;
 import com.neueda.leap.service.InstrumentCatalog.CatalogInstrument;
+import com.neueda.leap.service.InstrumentCatalog.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -123,16 +124,27 @@ class InstrumentCatalogTest {
     void search_findsTickersAndNamesContainingTheQuery() {
         when(instrumentMapper.search("%apple%", "APPLE", 50, 0)).thenReturn(List.of(
                 instrument(1L, "AAPL", "Apple Inc", InstrumentType.STOCK)));
+        when(instrumentMapper.countMatching("%apple%")).thenReturn(1L);
 
-        assertEquals(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK")), catalog.search(" apple ", 50, 0));
+        assertEquals(new Page(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK")), 1),
+                catalog.search(" apple ", 50, 0));
         verifyNoInteractions(marketDataClient);
+    }
+
+    @Test
+    void search_countsTheMatchesOnEveryPage() {
+        when(instrumentMapper.search("%%", "", 50, 300)).thenReturn(List.of(
+                instrument(334L, "ZTS", "Zoetis Inc", InstrumentType.STOCK)));
+        when(instrumentMapper.countMatching("%%")).thenReturn(334L);
+
+        assertEquals(334, catalog.search("", 50, 300).total());
     }
 
     @Test
     void search_blankQuery_matchesEveryInstrument() {
         when(instrumentMapper.search("%%", "", 50, 100)).thenReturn(List.of());
 
-        assertEquals(List.of(), catalog.search(null, 50, 100));
+        assertEquals(new Page(List.of(), 0), catalog.search(null, 50, 100));
         verify(instrumentMapper).search("%%", "", 50, 100);
     }
 
