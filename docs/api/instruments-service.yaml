@@ -1,0 +1,80 @@
+openapi: 3.0.3
+info:
+  title: Instruments Service
+  description: API for listing instruments and their current price
+  version: 1.0.0
+
+servers:
+  - url: /v1
+
+paths:
+  /instruments:
+    get:
+      summary: List instruments, or look one up by symbol
+      description: >
+        Without search: every instrument in the database, sorted by ticker. With search: that symbol, looked up in the
+        database and then the market data API (which adds it to the database), or an empty list if the symbol is
+        unknown. Crypto symbols are Fauxnance's, e.g. X:BTC-USD (a bare BTC is a different, stock symbol). Prices
+        are for showing: a stale quote keeps its last known price, and price is null when there is no price right now
+        (orders are priced separately and reject stale quotes).
+      tags: [instruments]
+      parameters:
+        - name: search
+          in: query
+          required: false
+          description: A Fauxnance symbol, case-insensitive, e.g. ORCL or X:BTC-USD
+          schema:
+            type: string
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Instruments with their current price
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Instrument'
+              example:
+                - instrumentId: 44
+                  ticker: "AAPL"
+                  name: "Apple Inc."
+                  price: 151.23
+                  assetClass: "STOCK"
+                - instrumentId: 12
+                  ticker: "X:BTC-USD"
+                  name: "Bitcoin"
+                  price: null
+                  assetClass: "CRYPTO"
+        '401':
+          description: Unauthorized
+
+components:
+  schemas:
+    Instrument:
+      type: object
+      required: [instrumentId, ticker, name, assetClass]
+      properties:
+        instrumentId:
+          type: integer
+          format: int64
+          description: The id to trade the instrument with
+        ticker:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+          format: double
+          nullable: true
+          description: Current price, the last known one if the quote is stale; null when there is none right now
+        assetClass:
+          type: string
+          enum: [STOCK, ETF, FOREX, CRYPTO, BOND]
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

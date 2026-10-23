@@ -4,6 +4,9 @@ target/
 # Environment / secrets
 .env
 .env.*
+!.env.example
+application.properties
+start-services.sh
 
 # IDEs
 .vscode/
@@ -21,3 +24,15 @@ Thumbs.db
 *.log
 .venv
 reports/
+
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+# Reporting tests in Jenkins
+.venv-reporting/
+pytest-results.xml
+
+auth-service/node_modules/
+auth-service/dist/
+auth-service/.env

@@ -1,0 +1,15 @@
+# The Dockerfile only copies pom.xml and src/, but Docker reads files from disk, not from git:
+# without this, a local application.properties would be built into the jar.
+
+# never build local settings or secrets into the image
+src/main/resources/application.properties
+.env
+.env.*
+
+# not needed for the build (keeps the build context small)
+.git
+target/
+reporting/
+.venv*
+**/node_modules/
+.idea/

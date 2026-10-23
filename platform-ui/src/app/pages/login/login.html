@@ -1,0 +1,52 @@
+<div class="auth-page">
+  <section class="auth-pitch">
+    <div class="brand-lockup"><img src="assets/nav-bar-logo.png" alt=""> <span>f-trade</span></div>
+    <div class="pitch-copy"><span class="pitch-kicker">Investing, made clear</span><h1>Build your future,<br>one trade at a time.</h1><p>Track your portfolio, place trades, and stay close to every market move from one secure account.</p><div class="pitch-stats"><div><strong>$0</strong><span>Account minimum</span></div><div><strong>24/7</strong><span>Portfolio access</span></div><div><strong>256-bit</strong><span>Data encryption</span></div></div></div>
+    <div class="pitch-foot">⌾ Your information is protected with bank-level security.</div>
+  </section>
+  <section class="auth-form-panel"><main>
+    <form (ngSubmit)="submit()" novalidate>
+      <h2>Welcome back</h2><p class="auth-subtitle">Sign in to continue to your portfolio.</p>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          minlength="3"
+          autocomplete="username"
+          [(ngModel)]="username"
+          #usernameField="ngModel"
+          [class.invalid]="submitted && usernameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-input">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            name="password"
+            required
+            autocomplete="current-password"
+            [(ngModel)]="password"
+            #passwordField="ngModel"
+            [class.invalid]="submitted && passwordField.invalid"
+          />
+          <button type="button" class="toggle-password" (click)="showPassword.set(!showPassword())" [attr.aria-pressed]="showPassword()" aria-controls="password">{{ showPassword() ? 'Hide' : 'Show' }}</button>
+        </div>
+      </div>
+
+      <p class="message" [class.hidden]="!message()" [class.error]="messageKind() === 'error'" [class.success]="messageKind() === 'success'">{{ message() }}</p>
+
+      <button type="submit" [disabled]="submitting()">{{ submitting() ? 'Logging in…' : 'Log In' }}</button>
+      <div class="auth-switch">New to f-trade? <a routerLink="/registration">Create an account</a></div><p class="auth-terms">By continuing, you agree to f-trade’s Terms of Service and Privacy Policy.</p>
+    </form>
+  </main></section>
+</div>
+
+
+

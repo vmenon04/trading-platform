@@ -1,0 +1,97 @@
+<header class="analytics-header">
+  <div><h1>Client analysis</h1><span>Filter clients and see how they hold and trade</span></div>
+  <app-data-freshness />
+</header>
+
+<main class="analytics">
+  <div class="intro">
+    <span class="eyebrow">Analyst</span>
+    <h2>Clients</h2>
+    <p>Pick clients, an account value range and a time period. Every chart below shows just the clients that match.</p>
+  </div>
+
+  <section class="filter-card" aria-label="Filters">
+    <form class="filters" (submit)="$event.preventDefault()">
+      <app-client-picker [(picked)]="picked" [max]="maxClients" />
+    </form>
+
+    <form class="filters" (submit)="$event.preventDefault()">
+      <div class="field">Account value
+        <div class="chips">
+          @for (band of valueBands; track band.label) {
+            <button type="button" [class.active]="isBand(band)" (click)="pickBand(band)">{{ band.label }}</button>
+          }
+        </div>
+      </div>
+      <label>Min value
+        <input class="amount" type="text" inputmode="decimal" placeholder="e.g. 250k or 1m" [value]="shown(minValue())"
+               (change)="setAmount(minValue, $event)">
+      </label>
+      <label>Max value
+        <input class="amount" type="text" inputmode="decimal" placeholder="No limit" [value]="shown(maxValue())"
+               (change)="setAmount(maxValue, $event)">
+      </label>
+    </form>
+    @if (badAmount()) { <p class="problem">Enter amounts like 1000000, 1m, 250k or 2.5b.</p> }
+
+    <form class="filters" (submit)="$event.preventDefault()">
+      <div class="field">Time period
+        <div class="chips">
+          @for (months of periods; track months) {
+            <button type="button" [class.active]="dates.isLastMonths(months)" (click)="dates.lastMonths(months)">
+              {{ months === 12 ? '1 year' : months + (months === 1 ? ' month' : ' months') }}
+            </button>
+          }
+        </div>
+      </div>
+      <app-date-range [(start)]="dates.start" [(end)]="dates.end" [(grain)]="dates.grain" />
+      <span class="spacer"></span>
+      <button type="button" (click)="clear()">Clear filters</button>
+    </form>
+  </section>
+
+  @if (problem(); as message) { <p class="problem">{{ message }}</p> }
+
+  <app-tiles [tiles]="tiles()" />
+
+  <section class="grid">
+    <figure class="card wide">
+      <figcaption>Traded value over time<small>{{ scope() }}{{ anyPicked() ? ' · one line per client' : '' }}</small></figcaption>
+      <app-chart [config]="volumeChart()" [height]="300" />
+    </figure>
+
+    <figure class="card">
+      <figcaption>Buy vs sell<small>{{ scope() }}</small></figcaption>
+      <app-chart [config]="buySellChart()" />
+    </figure>
+
+    <figure class="card">
+      <figcaption>Traded value by asset class<small>{{ scope() }}</small></figcaption>
+      @if (classChart(); as config) { <app-chart [config]="config" /> }
+      @else { <p class="chart-empty">No trades in this period.</p> }
+    </figure>
+
+    @if (anyPicked()) {
+      <figure class="card">
+        <figcaption>Account value by client<small>What each picked client holds today: invested and cash</small></figcaption>
+        @if (mixChart(); as config) { <app-chart [config]="config" [height]="rankingHeight(picked().length)" /> }
+        @else { <p class="chart-empty">None of the picked clients has an account in this value range.</p> }
+      </figure>
+      <figure class="card">
+        <figcaption>Traded value by client<small>In the time period</small></figcaption>
+        @if (perClientChart(); as config) { <app-chart [config]="config" [height]="rankingHeight(picked().length)" /> }
+        @else { <p class="chart-empty">The picked clients made no trades in this period.</p> }
+      </figure>
+      <figure class="card wide">
+        <figcaption>Latest trades<small>The picked clients' newest {{ tradeRows().length }} orders, in any status</small></figcaption>
+        <app-trades-table [rows]="tradeRows()" />
+      </figure>
+    } @else {
+      <figure class="card wide">
+        <figcaption>Clients by account value<small>How many clients hold how much today (cash + holdings) · {{ scope() }}</small></figcaption>
+        @if (histogram(); as config) { <app-chart [config]="config" /> }
+        @else { <p class="chart-empty">No clients have an account value in this range.</p> }
+      </figure>
+    }
+  </section>
+</main>

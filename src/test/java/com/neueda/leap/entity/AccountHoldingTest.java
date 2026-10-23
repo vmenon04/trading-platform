@@ -1,65 +1,59 @@
 package com.neueda.leap.entity;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.neueda.leap.enums.ActivityStatus;
 import org.junit.jupiter.api.Test;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AccountHoldingTest {
+class AccountHoldingTest {
 
-    private AccountHolding holding;
-    private final int ACCOUNT_ID = 101;
-    private final int INSTRUMENT_ID = 1;
-    private final double  QUANTITY = 100;
-
-    @BeforeEach
-    void setUp() {
-        //Account_Holding(accountID, instrumentID, quantity, status)
-        holding = new AccountHolding(ACCOUNT_ID, INSTRUMENT_ID, QUANTITY, HoldingStatus.ACTIVE);
-    }
-
-    // BR-10: Client can see current holdings
     @Test
-    void testHoldingCanBeCreated() {
-        assertNotNull(holding);
-        assertEquals(ACCOUNT_ID, holding.getAccountId());
-        assertEquals(INSTRUMENT_ID, holding.getInstrumentId());
-        assertEquals(QUANTITY, holding.getQuantity());
-        assertEquals(HoldingStatus.ACTIVE, holding.getStatus());
-    }
+    void noArgsConstructorLeavesFieldsAtJavaDefaults() {
+        AccountHolding holding = new AccountHolding();
 
-    // BR-09: Atomic updates
-    @Test
-    void testHoldingQuantityUpdateOnBuy() {
-        holding.updateQuantity(50, "BUY");
-        assertEquals(150, holding.getQuantity());
+        assertAll(
+                () -> assertNull(holding.getAccountId()),
+                () -> assertNull(holding.getInstrumentId()),
+                () -> assertNull(holding.getAsOfDate()),
+                () -> assertNull(holding.getQuantity()),
+                () -> assertNull(holding.getStatus())
+        );
     }
 
     @Test
-    void testHoldingQuantityUpdateOnSell() {
-        holding.updateQuantity(50, "SELL");
-        assertEquals(50, holding.getQuantity());
+    void parameterizedConstructorSetsProvidedValues() {
+        OffsetDateTime date = OffsetDateTime.now();
+        AccountHolding holding = new AccountHolding(101L, 1L, date, new BigDecimal("100.5"), ActivityStatus.ACTIVE);
+
+        assertAll(
+                () -> assertEquals(101L, holding.getAccountId()),
+                () -> assertEquals(1L, holding.getInstrumentId()),
+                () -> assertEquals(date, holding.getAsOfDate()),
+                () -> assertEquals(BigDecimal.valueOf(100.5), holding.getQuantity()),
+                () -> assertEquals(ActivityStatus.ACTIVE, holding.getStatus())
+        );
     }
 
     @Test
-    void testHoldingCannotGoNegative() {
-        assertThrows(IllegalArgumentException.class,
-                () -> holding.updateQuantity(150, "SELL"));
-    }
+    void settersUpdateFields() {
+        AccountHolding holding = new AccountHolding();
+        OffsetDateTime date = OffsetDateTime.now();
 
-    @Test
-    void testHoldingTransitionsOnFullSell() {
-        assertEquals(HoldingStatus.ACTIVE, holding.getStatus());
-        holding.updateQuantity(100, "SELL");
-        assertEquals(HoldingStatus.INACTIVE, holding.getStatus());
-    }
+        holding.setAccountId(200L);
+        holding.setInstrumentId(300L);
+        holding.setAsOfDate(date);
+        holding.setQuantity(new BigDecimal("55.75"));
+        holding.setStatus(ActivityStatus.INACTIVE);
 
-    @Test
-    void testHoldingHistory() {
-        String outputString = holding.toString();
-        assertEquals(outputString, holding.getHistory());
-        holding.updateQuantity(50, "SELL");
-        outputString += "\n" + holding.toString();
-        assertEquals(outputString, holding.getHistory());
+        assertAll(
+                () -> assertEquals(200L, holding.getAccountId()),
+                () -> assertEquals(300L, holding.getInstrumentId()),
+                () -> assertEquals(date, holding.getAsOfDate()),
+                () -> assertEquals(BigDecimal.valueOf(55.75), holding.getQuantity()),
+                () -> assertEquals(ActivityStatus.INACTIVE, holding.getStatus())
+        );
     }
 }

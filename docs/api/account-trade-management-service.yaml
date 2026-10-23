@@ -1,0 +1,444 @@
+openapi: 3.0.3
+info:
+  title: Account & Trade Management Service
+  description: API for retrieving accounts, trades, holdings and order history.
+  version: 1.0.0
+
+servers:
+  - url: /v1
+
+tags:
+  - name: accounts
+    description: Account and holdings operations
+  - name: orders
+    description: Order and trade queries
+
+paths:
+  /accounts/{account_id}/deposits:
+    post:
+      tags: [accounts]
+      summary: Deposit cash into a client account
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          description: External UUID of the account receiving the deposit
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositRequest'
+            example:
+              amount: 500.00
+      security:
+        - bearerAuth: []
+      responses:
+        '204':
+          description: Deposit completed successfully
+        '400':
+          description: Invalid deposit request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: The logged-in user does not own the account
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{account_id}:
+    get:
+      tags: [accounts]
+      summary: Get account summary
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: UUID of the account
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountSummary'
+              example:
+                accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                investmentValue: 125430.75
+                portfolioValue: 135665.25
+                cashBalance: 10234.50
+                costBasis: 98000.25
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{account_id}/trades/{trade_id}:
+    get:
+      tags: [orders]
+      summary: Get the status of a submitted trade
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: trade_id
+          in: path
+          required: true
+          description: The trade ID from the Location header returned when the order was submitted
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Trade status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradeStatus'
+              example:
+                instrumentId: 44
+                ticker: "AAPL"
+                tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                side: "BUY"
+                quantity: 10.5
+                ppu: 151.23
+                totalPrice: 1587.92
+                status: "ACCEPTED"
+                reason: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Trade not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{account_id}/holdings:
+    get:
+      tags: [accounts]
+      summary: List holdings for an account
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Account holdings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountHolding'
+              example:
+                - accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  name: "Apple Inc."
+                  ticker: "AAPL"
+                  quantity: 25.0
+                  price: 151.23
+                  instrumentId: 44
+                - accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                  name: "Microsoft Corp."
+                  ticker: "MSFT"
+                  quantity: 10.0
+                  price: null
+                  instrumentId: 12
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /accounts/{account_id}/orders:
+    get:
+      tags: [orders]
+      summary: List orders/trades for an account
+      parameters:
+        - name: account_id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: side
+          in: query
+          required: false
+          description: Filter by side (BUY, SELL) or omitted for all
+          schema:
+            type: string
+            enum: [BUY, SELL]
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: List of trades/orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Trade'
+
+              example:
+                - instrumentId: 44
+                  ticker: "AAPL"
+                  tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                  side: "BUY"
+                  quantity: 10.5
+                  ppu: 151.00
+                  totalPrice: 1585.50
+                  status: "FULFILLED"
+                  reason: null
+                - instrumentId: 12
+                  ticker: "MSFT"
+                  tradeId: "9a1d2c3b-4e5f-4a6b-8c7d-0e1f2a3b4c5d"
+                  side: "SELL"
+                  quantity: 5.0
+                  ppu: null
+                  totalPrice: null
+                  status: "PENDING"
+                  reason: null
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Account not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    DepositRequest:
+      type: object
+      required: [amount]
+      properties:
+        amount:
+          type: number
+          format: double
+          exclusiveMinimum: 0
+
+    AccountSummary:
+      type: object
+      required: [accountId, investmentValue, portfolioValue, cashBalance, costBasis]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        investmentValue:
+          type: number
+          format: double
+        portfolioValue:
+          type: number
+          format: double
+        cashBalance:
+          type: number
+          format: double
+        costBasis:
+          type: number
+          format: double
+
+    TradeStatus:
+      type: object
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
+      properties:
+        instrumentId:
+          type: integer
+          format: int64
+        ticker:
+          type: string
+        name:
+          type: string
+        tradeId:
+          type: string
+          format: uuid
+        side:
+          type: string
+          enum: [BUY, SELL]
+        quantity:
+          type: number
+          format: double
+        ppu:
+          type: number
+          format: double
+          nullable: true
+          description: Price per unit; null until the trade has a price
+        totalPrice:
+          type: number
+          format: double
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED, FULFILLED]
+        reason:
+          type: string
+          nullable: true
+
+    AccountHolding:
+      type: object
+      required: [accountId, name, ticker, quantity, instrumentId]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        ticker:
+          type: string
+        quantity:
+          type: number
+          format: double
+        price:
+          type: number
+          format: double
+          nullable: true
+          description: Current price, the last known one if the quote is stale; null when there is none right now
+        instrumentId:
+          type: integer
+          format: int64
+          description: The id to sell this holding with (POST /accounts/{account_id}/trades)
+
+    Trade:
+      type: object
+      required: [instrumentId, ticker, name, tradeId, side, quantity, status]
+      properties:
+        instrumentId:
+          type: integer
+          format: int64
+        ticker:
+          type: string
+        name:
+          type: string
+        tradeId:
+          type: string
+          format: uuid
+        side:
+          type: string
+          enum: [BUY, SELL]
+        quantity:
+          type: number
+          format: double
+        ppu:
+          type: number
+          format: double
+          nullable: true
+          description: Price per unit; null until the trade has a price
+        totalPrice:
+          type: number
+          format: double
+          nullable: true
+        status:
+          type: string
+          enum: [PENDING, ACCEPTED, REJECTED, FULFILLED]
+        reason:
+          type: string
+          nullable: true
+
+    ErrorResponse:
+      type: object
+      required: [status, error, message, fieldErrors]
+      properties:
+        status:
+          type: string
+          description: Spring HttpStatus name, e.g. BAD_REQUEST
+        error:
+          type: string
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+

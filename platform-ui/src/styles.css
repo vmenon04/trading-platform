@@ -1,0 +1,63 @@
+@import url("https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap");
+
+:root {
+  --font-ui: "DM Sans", sans-serif;
+  --font-numeric: "IBM Plex Mono", monospace;
+  --font-logo: Georgia, serif;
+
+  --color-ink: #17231f;
+  --color-muted: #728078;
+  --color-surface: #ffffff;
+  --color-canvas: #f3f6f4;
+  --color-border: #e3e9e5;
+  --color-navigation: #10231d;
+  --color-green: #177c5b;
+  --color-green-bright: #23b47e;
+  --color-green-soft: #e7f6ef;
+  --color-red: #c95252;
+  --color-red-soft: #fff0ef;
+
+  --ink: var(--color-ink);
+  --muted: var(--color-muted);
+  --line: var(--color-border);
+  --surface: var(--color-surface);
+  --canvas: var(--color-canvas);
+  --nav: var(--color-navigation);
+  --green: var(--color-green);
+  --green-bright: var(--color-green-bright);
+  --green-soft: var(--color-green-soft);
+  --red: var(--color-red);
+  --red-soft: var(--color-red-soft);
+  --radius: 16px;
+
+  font-family: var(--font-ui);
+  color: var(--color-ink);
+  background: var(--color-canvas);
+  font-synthesis: none;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body { background: var(--color-canvas); font-family: var(--font-ui); font-weight: 400; }
+
+button, input { font: inherit; }
+
+.metric-card strong,
+.chart-value,
+.portfolio-intro > div > strong,
+.market-price strong,
+.option-price strong,
+.estimate strong,
+.order-row > strong,
+.holding-row > strong {
+  font-family: var(--font-numeric);
+  font-weight: 600;
+}
+
+.auth-content { min-height: 100vh; }
+.auth-page { display: grid; grid-template-columns: minmax(0, 1fr) minmax(420px, 1fr); min-height: 100vh; background: var(--surface); }
+.auth-pitch { position: relative; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; padding: 32px 5vw 28px; background: var(--nav); color: #fff; }
+.auth-pitch::before, .auth-pitch::after { content: ''; position: absolute; width: 620px; height: 620px; border: 1px solid #32605250; border-radius: 50%; pointer-events: none; }.auth-pitch::before { top: -260px; right: -250px; }.auth-pitch::after { top: -165px; right: -155px; }
+.brand-lockup { position: relative; z-index: 1; display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 800; }.brand-lockup img { width: 27px; height: 27px; object-fit: contain; }
+.pitch-copy { position: relative; z-index: 1; max-width: 530px; }.pitch-kicker { color: #8be7c5; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }.pitch-copy h1 { max-width: 520px; margin: 26px 0; font-size: clamp(2.8rem, 5vw, 4rem); line-height: 1.02; letter-spacing: -0.06em; }.pitch-copy p { max-width: 480px; color: #b0c9c0; font-size: 0.9rem; line-height: 1.6; }.pitch-stats { display: flex; gap: clamp(24px, 5vw, 70px); margin-top: 36px; padding-top: 25px; border-top: 1px solid #ffffff1f; }.pitch-stats strong { display: block; color: #8be7c5; font-size: 1rem; }.pitch-stats span { display: block; margin-top: 8px; color: #7d9b90; font-size: 0.6rem; }.pitch-foot { position: relative; z-index: 1; color: #7d9b90; font-size: 0.62rem; }.auth-form-panel { display: flex; align-items: center; justify-content: center; padding: 40px 7vw; }.auth-form-panel main { width: 100%; max-width: 410px; padding: 0; }.auth-form-panel form { display: grid; gap: 16px; width: 100%; max-width: none; padding: 0; border: 0; border-radius: 0; }.auth-form-panel form h2 { margin: 0; font-size: 1.8rem; }.auth-subtitle { margin: -8px 0 18px; color: var(--muted); font-size: 0.75rem; }.auth-form-panel .field { gap: 7px; }.auth-form-panel .field label { color: var(--ink); font-size: 0.68rem; }.auth-form-panel .field input { min-height: 47px; padding: 0 14px; border: 1px solid #d8e1dc; border-radius: 10px; background: #fff; }.auth-form-panel button { min-height: 47px; margin-top: 4px; background: var(--green); border-radius: 9px; }.auth-switch { padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: 0.7rem; }.auth-switch a { color: var(--green); font-weight: 800; text-decoration: none; }.auth-terms { margin-top: 26px; color: #9aa8a1; text-align: center; font-size: 0.58rem; }
+@media (max-width: 760px) { .auth-page { grid-template-columns: 1fr; }.auth-pitch { min-height: 360px; padding: 24px; }.pitch-copy h1 { margin: 32px 0 18px; font-size: 2.6rem; }.pitch-stats { margin-top: 20px; }.pitch-foot { display: none; }.auth-form-panel { padding: 40px 24px; } }

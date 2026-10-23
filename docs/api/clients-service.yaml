@@ -1,0 +1,195 @@
+openapi: 3.0.3
+info:
+  title: Clients Service
+  description: >
+    API for the logged-in user's client and trading accounts. The user comes from the login token (its subject), never
+    from the request. Only CLIENT logins may use these endpoints; analysts and admins get 403.
+  version: 1.0.0
+
+servers:
+  - url: /v1
+
+paths:
+  /clients/me:
+    get:
+      summary: Get the logged-in user's client and trading accounts
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: The user's client and accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+              example:
+                clientId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
+                clientName: "Jane Doe"
+                tradingAccounts:
+                  - accountId: "9b2c1d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e"
+        '401':
+          description: Not logged in
+        '403':
+          description: Not a client login
+        '404':
+          description: The user has only registered a login and has no client or accounts yet (open one with POST)
+
+    post:
+      summary: Open the logged-in user's first trading account
+      description: Creates the client from these details and an account with no cash, and links them to the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OpenAccountRequest'
+            example:
+              firstName: "Jane"
+              lastName: "Doe"
+              email: "jane@example.com"
+              birthDate: "1990-01-01"
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Account opened; the user's client and accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          description: Missing or invalid details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Not logged in
+        '403':
+          description: Not a client login
+        '409':
+          description: The user already has a trading account, or another client already uses the email
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/me/accounts:
+    post:
+      summary: Open another trading account (with no cash) for a user who already has one
+      security:
+        - bearerAuth: []
+      responses:
+        '201':
+          description: Account opened; the user's client and all of their accounts
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '401':
+          description: Not logged in
+        '403':
+          description: Not a client login
+        '404':
+          description: The user has no client yet (open the first account with POST /clients/me)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/{clientId}:
+    get:
+      summary: Get a client by id
+      description: Only the client's own user may read it.
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: Client information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Client'
+        '400':
+          description: Malformed id
+        '401':
+          description: Not logged in
+        '403':
+          description: Someone else's client
+        '404':
+          description: Client not found
+
+components:
+  schemas:
+    Client:
+      type: object
+      required: [clientId, clientName, tradingAccounts]
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+          description: First and last name
+        tradingAccounts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Account'
+
+    Account:
+      type: object
+      required: [accountId]
+      properties:
+        accountId:
+          type: string
+          format: uuid
+
+    OpenAccountRequest:
+      type: object
+      required: [firstName, lastName, email, birthDate]
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          format: email
+        birthDate:
+          type: string
+          format: date
+          description: Must be in the past
+
+    ErrorResponse:
+      type: object
+      required: [status, error, message, fieldErrors]
+      properties:
+        status:
+          type: string
+          description: Spring HttpStatus name, e.g. CONFLICT
+        error:
+          type: string
+        message:
+          type: string
+        fieldErrors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

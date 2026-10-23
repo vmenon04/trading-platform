@@ -1,0 +1,29 @@
+meta {
+  name: Place trade
+  type: http
+  seq: 1
+}
+
+post {
+  url: {{apiUrl}}/v1/accounts/{{accountId}}/trades
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "accountId": "{{accountId}}",
+    "instrumentId": 1,
+    "side": "BUY",
+    "quantity": 5
+  }
+}
+
+assert {
+  res.status: eq 202
+  res.headers.location: isDefined
+}

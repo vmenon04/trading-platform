@@ -1,0 +1,126 @@
+
+<div class="auth-page">
+  <section class="auth-pitch">
+    <div class="brand-lockup"><img src="assets/nav-bar-logo.png" alt=""> <span>f-trade</span></div>
+    <div class="pitch-copy"><span class="pitch-kicker">Investing, made clear</span><h1>Start building<br>your future.</h1><p>Create one secure account to track your portfolio, place trades, and stay close to every market move.</p><div class="pitch-stats"><div><strong>$0</strong><span>Account minimum</span></div><div><strong>24/7</strong><span>Portfolio access</span></div><div><strong>256-bit</strong><span>Data encryption</span></div></div></div>
+    <div class="pitch-foot">⌾ Your information is protected with bank-level security.</div>
+  </section>
+  <section class="auth-form-panel"><main>
+    <form (ngSubmit)="submit()" novalidate>
+      <h2>Create your account</h2><p class="auth-subtitle">Get started with f-trade today.</p>
+
+      <div class="field">
+        <label for="first-name">First Name</label>
+        <input
+          type="text"
+          id="first-name"
+          name="first-name"
+          required
+          minlength="2"
+          [(ngModel)]="firstName"
+          name="firstName"
+          #firstNameField="ngModel"
+          [class.invalid]="submitted && firstNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="last-name">Last Name</label>
+        <input
+          type="text"
+          id="last-name"
+          name="last-name"
+          required
+          minlength="2"
+          [(ngModel)]="lastName"
+          name="lastName"
+          #lastNameField="ngModel"
+          [class.invalid]="submitted && lastNameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="username">Username</label>
+        <input
+          type="text"
+          id="username"
+          name="username"
+          required
+          minlength="3"
+          autocomplete="username"
+          [(ngModel)]="username"
+          #usernameField="ngModel"
+          [class.invalid]="submitted && usernameField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="password">Password</label>
+        <div class="password-input">
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            id="password"
+            name="password"
+            required
+            minlength="8"
+            autocomplete="new-password"
+            [(ngModel)]="password"
+            #passwordField="ngModel"
+            [class.invalid]="submitted && passwordField.invalid"
+          />
+          <button type="button" class="toggle-password" (click)="showPassword.set(!showPassword())" [attr.aria-pressed]="showPassword()" aria-controls="password">{{ showPassword() ? 'Hide' : 'Show' }}</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="confirm-password">Retype password</label>
+        <input
+          [type]="showPassword() ? 'text' : 'password'"
+          id="confirm-password"
+          name="confirmPassword"
+          required
+          autocomplete="new-password"
+          [(ngModel)]="confirmPassword"
+          [class.invalid]="submitted && confirmPassword !== password"
+        />
+      </div>
+
+      <div class="field">
+        <label for="email">Email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          required
+          minlength="2"
+          [(ngModel)]="email"
+          #emailField="ngModel"
+          [class.invalid]="submitted && emailField.invalid"
+        />
+      </div>
+
+      <div class="field">
+        <label for="dob">Birth Date</label>
+        <input
+          type="date"
+          id="dob"
+          name="dob"
+          required
+          [max]="latestBirthDate"
+          [(ngModel)]="dob"
+          #dobField="ngModel"
+          [class.invalid]="submitted && dobField.invalid"
+          />
+      </div>
+
+      
+
+      <p class="message" [class.hidden]="!message()" [class.error]="messageKind() === 'error'" [class.success]="messageKind() === 'success'">{{ message() }}</p>
+
+      <button type="submit" [disabled]="submitting()">{{ submitting() ? 'Creating account…' : 'Register' }}</button>
+      <div class="auth-switch">Already have an account? <a routerLink="/login">Log in</a></div><p class="auth-terms">By continuing, you agree to f-trade’s Terms of Service and Privacy Policy.</p>
+    </form>
+  </main></section>
+</div>
+
+

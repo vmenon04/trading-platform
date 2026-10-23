@@ -1,0 +1,17 @@
+<header class="page-header"><div><h1>Orders</h1><span>Track and manage your trades</span></div><span class="market-status">● Markets open</span></header>
+<main class="orders-page">
+	<span class="eyebrow">Activity</span>
+	<h2>Your orders</h2>
+	<p class="intro">Follow active trades and review your order history.</p>
+	<section class="orders-card">
+		<div class="orders-toolbar"><div class="filters"><button [class.active]="activeFilter === 'All'" (click)="setFilter('All')">All</button><button [class.active]="activeFilter === 'Buy'" (click)="setFilter('Buy')">Buy</button><button [class.active]="activeFilter === 'Sell'" (click)="setFilter('Sell')">Sell</button></div><button class="export">Export history</button></div>
+		<div class="orders-head"><span>Order</span><span>Side</span><span>Quantity</span><span>Price</span><span>Status</span><span></span></div>
+		@if (account.orders.isLoading()) {
+			<p class="empty-orders">Loading orders…</p>
+		} @else if (account.orders.error()) {
+			<p class="empty-orders">Couldn't load your orders. Is the backend running?</p>
+		} @else {
+			@for (order of visibleOrders(); track $index) { <app-order-item [order]="order"></app-order-item> } @empty { <p class="empty-orders">No orders match this filter.</p> }
+		}
+	</section>
+</main>

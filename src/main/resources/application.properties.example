@@ -1,0 +1,38 @@
+# SpringBoot Server
+server.port=8081
+
+# Kafka
+spring.kafka.bootstrap-servers=<kafka-host>:9092
+
+# Postgres
+spring.datasource.url=jdbc:postgresql://<postgres-host>:8082/trading
+spring.datasource.username=trading
+spring.datasource.password=<postgres-password>
+
+# Recreate the tables from schema.sql and reload sample-data.sql on every start (drops existing data)
+spring.sql.init.mode=always
+spring.sql.init.data-locations=classpath:sample-data.sql
+
+# Market data (Fauxnance)
+market.data.base-url=<fauxnance-base-url>
+market.data.api-key=<fauxnance-api-key>
+# how long a price stays in the Redis cache before Fauxnance is asked again
+market.data.cache-ttl=5m
+# Fauxnance calls allowed a day (the key's quota); showing prices stops at 90%, keeping the rest for trades
+market.data.daily-limit=2000
+
+# Redis (price cache). If it is down, prices come straight from Fauxnance, so it is left out of /actuator/health.
+spring.data.redis.host=<redis-host>
+spring.data.redis.port=8083
+spring.data.redis.password=<redis-password>
+management.health.redis.enabled=false
+
+# Login tokens (JWTs) from auth-service. The same secret as its JWT_SECRET, at least 32 characters
+jwt.shared-secret=<jwt-secret>
+
+# Which parts of the app run in this process. Set false to leave a stage out, e.g. a container that only executes
+# trades. A property that isn't set counts as true, so an app without these lines runs every stage.
+trade.stage.api.enabled=true
+trade.stage.validation.enabled=true
+trade.stage.recording.enabled=true
+trade.stage.execution.enabled=true
