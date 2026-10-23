@@ -115,6 +115,16 @@ class CachingMarketDataClientTest {
     }
 
     @Test
+    void getPrice_symbolFauxnanceDoesNotKnow_returnsNullWithoutCallingTheApi() {
+        when(values.get(KEY)).thenReturn(null);
+        when(values.get("unknown:AAPL")).thenReturn("1");
+
+        assertNull(client.getPrice(TICKER));
+        verifyNoInteractions(delegate);
+        verify(values, never()).increment(anyString(), anyLong());
+    }
+
+    @Test
     void apiErrorPropagatesAndNothingIsCached() {
         when(values.get(KEY)).thenReturn(null);
         when(delegate.getPrice(TICKER)).thenThrow(new IllegalStateException("Fauxnance returned 429 for AAPL"));

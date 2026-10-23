@@ -125,8 +125,11 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: trading-redis
-    # only a cache, so nothing is saved to disk (no snapshots, no append-only file)
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "no"]
+    # kept on disk in an append-only file (no snapshots), so the count of today's Fauxnance calls survives a restart;
+    # without it the count starts again at 0 while Fauxnance's doesn't, and the reserve kept for trades gets used up
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
     ports:
       # published like Postgres, so the app can use it when run on the VM
       - "${HOST_IP:?HOST_IP is not set}:${REDIS_PORT:?REDIS_PORT is not set}:6379"
@@ -327,3 +330,4 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:

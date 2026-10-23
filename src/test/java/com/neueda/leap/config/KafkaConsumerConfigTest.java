@@ -5,15 +5,23 @@ import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.enums.TradeSide;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.util.NoSuchElementException;
+import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.listener.DefaultErrorHandler;
+import org.springframework.kafka.listener.ListenerExecutionFailedException;
+import org.springframework.kafka.listener.MessageListenerContainer;
 import org.springframework.kafka.support.converter.ConversionException;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
 import org.springframework.kafka.support.serializer.JacksonJsonSerializer;
 import org.springframework.messaging.Message;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.Mockito.mock;
 
 class KafkaConsumerConfigTest {
 
@@ -73,5 +81,38 @@ class KafkaConsumerConfigTest {
         ConsumerRecord<String, String> notJson = consumerRecord("not json");
         assertThrows(ConversionException.class,
                 () -> converter.toMessage(notJson, null, null, TradeRecordedDTO.class));
+    }
+
+    // --- the error handler: handleOne returns true once the record is given up on (logged and skipped) ----------
+
+    private final DefaultErrorHandler errorHandler = new KafkaConsumerConfig().kafkaErrorHandler();
+    private final ConsumerRecord<String, String> failing = consumerRecord("{}");
+    private final Consumer<?, ?> consumer = mock(Consumer.class);
+    // a mock container isn't running, so the 2 s wait between attempts is skipped
+    private final MessageListenerContainer container = mock(MessageListenerContainer.class);
+
+    // the listener's exception reaches the handler wrapped, as it does from a real container
+    private boolean fails(Exception cause) {
+        return errorHandler.handleOne(new ListenerExecutionFailedException("listener failed", cause),
+                failing, consumer, container);
+    }
+
+    @Test
+    void errorHandler_otherFailure_isRetriedTwiceThenSkipped() {
+        IllegalStateException fauxnanceDown = new IllegalStateException("Fauxnance returned 500 for AAPL");
+
+        assertFalse(fails(fauxnanceDown));
+        assertFalse(fails(fauxnanceDown));
+        assertTrue(fails(fauxnanceDown));
+    }
+
+    @Test
+    void errorHandler_invalidOrder_isSkippedWithoutARetry() {
+        assertTrue(fails(new IllegalArgumentException("Quantity must be positive")));
+    }
+
+    @Test
+    void errorHandler_unknownAccountOrInstrument_isSkippedWithoutARetry() {
+        assertTrue(fails(new NoSuchElementException("No instrument with id 99")));
     }
 }

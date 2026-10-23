@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 
-import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 
@@ -34,6 +33,10 @@ public class InstrumentCatalog {
 
     // assetClass is the InstrumentType name, e.g. STOCK
     public record CatalogInstrument(Long instrumentId, String ticker, String name, String assetClass) {
+    }
+
+    // one page of a search, and how many instruments match in all
+    public record Page(List<CatalogInstrument> instruments, long total) {
     }
 
     /**
@@ -71,13 +74,21 @@ public class InstrumentCatalog {
     }
 
     /**
-     * @return every instrument in the database, sorted by ticker
+     * A page of the instruments in the database whose ticker or name contains the query (case-insensitive), an
+     * exact ticker match first, then by ticker. Only the database is searched; {@link #lookup} adds new symbols.
+     *
+     * @param query text to look for; blank matches every instrument
+     * @param limit the most instruments to return
+     * @param offset how many matches to skip
+     * @return the page of matching instruments, with the number of matches across every page
      */
-    public List<CatalogInstrument> all() {
-        return instrumentMapper.findAll().stream()
-                .map(InstrumentCatalog::toCatalogInstrument)
-                .sorted(Comparator.comparing(CatalogInstrument::ticker))
-                .toList();
+    public Page search(String query, int limit, int offset) {
+        String text = query == null ? "" : query.trim();
+        // a typed % or _ is matched as itself, not as a wildcard (backslash is ILIKE's escape character)
+        String pattern = "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
+        List<CatalogInstrument> instruments = instrumentMapper.search(pattern, text.toUpperCase(Locale.ROOT), limit,
+                offset).stream().map(InstrumentCatalog::toCatalogInstrument).toList();
+        return new Page(instruments, instrumentMapper.countMatching(pattern));
     }
 
     // Fauxnance types to the asset classes the instruments table allows
