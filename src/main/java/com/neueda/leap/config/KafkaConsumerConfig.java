@@ -5,6 +5,7 @@ import com.neueda.leap.exception.InsufficientHoldingsException;
 import java.util.NoSuchElementException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.support.converter.JacksonJsonMessageConverter;
 import org.springframework.kafka.support.converter.RecordMessageConverter;
@@ -28,10 +29,10 @@ public class KafkaConsumerConfig {
     // with no wait, each one able to spend a Fauxnance call), so a passing Fauxnance or database error has time to
     // clear; after that the message is logged and skipped. A bad order (invalid quantity or side, unknown account or
     // instrument) or one the account can't cover (not enough cash or shares) fails the same way every time, so it is
-    // skipped at once.
+    // skipped at once. A skipped message goes to the recoverer (TradeRejectionRecoverer).
     @Bean
-    public DefaultErrorHandler kafkaErrorHandler() {
-        DefaultErrorHandler handler = new DefaultErrorHandler(new FixedBackOff(RETRY_INTERVAL_MS, RETRIES));
+    public DefaultErrorHandler kafkaErrorHandler(ConsumerRecordRecoverer recoverer) {
+        DefaultErrorHandler handler = new DefaultErrorHandler(recoverer, new FixedBackOff(RETRY_INTERVAL_MS, RETRIES));
         handler.addNotRetryableExceptions(IllegalArgumentException.class, NoSuchElementException.class,
                 InsufficientFundsException.class, InsufficientHoldingsException.class);
         return handler;

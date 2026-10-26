@@ -13,6 +13,7 @@ import java.util.UUID;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
+import org.springframework.kafka.listener.ConsumerRecordRecoverer;
 import org.springframework.kafka.listener.DefaultErrorHandler;
 import org.springframework.kafka.listener.ListenerExecutionFailedException;
 import org.springframework.kafka.listener.MessageListenerContainer;
@@ -26,6 +27,10 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 
 class KafkaConsumerConfigTest {
 
@@ -92,7 +97,8 @@ class KafkaConsumerConfigTest {
 
     // --- the error handler: handleOne returns true once the record is given up on (logged and skipped) ----------
 
-    private final DefaultErrorHandler errorHandler = new KafkaConsumerConfig().kafkaErrorHandler();
+    private final ConsumerRecordRecoverer recoverer = mock(ConsumerRecordRecoverer.class);
+    private final DefaultErrorHandler errorHandler = new KafkaConsumerConfig().kafkaErrorHandler(recoverer);
     private final ConsumerRecord<String, String> failing = consumerRecord("{}");
     private final Consumer<?, ?> consumer = mock(Consumer.class);
     // a mock container isn't running, so the 2 s wait between attempts is skipped
@@ -141,5 +147,25 @@ class KafkaConsumerConfigTest {
         assertFalse(fails(noPrice));
         assertFalse(fails(noPrice));
         assertTrue(fails(noPrice));
+    }
+
+    // the recoverer publishes trade.rejected for a trade that failed validation
+    @Test
+    void errorHandler_givesTheSkippedRecordToTheRecoverer() {
+        IllegalStateException fauxnanceDown = new IllegalStateException("Fauxnance returned 500 for AAPL");
+
+        fails(fauxnanceDown);
+        fails(fauxnanceDown);
+        verify(recoverer, never()).accept(any(), any());
+
+        fails(fauxnanceDown);
+        verify(recoverer).accept(eq(failing), any());
+    }
+
+    @Test
+    void errorHandler_givesARecordSkippedWithoutARetryToTheRecoverer() {
+        fails(new InsufficientFundsException("Insufficient funds in account 1"));
+
+        verify(recoverer).accept(eq(failing), any());
     }
 }
