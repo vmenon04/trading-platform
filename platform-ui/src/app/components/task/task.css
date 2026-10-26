@@ -5,3 +5,8 @@
 @media (max-width: 900px) { .task-row { grid-template-columns: 24px 1fr 38px 60px; }.task-row .side { grid-column: 3; }.task-row .quoted-price { grid-column: 2; grid-row: 2; }.task-row .status { grid-column: 4; grid-row: 2; } }
 .status.pending { background: #fff4dc; color: #a0700b; }
 .task-empty { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: 0.65rem; text-align: center; }
+.task-card .eyebrow, .ticker-badge, .quantity, .quoted-price, .side, .status, .task-card > a, .task-empty { font-size: var(--type-caption) !important; }
+.task-card h2 { font-size: var(--type-card-title); }
+.task-row { font-size: var(--type-body); }
+.ticker { font-size: var(--type-body); }
+.task-card > a { font-size: var(--type-control); }

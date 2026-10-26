@@ -1,4 +1,4 @@
-<header class="page-header"><div><h1>Dashboard</h1><span>{{ today }}</span></div><span class="market-status">● Markets open</span></header>
+<header class="page-header"><div><h1>Dashboard</h1><span>{{ today }}</span></div></header>
 
 <section class="dashboard-page">
 	<div class="welcome-row"><div><span class="eyebrow">Portfolio overview</span><h2>{{ greeting }}, {{ firstName() }}.</h2><p>Here’s how your investments are performing today.</p></div><button type="button" class="primary-action" routerLink="/trade">↗ Place a trade</button></div>
@@ -6,13 +6,12 @@
 		<p class="no-account">You don't have a trading account yet. <a routerLink="/portfolio">Open one on the Portfolio page</a> to deposit funds and start trading.</p>
 	}
 	<div class="metrics-grid">
-		<app-financial-card label="Total portfolio value" [value]="totalValue()" [change]="investedChange()"></app-financial-card>
-		<app-financial-card label="Cash available" [value]="cashBalance()" change="Ready to invest"></app-financial-card>
-		<app-financial-card label="Total return" [value]="totalReturn()" [change]="totalReturnChange()" [tone]="totalReturnTone()"></app-financial-card>
+		<app-financial-card label="Total portfolio value" [value]="totalValue()" ></app-financial-card>
+		<app-financial-card label="Cash available" [value]="cashBalance()" ></app-financial-card>
+		<app-financial-card label="Total return" [value]="totalReturn()" [tone]="totalReturnTone()"></app-financial-card>
 	</div>
 	<div class="dashboard-grid">
-		<section class="chart-card"><div class="card-heading"><div><h2>Portfolio performance</h2><span>Total portfolio value today</span></div></div><strong class="chart-value">{{ totalValue() }}</strong><p class="chart-empty">Performance history over time isn't available yet.</p></section>
-		<section class="allocation-card"><h2>Allocation</h2><span>By holding</span><div class="donut" [style.background]="donutBackground()"><strong>{{ donutTotal() }}<small>Total</small></strong></div><ul>@for (slice of allocation(); track slice.label) {<li><span><i class="dot" [style.background]="slice.color"></i>{{ slice.label }}</span><b>{{ slice.share }}</b></li>} @empty {<li><span>No holdings or cash yet</span><b>0%</b></li>}</ul></section>
+		<section class="allocation-card"><h2>Allocation</h2><span>By holding</span><div class="allocation-content"><div class="donut" [style.background]="donutBackground()"><strong>{{ donutTotal() }}<small>Total</small></strong></div><ul>@for (slice of allocation(); track slice.label) {<li><span><i class="dot" [style.background]="slice.color"></i>{{ slice.label }}</span><b>{{ slice.share }}</b></li>} @empty {<li><span>No holdings or cash yet</span><b>0%</b></li>}</ul></div></section>
 	</div>
 	<app-holdings-summary [data]="account.holdings.value() ?? []"></app-holdings-summary>
 	<app-news-feed></app-news-feed>

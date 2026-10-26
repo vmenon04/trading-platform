@@ -73,6 +73,7 @@ export interface Trade {
   ticker: string;
   name: string;
   tradeId: string | null;
+  tradeTime: string | null;
   side: TradeSide;
   quantity: number;
   ppu: number | null;

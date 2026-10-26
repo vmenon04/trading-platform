@@ -1,8 +1,8 @@
 <div class="order-row" role="row">
-	<div class="order-identity"><b><app-ticker-logo [ticker]="order().symbol" /></b><span><strong>{{ order().symbol }}</strong><small>{{ order().name }}</small><small>{{ order().reference }} · {{ order().date }}</small></span></div>
+	<div class="order-identity"><b><app-ticker-logo [ticker]="order().symbol" /></b><span><strong>{{ order().symbol }}</strong><small>{{ order().name }}</small><small>{{ order().reference }}</small></span></div>
+	<time>{{ order().timestamp }}</time>
 	<span><em [class.sell]="order().side === 'Sell'">{{ order().side }}</em></span>
 	<span>{{ order().quantity }}</span>
 	<strong>{{ order().price }}</strong>
 	<span><em class="status">● {{ order().status }}</em></span>
-	<span class="chevron" aria-hidden="true">›</span>
 </div>

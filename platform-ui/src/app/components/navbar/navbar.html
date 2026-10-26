@@ -24,18 +24,20 @@
   }
 
   @if (auth.isClient()) {
-    <button type="button" class="profile-button" (click)="openAccount()" aria-label="Open account">
-      <span class="profile-avatar">{{ initials() }}</span>
-      <span class="profile-copy"><strong>{{ account.clientName() || 'Your account' }}</strong><small>View account</small></span>
-      <span class="profile-arrow" aria-hidden="true">↗</span>
-    </button>
+    <div class="profile-actions">
+      <button type="button" class="profile-button" (click)="openAccount()" aria-label="Open account">
+        <span class="profile-avatar">{{ initials() }}</span>
+        <span class="profile-copy"><strong>{{ account.clientName() || 'Your account' }}</strong><small>View account</small></span>
+      </button>
+      <button type="button" class="logout-button" (click)="logout()">Log out</button>
+    </div>
   } @else {
     <div class="profile-button staff">
       <span class="profile-avatar">{{ staffInitials() }}</span>
       <span class="profile-copy"><strong>{{ staffTitle() }}</strong><small>Staff account</small></span>
     </div>
+    <button type="button" class="logout-button" (click)="logout()">Log out</button>
   }
-  <button type="button" class="logout-button" (click)="logout()">Log out</button>
 </nav>
 
 @if (showEasterEgg()) {
