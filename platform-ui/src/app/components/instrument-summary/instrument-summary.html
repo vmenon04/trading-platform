@@ -5,7 +5,7 @@
 		<div class="market-price"><strong>{{ instrument().price }}</strong><small [class.negative]="instrument().change.startsWith('-')">{{ instrument().change }}</small></div>
 	</section>
 } @else {
-	<button class="instrument-option" type="button" (click)="choose()">
+	<button class="instrument-option" type="button" [class.active]="active()" [attr.aria-pressed]="active()" (click)="choose()">
 		<span class="instrument-icon"><app-ticker-logo [ticker]="instrument().symbol" [assetClass]="instrument().assetClass ?? null" /></span>
 		<span class="instrument-copy"><strong>{{ instrument().name }}</strong><small>{{ instrument().symbol }} · {{ instrument().exchange }}</small></span>
 		@if (instrument().shares !== undefined) { <small class="owned">{{ instrument().shares }} shares owned</small> }

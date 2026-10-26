@@ -1,12 +1,32 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { TickerLogo } from '../ticker-logo/ticker-logo';
+import { LiveTrade, RejectionCode, TradeStage } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 
-// how many of the account's latest orders to show next to the order form
-const RECENT_ORDERS = 5;
+// how often to ask again while a trade is going through
+const POLL_MS = 1000;
+// after an order is submitted, keep asking for this long even before it shows up: it takes a moment to be tracked
+const AFTER_SUBMIT_MS = 5000;
+
+const STAGE_LABELS: Record<TradeStage, string> = {
+  SUBMITTED: 'Submitted',
+  VALIDATED: 'Validated',
+  PENDING: 'Pending',
+  FULFILLED: 'Fulfilled',
+  REJECTED: 'Rejected',
+};
+
+const REASONS: Record<RejectionCode, string> = {
+  INSUFFICIENT_FUNDS: 'Not enough cash',
+  INSUFFICIENT_SHARES: 'Not enough shares',
+  PRICE_UNAVAILABLE: 'No price right now',
+  INVALID_ORDER: 'Invalid order',
+  UNKNOWN: "Couldn't be processed",
+};
 
 export interface TaskOrder {
   key: string;
@@ -14,12 +34,19 @@ export interface TaskOrder {
   quantity: number;
   side: 'Buy' | 'Sell';
   price: string;
-  // backend status, lower-cased for the css class: pending, accepted, rejected or fulfilled
+  // lower-cased for the css class: submitted, validated, pending, fulfilled or rejected
   status: string;
+  label: string;
+  // still going through
+  moving: boolean;
+  reason: string | null;
 }
 
-// The account's latest orders from GET /v1/accounts/{id}/orders, newest first; AccountService reloads them
-// after an order is submitted, so a new order appears here and moves from pending to fulfilled.
+const finished = (trade: LiveTrade) => trade.stage === 'FULFILLED' || trade.stage === 'REJECTED';
+
+// The account's orders as they go through the pipeline (GET /v1/accounts/{id}/trades/live), newest first, asked for
+// every second while one is still going through. Ones already fulfilled when the page opened are left out: they're
+// in Order History. Rejected ones stay, as one that failed validation is nowhere else
 @Component({
   imports: [RouterLink, TickerLogo],
   selector: 'app-task',
@@ -27,19 +54,62 @@ export interface TaskOrder {
   templateUrl: './task.html',
 })
 export class Task {
-  protected account = inject(AccountService);
+  private account = inject(AccountService);
 
-  tasks = computed<TaskOrder[]>(() =>
-    [...(this.account.orders.value() ?? [])]
-      .reverse()
-      .slice(0, RECENT_ORDERS)
-      .map((trade, index) => ({
-        key: trade.tradeId ?? `${trade.ticker}-${index}`,
-        ticker: trade.ticker,
+  protected readonly live = httpResource<LiveTrade[]>(() => {
+    const accountId = this.account.accountId();
+    return accountId ? `/v1/accounts/${accountId}/trades/live` : undefined;
+  });
+
+  // the trades already fulfilled in the first answer for the account
+  private hiddenFor: string | null = null;
+  private readonly hidden = signal(new Set<string>());
+
+  private pollUntil = 0;
+  private timer: ReturnType<typeof setTimeout> | undefined;
+
+  readonly tasks = computed<TaskOrder[]>(() =>
+    (this.live.value() ?? [])
+      .filter((trade) => !this.hidden().has(trade.tradeId))
+      .map((trade) => ({
+        key: trade.tradeId,
+        ticker: trade.ticker ?? '—',
         quantity: trade.quantity,
         side: trade.side === 'BUY' ? 'Buy' : 'Sell',
-        price: trade.ppu === null ? '—' : usd.format(trade.ppu),
-        status: trade.status.toLowerCase(),
+        price: trade.price === null ? '—' : usd.format(trade.price),
+        status: trade.stage.toLowerCase(),
+        label: STAGE_LABELS[trade.stage],
+        moving: !finished(trade),
+        reason: trade.stage === 'REJECTED' ? REASONS[trade.rejectionCode ?? 'UNKNOWN'] : null,
       })),
   );
+
+  constructor() {
+    inject(DestroyRef).onDestroy(() => clearTimeout(this.timer));
+
+    // a new order: ask now, and keep asking until it has been tracked and finished
+    effect(() => {
+      if (this.account.submissions() > 0) {
+        this.pollUntil = Date.now() + AFTER_SUBMIT_MS;
+        untracked(() => this.live.reload());
+      }
+    });
+
+    // each answer: note what was already fulfilled the first time, then ask again while anything is moving
+    effect(() => {
+      const trades = this.live.value();
+      if (!trades) {
+        return;
+      }
+      const accountId = untracked(() => this.account.accountId());
+      if (this.hiddenFor !== accountId) {
+        this.hiddenFor = accountId;
+        this.hidden.set(new Set(trades.filter((trade) => trade.stage === 'FULFILLED').map((trade) => trade.tradeId)));
+      }
+      clearTimeout(this.timer);
+      if (trades.some((trade) => !finished(trade)) || Date.now() < this.pollUntil) {
+        this.timer = setTimeout(() => this.live.reload(), POLL_MS);
+      }
+    });
+  }
 }

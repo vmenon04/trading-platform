@@ -1,5 +1,6 @@
 package com.neueda.leap.external;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.util.Collection;
 import java.util.HashMap;
@@ -34,7 +35,7 @@ public class HttpMarketDataClient implements MarketDataClient {
                     }
                     // 401/403: bad or expired key; 429: daily quota used up; 5xx: API unavailable
                     if (response.getStatusCode().isError()) {
-                        throw new IllegalStateException("Fauxnance returned " + status + " for " + ticker);
+                        throw new PriceUnavailableException("Fauxnance returned " + status + " for " + ticker);
                     }
                     QuoteResponse body = response.bodyTo(QuoteResponse.class);
                     // this prices trades, so a stale quote (past Fauxnance's freshness window) means no price

@@ -44,6 +44,8 @@ x-app-environment: &app-environment
   SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
   # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # Finnhub market news on the dashboard; optional: without a key there is simply no news
+  NEWS_API_KEY: ${FINNHUB_API_KEY:-}
   # verifies the login tokens issued by auth-service, which compose gives the same secret
   JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
 
@@ -269,6 +271,65 @@ services:
     environment:
       # logo.dev's publishable key, added to /logo requests by nginx; logos fall back to a letter without it
       LOGO_DEV_CRED_KEY: ${LOGO_DEV_CRED_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # Prints where to find everything once every service is up and answering: in the log of `docker compose up`, or
+  # later with `docker compose logs ready`. It then stays running and does nothing, because
+  # `docker compose up --wait` counts a container that exits, even successfully, as a failure
+  ready:
+    image: alpine:3.20
+    container_name: trading-ready
+    depends_on:
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      validation:
+        condition: service_healthy
+      recording:
+        condition: service_healthy
+      execution:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      reporting-api:
+        condition: service_healthy
+      # no health checks: started is as much as compose can tell
+      reporting-sync:
+        condition: service_started
+      reporting-consumer:
+        condition: service_started
+    environment:
+      UI_URL: http://${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}
+      API_URL: http://${HOST_IP:?HOST_IP is not set}:${API_PORT:?API_PORT is not set}
+      AUTH_URL: http://${HOST_IP:?HOST_IP is not set}:${AUTH_PORT:?AUTH_PORT is not set}
+      TOOLS: >-
+        Redis Insight :${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set},
+        Kafka UI :${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set},
+        Adminer :${ADMINER_PORT:?ADMINER_PORT is not set}
+    # $$ so the variables are read inside the container, not by compose; the file marks the banner as printed
+    command:
+      - sh
+      - -c
+      - |
+        printf '\n  ✔ Trading platform is up\n\n'
+        printf '  %-8s %s\n' App "$$UI_URL" API "$$API_URL" Auth "$$AUTH_URL"
+        printf '  %-8s %s\n' Tools "docker compose --profile tools up -d ($$TOOLS)"
+        printf '\n'
+        touch /tmp/printed
+        exec tail -f /dev/null
+    # stops at once on `docker compose down` (sh, as process 1, would ignore the stop signal)
+    init: true
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/printed"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
     restart: unless-stopped
 
   # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env

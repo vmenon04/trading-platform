@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.external.MarketDataClient;
@@ -98,14 +99,14 @@ class InstrumentServiceTest {
     void getCurrentPriceThrowsWhenApiHasNoQuote() {
         when(instrumentMapper.findByTicker("AAPL")).thenReturn(instrument);
         when(marketDataClient.getPrice("AAPL")).thenReturn(null);
-        assertThrows(IllegalStateException.class, () -> instrumentService.getCurrentPrice("AAPL"));
+        assertThrows(PriceUnavailableException.class, () -> instrumentService.getCurrentPrice("AAPL"));
     }
 
     @Test
     void getCurrentPriceRejectsNonPositivePrice() {
         when(instrumentMapper.findByTicker("AAPL")).thenReturn(instrument);
         when(marketDataClient.getPrice("AAPL")).thenReturn(BigDecimal.ZERO);
-        assertThrows(IllegalStateException.class, () -> instrumentService.getCurrentPrice("AAPL"));
+        assertThrows(PriceUnavailableException.class, () -> instrumentService.getCurrentPrice("AAPL"));
     }
 
     // note that this needs Instrument.getTicker() from entity

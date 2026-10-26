@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
@@ -91,10 +92,10 @@ public class InstrumentService {
         getInstrumentByTicker(ticker);
         BigDecimal price = marketDataClient.getPrice(ticker);
         if (price == null) {
-            throw new IllegalStateException("No price available for " + ticker);
+            throw new PriceUnavailableException("No price available for " + ticker);
         }
         if (price.compareTo(BigDecimal.ZERO) <= 0) {
-            throw new IllegalStateException("Invalid price " + price + " for " + ticker);
+            throw new PriceUnavailableException("Invalid price " + price + " for " + ticker);
         }
         return price;
     }

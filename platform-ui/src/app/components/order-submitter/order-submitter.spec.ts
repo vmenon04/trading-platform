@@ -54,6 +54,29 @@ describe('OrderSubmitter', () => {
     expect(component).toBeTruthy();
   });
 
+  it('reports the instrument picked, and null when switching between buy and sell clears it', () => {
+    const picked: (string | null)[] = [];
+    component.instrumentChange.subscribe((instrument) => picked.push(instrument?.symbol ?? null));
+    const oracle = { instrumentId: 22, symbol: 'ORCL', name: 'Oracle Corporation', exchange: 'Stock', price: '$130.16', change: '' };
+
+    component.selectInstrument(oracle);
+    component.setMode('sell');
+
+    expect(picked).toEqual(['ORCL', null]);
+  });
+
+  it('unpicks the instrument when it is clicked again', () => {
+    const picked: (string | null)[] = [];
+    component.instrumentChange.subscribe((instrument) => picked.push(instrument?.symbol ?? null));
+    const oracle = { instrumentId: 22, symbol: 'ORCL', name: 'Oracle Corporation', exchange: 'Stock', price: '$130.16', change: '' };
+
+    component.selectInstrument(oracle);
+    component.selectInstrument({ ...oracle });
+
+    expect(component.selectedInstrument).toBeNull();
+    expect(picked).toEqual(['ORCL', null]);
+  });
+
   it('looks up a typed symbol that the buy list for it does not have', async () => {
     await answerPage('', []);
 
@@ -97,14 +120,19 @@ describe('OrderSubmitter', () => {
   it('shows where the page is in the matches, once there is more than one page', async () => {
     await answerPage('', [ORACLE], 0, 334);
     expect(pager()?.textContent).toContain('1–50 of 334');
+    expect(pager()?.classList).not.toContain('pager-hidden');
 
     instruments.nextPage();
     await answerPage('', [ORACLE], 50, 334);
     expect(pager()?.textContent).toContain('51–100 of 334');
   });
 
+  // the pager keeps its space so the form doesn't jump, but it is hidden and can't be used
   it('has no page controls when the matches fit on one page', async () => {
     await answerPage('', [ORACLE], 0, 1);
-    expect(pager()).toBeNull();
+    const nav = pager() as HTMLElement;
+    expect(nav.classList).toContain('pager-hidden');
+    expect(nav.getAttribute('aria-hidden')).toBe('true');
+    nav.querySelectorAll('button').forEach((button) => expect(button.disabled).toBe(true));
   });
 });

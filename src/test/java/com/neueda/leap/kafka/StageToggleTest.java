@@ -5,6 +5,7 @@ import com.neueda.leap.service.ExecutionService;
 import com.neueda.leap.service.RecipientService;
 import com.neueda.leap.service.TradeEventProducer;
 import com.neueda.leap.service.TradeRecordingService;
+import com.neueda.leap.service.TradeTrackerService;
 import com.neueda.leap.service.ValidationService;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -83,5 +84,20 @@ class StageToggleTest {
     @Test
     void theExecutionContainerOnlyExecutes() {
         assertRunsOnly("execution", ExecutionConsumer.class);
+    }
+
+    // it serves the live trades the api container's endpoint shows, so it runs there and nowhere else
+    @Test
+    void theTradeTrackerRunsInTheApiContainer() {
+        ApplicationContextRunner tracker = new ApplicationContextRunner()
+                .withUserConfiguration(TradeTrackerConsumer.class)
+                .withBean(TradeTrackerService.class, () -> mock(TradeTrackerService.class));
+
+        tracker.withPropertyValues(onlyStage("api"))
+                .run(context -> assertThat(context).hasSingleBean(TradeTrackerConsumer.class));
+        for (String stage : List.of("validation", "recording", "execution")) {
+            tracker.withPropertyValues(onlyStage(stage))
+                    .run(context -> assertThat(context).doesNotHaveBean(TradeTrackerConsumer.class));
+        }
     }
 }

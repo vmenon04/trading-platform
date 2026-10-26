@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, output, signal, untracked } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
@@ -28,8 +28,10 @@ export class OrderSubmitter {
 
   mode: 'buy' | 'sell' = 'buy';
   search = '';
-  quantity = 0;
+  quantity: number | null = null;
   selectedInstrument: Instrument | null = null;
+  // the instrument picked for the order, or null when the choice is cleared (e.g. switching between buy and sell)
+  readonly instrumentChange = output<Instrument | null>();
 
   submitting = signal(false);
   result = signal<{ ok: boolean; message: string } | null>(null);
@@ -145,23 +147,33 @@ export class OrderSubmitter {
     this.instrumentService.setQuery('');
     this.searchMiss.set('');
     this.selectedInstrument = null;
+    this.instrumentChange.emit(null);
     this.result.set(null);
   }
 
+  // clicking the instrument that's already picked unpicks it, so the order form and the news go back to their defaults
   selectInstrument(instrument: Instrument): void {
+    if (this.selectedInstrument?.symbol === instrument.symbol) {
+      this.selectedInstrument = null;
+      this.instrumentChange.emit(null);
+      this.result.set(null);
+      return;
+    }
     this.selectedInstrument = instrument;
+    this.instrumentChange.emit(instrument);
     this.result.set(null);
   }
 
   // selling more than you hold would be rejected by the backend, so it's stopped here first
   get overSelling(): boolean {
     const shares = this.selectedInstrument?.shares;
-    return this.mode === 'sell' && shares !== undefined && this.quantity > shares;
+    return this.mode === 'sell' && shares !== undefined && this.quantity !== null && this.quantity > shares;
   }
 
   async submitOrder(): Promise<void> {
     const instrument = this.selectedInstrument;
-    if (!instrument || this.quantity <= 0 || this.overSelling || this.submitting()) {
+    const quantity = this.quantity;
+    if (!instrument || quantity === null || quantity <= 0 || this.overSelling || this.submitting()) {
       return;
     }
     if (instrument.instrumentId === undefined) {
@@ -172,8 +184,8 @@ export class OrderSubmitter {
     this.submitting.set(true);
     this.result.set(null);
     try {
-      await this.account.submitTrade(instrument.instrumentId, this.mode === 'buy' ? 'BUY' : 'SELL', this.quantity);
-      this.result.set({ ok: true, message: 'Order submitted. It will appear in Recent orders in a few seconds.' });
+      await this.account.submitTrade(instrument.instrumentId, this.mode === 'buy' ? 'BUY' : 'SELL', quantity);
+      this.result.set({ ok: true, message: 'Order submitted. Follow it in Recent orders.' });
     } catch (error) {
       this.result.set({ ok: false, message: this.errorMessage(error) });
     } finally {
@@ -209,12 +221,14 @@ export class OrderSubmitter {
   }
 
   adjustQuantity(amount: number): void {
-    this.quantity = Math.max(1, this.quantity + amount);
+    this.quantity = Math.max(1, (this.quantity ?? 0) + amount);
   }
 
   // estimate from the backend's current price; the order itself is priced by the backend when it executes
   get total(): string {
     const price = this.selectedInstrument?.priceValue;
-    return price === null || price === undefined ? '—' : usd.format(price * this.quantity);
+    return price === null || price === undefined || this.quantity === null || this.quantity <= 0
+      ? '—'
+      : usd.format(price * this.quantity);
   }
 }

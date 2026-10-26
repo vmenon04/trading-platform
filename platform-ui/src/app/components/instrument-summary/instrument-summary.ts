@@ -25,6 +25,8 @@ export interface Instrument {
 export class InstrumentSummary {
   instrument = input.required<Instrument>();
   variant = input<'option' | 'selected'>('option');
+  // an option that is the instrument picked for the order; clicking it again unpicks it
+  active = input(false);
   selected = output<Instrument>();
 
   choose(): void {
