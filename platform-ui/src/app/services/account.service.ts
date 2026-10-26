@@ -47,6 +47,9 @@ export class AccountService {
     return error?.status === 404 || (this.client.hasValue() && this.client.value().tradingAccounts.length === 0);
   });
 
+  // goes up each time an order is submitted, so the trade page's live list knows to look for it
+  readonly submissions = signal(0);
+
   // null = all orders
   readonly orderSide = signal<TradeSide | null>(null);
 
@@ -86,6 +89,7 @@ export class AccountService {
     }
     const body: TradeRequest = { accountId, instrumentId, side, quantity };
     await firstValueFrom(this.http.post(`/v1/accounts/${accountId}/trades`, body));
+    this.submissions.update((count) => count + 1);
     this.refreshAfterTrade();
   }
 

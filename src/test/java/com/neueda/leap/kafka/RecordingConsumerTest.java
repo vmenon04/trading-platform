@@ -31,13 +31,15 @@ class RecordingConsumerTest {
     @Mock
     private TradeEventProducer tradeEventProducer;
 
+    private static final UUID EXTERNAL_TRADE_ID = UUID.randomUUID();
+
     private RecordingConsumer recordingConsumer;
 
     private final TradeValidatedDTO trade = new TradeValidatedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), UUID.randomUUID());
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), EXTERNAL_TRADE_ID);
 
     private final TradeRecordedDTO recorded = new TradeRecordedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L);
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L, EXTERNAL_TRADE_ID);
 
     @BeforeEach
     void setUp() {

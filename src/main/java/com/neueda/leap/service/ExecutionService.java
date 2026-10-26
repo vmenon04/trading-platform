@@ -2,6 +2,7 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.enums.RejectionCode;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradePriceMapper;
@@ -63,7 +64,9 @@ public class ExecutionService {
         TradeStatus status = accountTradeStatusMapper.getTradeStatusByTradeId(tradeId);
         if (status == TradeStatus.FULFILLED || status == TradeStatus.REJECTED) {
             BigDecimal storedPrice = accountTradePriceMapper.getTradePriceByTradeId(tradeId);
-            return outcome(trade, storedPrice, null);
+            // why it was rejected isn't stored
+            RejectionCode code = status == TradeStatus.REJECTED ? RejectionCode.UNKNOWN : null;
+            return outcome(trade, storedPrice, null, code);
         }
 
         try {
@@ -77,12 +80,12 @@ public class ExecutionService {
                 accountTradePriceMapper.insertTradePrice(tradeId, price, total);
                 accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.FULFILLED);
             });
-            return outcome(trade, price, null);
+            return outcome(trade, price, null, null);
         } catch (IllegalStateException | IllegalArgumentException | NoSuchElementException | RestClientException e) {
             // business failures (no price, Fauxnance down, insufficient funds or holdings, unknown instrument)
             // reject the trade; anything else propagates so the message is retried
             accountTradeStatusMapper.insertTradeStatus(tradeId, TradeStatus.REJECTED);
-            return outcome(trade, null, e.getMessage());
+            return outcome(trade, null, e.getMessage(), RejectionCode.of(e));
         }
     }
 
@@ -99,8 +102,9 @@ public class ExecutionService {
     }
 
     // a null price means the trade was rejected
-    private static TradeFinishedDTO outcome(TradeRecordedDTO trade, BigDecimal price, String reason) {
+    private static TradeFinishedDTO outcome(TradeRecordedDTO trade, BigDecimal price, String reason,
+                                            RejectionCode rejectionCode) {
         return new TradeFinishedDTO(trade.tradeId(), trade.accountId(), trade.instrumentId(), trade.side(),
-                trade.quantity(), price, reason);
+                trade.quantity(), price, reason, trade.externalTradeId(), rejectionCode);
     }
 }

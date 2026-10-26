@@ -2,8 +2,10 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.dto.TradeRejectedDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
+import com.neueda.leap.enums.RejectionCode;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.kafka.KafkaTopics;
 import java.math.BigDecimal;
@@ -60,7 +62,7 @@ class TradeEventProducerTest {
     @Test
     void tradeRecordedIsKeyedByAccountId() {
         TradeRecordedDTO event = new TradeRecordedDTO(
-                INSTRUMENT_ID, ACCOUNT_ID, TradeSide.SELL, QUANTITY, PRICE, TRADE_ID);
+                INSTRUMENT_ID, ACCOUNT_ID, TradeSide.SELL, QUANTITY, PRICE, TRADE_ID, EXTERNAL_TRADE_ID);
         when(kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, "1", event)).thenReturn(sent);
 
         assertSame(sent, producer.publishTradeRecorded(event));
@@ -69,9 +71,18 @@ class TradeEventProducerTest {
     @Test
     void tradeFinishedIsKeyedByTradeId() {
         TradeFinishedDTO event = new TradeFinishedDTO(
-                TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY, PRICE, null);
+                TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY, PRICE, null, EXTERNAL_TRADE_ID, null);
         when(kafkaTemplate.send(KafkaTopics.TRADE_FINISHED, "42", event)).thenReturn(sent);
 
         assertSame(sent, producer.publishTradeFinished(event));
+    }
+
+    // trade.rejected has no internal ids, so it is keyed by the trade
+    @Test
+    void tradeRejectedIsKeyedByExternalTradeId() {
+        TradeRejectedDTO event = new TradeRejectedDTO(EXTERNAL_TRADE_ID, RejectionCode.INSUFFICIENT_FUNDS);
+        when(kafkaTemplate.send(KafkaTopics.TRADE_REJECTED, EXTERNAL_TRADE_ID.toString(), event)).thenReturn(sent);
+
+        assertSame(sent, producer.publishTradeRejected(event));
     }
 }

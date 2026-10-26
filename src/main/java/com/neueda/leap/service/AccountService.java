@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientFundsException;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
@@ -117,7 +118,7 @@ public class AccountService {
         requirePositive(amount);
         if (accountMapper.reduceBalance(accountId, amount) == 0) {
             BigDecimal balance = getBalance(accountId);
-            throw new IllegalStateException(
+            throw new InsufficientFundsException(
                     "Insufficient funds in account " + accountId + ": balance " + balance + ", requested " + amount);
         }
     }

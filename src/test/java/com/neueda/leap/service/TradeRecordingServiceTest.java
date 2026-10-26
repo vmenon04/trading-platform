@@ -64,6 +64,7 @@ class TradeRecordingServiceTest {
         assertEquals(new BigDecimal("100"), tradeRecordedDTO.quantity());
         assertEquals(new BigDecimal("10.0"), tradeRecordedDTO.quote());
         assertEquals(4L, tradeRecordedDTO.tradeId());
+        assertEquals(EXTERNAL_TRADE_ID, tradeRecordedDTO.externalTradeId());
     }
 
     @Test
@@ -75,6 +76,7 @@ class TradeRecordingServiceTest {
 
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertEquals(4L, tradeRecordedDTO.tradeId());
+        assertEquals(EXTERNAL_TRADE_ID, tradeRecordedDTO.externalTradeId());
     }
 
     @Test

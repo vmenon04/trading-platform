@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientFundsException;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
@@ -90,7 +91,7 @@ class AccountServiceTest {
         when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
         when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
         BigDecimal amount = new BigDecimal("1000.01");
-        assertThrows(IllegalStateException.class, () -> accountService.withdraw(1L, amount));
+        assertThrows(InsufficientFundsException.class, () -> accountService.withdraw(1L, amount));
     }
 
     @Test
@@ -121,7 +122,7 @@ class AccountServiceTest {
         when(accountMapper.reduceBalance(eq(1L), any())).thenReturn(0);
         when(accountMapper.findBalance(1L)).thenReturn(new BigDecimal("1000.00"));
         BigDecimal amount = new BigDecimal("1000.01");
-        assertThrows(IllegalStateException.class, () -> accountService.purchase(1L, amount));
+        assertThrows(InsufficientFundsException.class, () -> accountService.purchase(1L, amount));
     }
 
     @Test

@@ -57,6 +57,7 @@ public class TradeRecordingService {
                 tradeValidatedDTO.side(),
                 tradeValidatedDTO.quantity(),
                 tradeValidatedDTO.quote(),
-                tradeId);
+                tradeId,
+                tradeValidatedDTO.externalTradeId());
     }
 }

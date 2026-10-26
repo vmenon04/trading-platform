@@ -1,5 +1,6 @@
 package com.neueda.leap.external;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -183,7 +184,7 @@ class CachingMarketDataClientTest {
         callsUsedToday(DAILY_LIMIT);
         when(values.get(KEY)).thenReturn(null);
 
-        IllegalStateException e = assertThrows(IllegalStateException.class, () -> client.getPrice(TICKER));
+        PriceUnavailableException e = assertThrows(PriceUnavailableException.class, () -> client.getPrice(TICKER));
         assertTrue(e.getMessage().contains("quota"));
         verifyNoInteractions(delegate);
     }

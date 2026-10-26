@@ -185,7 +185,7 @@ export class OrderSubmitter {
     this.result.set(null);
     try {
       await this.account.submitTrade(instrument.instrumentId, this.mode === 'buy' ? 'BUY' : 'SELL', quantity);
-      this.result.set({ ok: true, message: 'Order submitted. It will appear in Recent orders in a few seconds.' });
+      this.result.set({ ok: true, message: 'Order submitted. Follow it in Recent orders.' });
     } catch (error) {
       this.result.set({ ok: false, message: this.errorMessage(error) });
     } finally {
