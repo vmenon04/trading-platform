@@ -1,12 +1,12 @@
 .news-card {
 	overflow: hidden;
-	border: 1px solid var(--line);
+	border: var(--card-border);
 	border-radius: var(--radius);
 	background: var(--surface);
 }
 
 .news-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px; border-bottom: 1px solid var(--line); }
-.news-heading h2 { margin: 0 0 5px; font-size: 0.95rem; }
+.news-heading h2 { margin: 0 0 5px; font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; }
 .news-heading span { color: var(--muted); font-size: 0.68rem; }
 .news-heading .live { padding: 5px 9px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 0.58rem; font-weight: 700; }
 
@@ -17,7 +17,7 @@
 .news-list li:nth-last-child(-n + 2):nth-child(odd), .news-list li:last-child { border-bottom: 0; }
 
 .news-list a { display: flex; flex-direction: column; gap: 7px; height: 100%; padding: 16px 18px; color: inherit; text-decoration: none; transition: background 0.15s; }
-.news-list a:hover { background: #f7faf8; }
+.news-list a:hover { background: var(--green-soft); }
 .news-list a:hover strong { color: var(--green); }
 .news-list a:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
 

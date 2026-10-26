@@ -3,13 +3,14 @@
 	gap: 8px;
 	min-height: 112px;
 	padding: 18px;
-	border: 1px solid var(--line);
+	border: var(--card-border);
 	border-radius: var(--radius);
 	background: var(--surface);
 }
 
 .metric-label {
 	color: var(--muted);
+	font-weight: 600;
 	font-size: 0.72rem;
 }
 

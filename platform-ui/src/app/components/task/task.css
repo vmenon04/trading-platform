@@ -1,8 +1,8 @@
-.task-card { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.task-card { display: grid; gap: 14px; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
 .task-heading { display: flex; align-items: center; gap: 10px; }
-.task-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+.task-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green); }
 .eyebrow { color: var(--green); font-size: var(--type-caption); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.task-card h2 { margin: 3px 0 0; font-size: var(--type-card-title); }
+.task-card h2 { margin: 3px 0 0; font-family: var(--font-display); font-size: var(--type-card-title); font-weight: 700; }
 
 /* scrolls sideways inside the card on a phone rather than squeezing the columns */
 .task-table { overflow-x: auto; }
@@ -29,7 +29,7 @@
 .status.rejected { background: var(--red-soft); color: var(--red); }
 .reason { color: var(--muted); font-size: var(--type-caption); }
 
-.task-empty { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: var(--type-caption); text-align: center; }
+.task-empty { margin: 0; padding: 14px; border-radius: 12px; background: var(--canvas); color: var(--muted); font-size: var(--type-caption); text-align: center; }
 .task-card > a { color: var(--green); font-size: var(--type-control); font-weight: 700; text-decoration: none; }
 
 @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }

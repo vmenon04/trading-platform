@@ -8,8 +8,9 @@ fieldset.statuses span { display: flex; gap: 12px; align-items: center; min-heig
 
 .table-head { display: flex; gap: 12px; align-items: baseline; margin-bottom: 8px; }
 
-button.sort { min-height: 0; border: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 700; text-transform: inherit; }
+button.sort { min-height: 0; border: 0; border-radius: 0; background: none; padding: 0; color: inherit; font: inherit; font-weight: 700; text-transform: inherit; }
 th.num button.sort { width: 100%; text-align: right; }
+button.sort:hover:not(:disabled) { background: none; }
 
 tr.order { cursor: pointer; }
 tr.order:hover, tr.order.open { background: #f7faf8; }
