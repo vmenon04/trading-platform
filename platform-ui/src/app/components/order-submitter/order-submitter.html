@@ -9,7 +9,7 @@
 			<p class="empty-state">Couldn't load {{ mode === 'buy' ? 'instruments' : 'your holdings' }}. Is the backend running?</p>
 		} @else {
 			@for (instrument of visibleInstruments; track instrument.symbol) {
-				<app-instrument-summary [instrument]="instrument" (selected)="selectInstrument($event)"></app-instrument-summary>
+				<app-instrument-summary [instrument]="instrument" [active]="instrument.symbol === selectedInstrument?.symbol" (selected)="selectInstrument($event)"></app-instrument-summary>
 			} @empty {
 				@if (searching()) {
 					<p class="empty-state">Looking up {{ search.trim().toUpperCase() }}…</p>
@@ -48,6 +48,6 @@
 		@if (result(); as result) {
 			<p class="order-result" [class.error]="!result.ok" role="status">{{ result.message }}</p>
 		}
-	} @else { <p class="selection-hint">Select an instrument to see its current market price and place an order.</p> }
+	} @else { <p class="selection-hint">Select an instrument to see its current market price and place an order. Click it again to unselect it.</p> }
 	<small class="disclaimer">Orders are priced by the backend at the live market price when they execute.</small>
 </section>
