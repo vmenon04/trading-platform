@@ -111,8 +111,9 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `trade.validated` | 8 | validation → `recording-service` |
 | `trade.recorded` | 8 | recording → `execution-service` |
 | `trade.finished` | 8 | execution → (none yet) |
+| `trade.rejected` | 8 | validation, for a trade that failed it (after retries) → (none yet) |
 
-Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.finished` is keyed by trade ID.
+Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.finished` is keyed by trade ID and `trade.rejected` by external trade ID.
 
 ## CI (Jenkins, `Jenkinsfile`)
 

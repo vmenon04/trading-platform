@@ -2,6 +2,7 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.dto.TradeRejectedDTO;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.kafka.KafkaTopics;
@@ -33,5 +34,9 @@ public class TradeEventProducer {
 
     public CompletableFuture<SendResult<String, Object>> publishTradeFinished(TradeFinishedDTO event) {
         return kafkaTemplate.send(KafkaTopics.TRADE_FINISHED, event.tradeId().toString(), event);
+    }
+
+    public CompletableFuture<SendResult<String, Object>> publishTradeRejected(TradeRejectedDTO event) {
+        return kafkaTemplate.send(KafkaTopics.TRADE_REJECTED, event.externalTradeId().toString(), event);
     }
 }
