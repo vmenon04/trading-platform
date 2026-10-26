@@ -26,6 +26,13 @@ describe('Landing', () => {
   it('draws every fly', () => {
     expect(fixture.nativeElement.querySelectorAll('svg g[opacity]').length).toBe(FLY_COUNT);
   });
+
+  it('says ribbit when the frog is clicked', async () => {
+    expect(fixture.nativeElement.querySelector('.ribbit')).toBeNull();
+    fixture.nativeElement.querySelector('g.frog').dispatchEvent(new MouseEvent('click'));
+    await fixture.whenStable();
+    expect(fixture.nativeElement.querySelector('.ribbit').textContent).toContain('Ribbit');
+  });
 });
 
 describe('FrogGame', () => {

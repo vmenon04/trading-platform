@@ -18,9 +18,11 @@ export class Landing implements OnInit, OnDestroy {
   // a signal, so each animation frame re-renders the scene (the app runs without zone.js)
   protected readonly scene = signal<SceneView>(this.game.view());
   protected readonly paused = signal(false);
+  protected readonly ribbiting = signal(false);
 
   private host = inject<ElementRef<HTMLElement>>(ElementRef);
   private frame = 0;
+  private ribbitTimer?: ReturnType<typeof setTimeout>;
   private last: number | null = null;
   private readonly onResize = () => this.fitToScreen();
 
@@ -45,6 +47,7 @@ export class Landing implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.ribbitTimer);
     if (typeof cancelAnimationFrame === 'function') cancelAnimationFrame(this.frame);
     if (typeof removeEventListener === 'function') removeEventListener('resize', this.onResize);
   }
@@ -57,6 +60,13 @@ export class Landing implements OnInit, OnDestroy {
     const scale = Math.max(svg.clientWidth / 1440, svg.clientHeight / 640);
     const shown = svg.clientWidth / scale;
     this.game.setVisibleRange(720 - shown / 2, 720 + shown / 2);
+  }
+
+  // clicking the frog makes it say hello for a moment
+  protected ribbit(): void {
+    this.ribbiting.set(true);
+    clearTimeout(this.ribbitTimer);
+    this.ribbitTimer = setTimeout(() => this.ribbiting.set(false), 1600);
   }
 
   protected togglePause(): void {

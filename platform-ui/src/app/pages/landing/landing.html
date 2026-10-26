@@ -60,13 +60,20 @@
         </g>
       }
 
-      <g [attr.transform]="scene().frog">
+      <g class="frog" [attr.transform]="scene().frog" (click)="ribbit()">
         <path [attr.d]="art.FROG" fill="#fff" stroke="#fff" stroke-width="11" stroke-linejoin="round" />
         <path [attr.d]="art.FROG" fill="#07ab3e" />
         <circle cx="34.5" cy="-84.5" r="18" fill="#fff" />
         <circle [attr.cx]="scene().pupilX" cy="-88.2" r="9.8" fill="#101719" />
         <circle [attr.cx]="scene().glintX" cy="-92.4" r="3" fill="#fff" />
       </g>
+
+      @if (ribbiting()) {
+        <g class="ribbit" [attr.transform]="scene().head">
+          <path d="M-74 -46 H74 A14 14 0 0 1 88 -32 V-14 A14 14 0 0 1 74 0 H10 L0 14 L-10 0 H-74 A14 14 0 0 1 -88 -14 V-32 A14 14 0 0 1 -74 -46 Z" fill="#fff" stroke="#101719" stroke-width="3" stroke-linejoin="round" />
+          <text y="-16" text-anchor="middle">Ribbit-ribbit!</text>
+        </g>
+      }
 
       @for (fly of scene().flies; track $index) {
         <g [attr.transform]="fly.transform" [attr.opacity]="fly.opacity">

@@ -14,6 +14,8 @@ export interface FlyView { transform: string; wings: string; opacity: number; }
 
 export interface SceneView {
   frog: string;
+  // just above the frog's head, unflipped, for the "Ribbit" bubble
+  head: string;
   shadow: string;
   pupilX: number;
   glintX: number;
@@ -149,6 +151,7 @@ export class FrogGame {
     const shadow = Math.max(0.45, 1 - this.hopH / 260);
     return {
       frog: `translate(${this.x.toFixed(1)} ${(this.y - this.hopH).toFixed(1)}) scale(${(this.dir * s.sx).toFixed(3)} ${s.sy.toFixed(3)})`,
+      head: `translate(${(this.x + 34 * this.dir).toFixed(1)} ${(this.y - this.hopH - 120).toFixed(1)})`,
       shadow: `translate(${this.x.toFixed(1)} ${this.y.toFixed(1)}) scale(${shadow.toFixed(3)})`,
       pupilX: aiming ? 43 : 42,
       glintX: aiming ? 47.2 : 46.2,

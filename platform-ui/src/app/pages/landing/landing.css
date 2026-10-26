@@ -87,6 +87,9 @@ a { color: inherit; }
   font-size: 28px;
   font-weight: 800;
 }
+.frog { cursor: pointer; }
+.ribbit { pointer-events: none; }
+.ribbit text { fill: var(--lp-ink); font-family: var(--lp-display); font-size: 22px; font-weight: 800; }
 .tally {
   position: absolute;
   top: 16px;
