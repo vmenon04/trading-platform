@@ -40,8 +40,11 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | `redis-insight` | `redis/redisinsight:3.8` | Web UI for Redis, already connected to `redis`. `tools` profile only |
 | `kafka-ui` | `ghcr.io/kafbat/kafka-ui:v1.5.0` | Web UI for Kafka topics, messages and consumer groups (read-only). `tools` profile only |
 | `adminer` | `adminer:6.1.2` | Web UI for Postgres: browse tables, run SQL. Log in with `POSTGRES_USER` / `POSTGRES_PASSWORD`. `tools` profile only |
+| `ready` | `alpine:3.20` | Waits until every other service is up, prints where to find the app (`docker compose logs ready`), then idles. It stays running because `docker compose up --wait` counts any container that exits as a failure |
 
 All four app services use the one image built from `Dockerfile`; each switches on only its own stage. Scale one with `docker compose up -d --scale execution=3` (at most 8 per stage get work, one per partition). Reset the database with `docker compose down -v`.
+
+Once every service is up and answering, the `ready` service prints the app's addresses: in the log of a plain `docker compose up`, or with `docker compose logs ready` after `docker compose up -d --wait`.
 
 `docker compose up -d` leaves out the three web UIs; `docker compose --profile tools up -d` starts them too. Redis Insight and Kafka UI have no login.
 
