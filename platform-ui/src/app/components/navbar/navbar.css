@@ -144,3 +144,19 @@ app-account-selector {
   background: #245443;
   color: #ffffff;
 }
+
+/* Shared client typography */
+.navbar a, .logout-button, .easter-egg { font-size: var(--type-body); }
+.nav-section, .profile-avatar, .profile-copy strong, .profile-copy small { font-size: var(--type-caption); }
+.profile-arrow { font-size: var(--type-body); }
+@media (max-width: 640px) { .navbar a { font-size: var(--type-body); } }
+
+.profile-actions { display: flex; align-items: center; gap: 4px; width: 100%; margin-top: auto; padding-top: 12px; border-top: 1px solid #ffffff1f; }
+.profile-actions .profile-button { flex: 1 1 auto; min-width: 0; margin-top: 0; padding: 0 2px; border: 0; }
+.profile-actions .profile-copy { min-width: 0; }
+.profile-actions .profile-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-actions .logout-button { flex: 0 0 auto; padding: 8px 6px; border: 1px solid #ffffff2b; border-radius: 6px; color: #ffffff; font-size: var(--type-caption); }
+@media (max-width: 640px) {
+  .profile-actions { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
+  .profile-actions .profile-button { flex: 1 1 auto; margin-top: 0; padding: 0 2px; }
+}

@@ -116,3 +116,8 @@
 .dialog-actions button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; }
 .dialog-actions button.primary { border-color: var(--green); background: var(--green); color: #fff; }
 .dialog-actions button:disabled { opacity: 0.6; cursor: wait; }
+
+/* Shared client typography */
+.account-icon, .account-copy strong, .account-copy small, .account-option .account-icon { font-size: var(--type-caption); }
+.account-empty, .confirm-dialog p, .dialog-actions button { font-size: var(--type-body); }
+.confirm-dialog h2 { font-size: var(--type-card-title); }

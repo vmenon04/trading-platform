@@ -5,7 +5,7 @@ export interface OrderItemData {
   symbol: string;
   name: string;
   reference: string;
-  date: string;
+  timestamp: string;
   side: 'Buy' | 'Sell';
   quantity: string;
   price: string;

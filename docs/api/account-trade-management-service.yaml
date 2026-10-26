@@ -140,7 +140,9 @@ paths:
               example:
                 instrumentId: 44
                 ticker: "AAPL"
+                name: "Apple Inc."
                 tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                tradeTime: "2026-10-25T14:30:00Z"
                 side: "BUY"
                 quantity: 10.5
                 ppu: 151.23
@@ -253,7 +255,9 @@ paths:
               example:
                 - instrumentId: 44
                   ticker: "AAPL"
+                  name: "Apple Inc."
                   tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                  tradeTime: "2026-10-25T14:30:00Z"
                   side: "BUY"
                   quantity: 10.5
                   ppu: 151.00
@@ -262,7 +266,9 @@ paths:
                   reason: null
                 - instrumentId: 12
                   ticker: "MSFT"
+                  name: "Microsoft Corporation"
                   tradeId: "9a1d2c3b-4e5f-4a6b-8c7d-0e1f2a3b4c5d"
+                  tradeTime: "2026-10-25T13:45:00Z"
                   side: "SELL"
                   quantity: 5.0
                   ppu: null
@@ -333,6 +339,11 @@ components:
         tradeId:
           type: string
           format: uuid
+        tradeTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the latest recorded trade status
         side:
           type: string
           enum: [BUY, SELL]
@@ -393,6 +404,11 @@ components:
         tradeId:
           type: string
           format: uuid
+        tradeTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the latest recorded trade status
         side:
           type: string
           enum: [BUY, SELL]

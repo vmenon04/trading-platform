@@ -22,3 +22,10 @@ button:disabled { opacity: 0.6; cursor: wait; }
 .quick-amounts button { flex: 1; min-height: 34px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); color: var(--ink); font-weight: 700; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .dialog-actions button { min-height: 40px; padding: 0 16px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); color: var(--ink); font-weight: 700; }
+.page-header h1 { font-size: var(--type-page-title); }
+.page-header span, .eyebrow, .open-account-form label, .deposit-dialog label { font-size: var(--type-caption); }
+.portfolio-intro strong { font-size: var(--type-value); }
+.portfolio-intro p, .load-error, .form-error, .deposit-success, .open-account p, .deposit-dialog p { font-size: var(--type-body); }
+.open-account h2, .deposit-dialog h2 { font-size: var(--type-card-title); }
+.intro-actions button, .open-account-form button, .dialog-actions button, .quick-amounts button { font-size: var(--type-control); }
+.open-account-form input, .deposit-dialog input { font-size: var(--type-input); }

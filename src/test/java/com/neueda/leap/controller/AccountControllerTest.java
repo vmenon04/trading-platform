@@ -29,6 +29,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -248,6 +249,7 @@ class AccountControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(2)))
                 .andExpect(jsonPath("$[0].side").value("BUY"))
+                .andExpect(jsonPath("$[0].tradeTime").value("2026-10-25T14:30:00Z"))
                 .andExpect(jsonPath("$[1].side").value("SELL"));
     }
 
@@ -353,6 +355,7 @@ class AccountControllerTest {
                 new BigDecimal("150.00"), new BigDecimal("1500.00"));
         trade.setExternalTradeId(externalTradeId);
         trade.setTradeStatus(TradeStatus.FULFILLED);
+        trade.setTradeTime(OffsetDateTime.parse("2026-10-25T14:30:00Z"));
         return trade;
     }
 }
