@@ -15,14 +15,22 @@ const signedPercent = new Intl.NumberFormat('en-US', { style: 'percent', maximum
 
 // allocation slices: the largest holdings, then "Other", then cash
 const MAX_SLICES = 4;
-const SLICE_COLORS = ['#168363', '#2fa57c', '#7cc0a9', '#a9d6c6', '#cfe5dc'];
-const CASH_COLOR = '#e6ece9';
+const SLICE_COLORS = ['#067a2c', '#07ab3e', '#6cc785', '#a9dcb5', '#d4f0c8'];
+const CASH_COLOR = '#c9d6c4';
 
 interface Slice {
   label: string;
   value: number;
   color: string;
   share: string;
+}
+
+// one slice of the donut as an arc of the ring, both in percent of the way round
+interface Arc {
+  label: string;
+  color: string;
+  length: number;
+  start: number;
 }
 
 // Everything shown here comes from the backend: the client (/v1/clients/me), the account summary
@@ -121,21 +129,21 @@ export class Dashboard {
     return parts.map((part) => ({ ...part, share: total > 0 ? percent.format(part.value / total) : '0%' }));
   });
 
-  // conic-gradient for the donut; an empty portfolio is one grey ring
-  readonly donutBackground = computed(() => {
+  // the donut's arcs, end to end from the top; an empty portfolio has none and shows just the grey track.
+  // Each arc is tracked by its label, so when prices move it grows or shrinks in place (see .arc in the css)
+  readonly donutArcs = computed<Arc[]>(() => {
     const slices = this.allocation();
     const total = slices.reduce((sum, slice) => sum + slice.value, 0);
     if (total <= 0) {
-      return `conic-gradient(${CASH_COLOR} 0 100%)`;
+      return [];
     }
     let start = 0;
-    const stops = slices.map((slice) => {
-      const end = start + (slice.value / total) * 100;
-      const stop = `${slice.color} ${start}% ${end}%`;
-      start = end;
-      return stop;
+    return slices.map((slice) => {
+      const length = (slice.value / total) * 100;
+      const arc = { label: slice.label, color: slice.color, length, start };
+      start += length;
+      return arc;
     });
-    return `conic-gradient(${stops.join(', ')})`;
   });
 
   readonly donutTotal = computed(() => {
