@@ -76,17 +76,27 @@ describe('Task', () => {
     return Array.from(fixture.nativeElement.querySelectorAll('.task-row'));
   }
 
-  function steps(row: HTMLElement): string[] {
-    return Array.from(row.querySelectorAll('.step')).map((step) => (step as HTMLElement).className.replace('step', '').trim());
+  function status(row: HTMLElement): HTMLElement {
+    return row.querySelector('.status') as HTMLElement;
   }
 
-  it('shows a trade going through with the steps it has reached', async () => {
+  it('labels the columns', async () => {
+    await respond([trade('t1')]);
+
+    const headers = Array.from(fixture.nativeElement.querySelectorAll('.task-head span')).map(
+      (header) => (header as HTMLElement).textContent?.trim(),
+    );
+    expect(headers).toEqual(['Order', 'Side', 'Qty', 'Price', 'Status']);
+  });
+
+  it('shows the stage a trade going through has reached', async () => {
     await respond([trade('t1', { stage: 'VALIDATED', validatedAt: AT })]);
 
     const [row] = rows();
     expect(row.textContent).toContain('AAPL');
-    expect(row.textContent).toContain('Validated');
-    expect(steps(row)).toEqual(['done', 'done', 'current', '']);
+    expect(row.textContent).toContain('Buy');
+    expect(status(row).textContent).toContain('Validated');
+    expect(status(row).classList).toContain('moving');
   });
 
   it('shows a fulfilled trade with its price', async () => {
@@ -97,18 +107,17 @@ describe('Task', () => {
     await settle();
 
     const [row] = rows();
-    expect(row.textContent).toContain('Fulfilled');
+    expect(status(row).textContent).toContain('Fulfilled');
+    expect(status(row).classList).not.toContain('moving');
     expect(row.textContent).toContain('$101.50');
-    expect(steps(row)).toEqual(['done', 'done', 'done', 'done']);
   });
 
-  it('shows where a rejected trade stopped and why', async () => {
+  it('shows why a trade was rejected', async () => {
     await respond([trade('t1', { stage: 'REJECTED', finishedAt: AT, rejectionCode: 'INSUFFICIENT_FUNDS' })]);
 
     const [row] = rows();
-    expect(row.textContent).toContain('Rejected');
-    expect(row.textContent).toContain('Not enough cash');
-    expect(steps(row)).toEqual(['done', 'failed', '', '']);
+    expect(status(row).textContent).toContain('Rejected');
+    expect(row.querySelector('.reason')?.textContent).toContain('Not enough cash');
   });
 
   it('says why for each rejection code', async () => {

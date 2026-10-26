@@ -12,8 +12,6 @@ const POLL_MS = 1000;
 // after an order is submitted, keep asking for this long even before it shows up: it takes a moment to be tracked
 const AFTER_SUBMIT_MS = 5000;
 
-const STEPS = ['Submitted', 'Validated', 'Pending', 'Fulfilled'];
-
 const STAGE_LABELS: Record<TradeStage, string> = {
   SUBMITTED: 'Submitted',
   VALIDATED: 'Validated',
@@ -30,9 +28,6 @@ const REASONS: Record<RejectionCode, string> = {
   UNKNOWN: "Couldn't be processed",
 };
 
-// done: reached; current: being worked on; failed: where a rejected trade stopped; '': not reached
-export type StepState = 'done' | 'current' | 'failed' | '';
-
 export interface TaskOrder {
   key: string;
   ticker: string;
@@ -42,32 +37,12 @@ export interface TaskOrder {
   // lower-cased for the css class: submitted, validated, pending, fulfilled or rejected
   status: string;
   label: string;
-  steps: { name: string; state: StepState }[];
+  // still going through
+  moving: boolean;
   reason: string | null;
 }
 
 const finished = (trade: LiveTrade) => trade.stage === 'FULFILLED' || trade.stage === 'REJECTED';
-
-// how many steps the trade has reached: Submitted, then Validated, Pending (recorded) and Fulfilled
-function reached(trade: LiveTrade): number {
-  if (trade.stage === 'FULFILLED') {
-    return 4;
-  }
-  return [trade.submittedAt, trade.validatedAt, trade.recordedAt].filter((time) => time !== null).length;
-}
-
-function steps(trade: LiveTrade): { name: string; state: StepState }[] {
-  const count = reached(trade);
-  return STEPS.map((name, index) => {
-    if (index < count) {
-      return { name, state: 'done' };
-    }
-    if (index === count) {
-      return { name, state: trade.stage === 'REJECTED' ? 'failed' : 'current' };
-    }
-    return { name, state: '' };
-  });
-}
 
 // The account's orders as they go through the pipeline (GET /v1/accounts/{id}/trades/live), newest first, asked for
 // every second while one is still going through. Ones already fulfilled when the page opened are left out: they're
@@ -104,7 +79,7 @@ export class Task {
         price: trade.price === null ? '—' : usd.format(trade.price),
         status: trade.stage.toLowerCase(),
         label: STAGE_LABELS[trade.stage],
-        steps: steps(trade),
+        moving: !finished(trade),
         reason: trade.stage === 'REJECTED' ? REASONS[trade.rejectionCode ?? 'UNKNOWN'] : null,
       })),
   );
