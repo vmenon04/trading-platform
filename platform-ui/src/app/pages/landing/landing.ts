@@ -13,7 +13,6 @@ import { CANOPY, FAR_PINES, FROG, GRASS, MID_PINES, TRUNKS } from './landing-sce
 })
 export class Landing implements OnInit, OnDestroy {
   protected readonly art = { FAR_PINES, MID_PINES, TRUNKS, CANOPY, GRASS, FROG };
-  protected readonly repoUrl = 'https://github.com/vmenon04/trading-platform';
 
   private game = new FrogGame();
   // a signal, so each animation frame re-renders the scene (the app runs without zone.js)

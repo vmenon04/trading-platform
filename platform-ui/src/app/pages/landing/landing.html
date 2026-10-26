@@ -2,15 +2,13 @@
   <header class="landing-nav">
     <a routerLink="/" class="landing-logo" aria-label="F-Trade home"><img src="assets/nav-bar-logo.png" alt="F-Trade"></a>
     <nav aria-label="Primary">
-      <a href="#inside" class="nav-link">What's inside</a>
       <a routerLink="/login" class="nav-link">Log in</a>
       <a routerLink="/registration" class="pill pill-dark">Create an account</a>
     </nav>
   </header>
 
   <section class="hero">
-    <p class="eyebrow">Stocks · ETFs · Bonds · Forex · Crypto</p>
-    <h1>Catch the move<br>before it flies off.</h1>
+    <h1>F-Trade</h1>
     <p class="lead">F-Trade is a trading platform: open an account, fund it, place buy and sell orders at live prices, and follow your portfolio and the market news in one place.</p>
     <div class="hero-actions">
       <a routerLink="/registration" class="pill pill-green">Create an account</a>
@@ -114,41 +112,7 @@
     </button>
   </div>
 
-  <section id="inside" class="inside">
-    <div class="inside-intro">
-      <h2>What's inside</h2>
-      <p>A portfolio project built by five engineers: an Angular front end over Spring services that pass every order through Kafka, a NestJS auth service, PostgreSQL and Redis, and a Python reporting service, all run with Docker Compose and built by Jenkins.</p>
-    </div>
-    <div class="features">
-      <article>
-        <span class="num">01</span>
-        <h3>Trade</h3>
-        <p>Buy and sell at live prices, then watch each order go from submitted to validated to filled in Recent orders. If one is rejected, you see why, like not enough cash or shares.</p>
-      </article>
-      <article>
-        <span class="num">02</span>
-        <h3>Portfolio</h3>
-        <p>Open accounts, deposit cash, and see holdings and order history for each account.</p>
-      </article>
-      <article>
-        <span class="num">03</span>
-        <h3>Markets</h3>
-        <p>Current instrument prices and a market news feed, next to the trades they affect.</p>
-      </article>
-      <article>
-        <span class="num">04</span>
-        <h3>Staff views</h3>
-        <p>Analysts review clients and instruments, admins see every order, and a reporting service charts trade volume across the platform.</p>
-      </article>
-    </div>
-    <div class="inside-actions">
-      <a routerLink="/registration" class="pill pill-green">Create an account</a>
-      <a [href]="repoUrl" class="pill pill-outline">View the code on GitHub</a>
-    </div>
-  </section>
-
   <footer class="landing-foot">
-    <p>Built by Efe Dincaslan, Archana Goli, Austin Huang, Vasudev Menon and Ryan Terpolilli.</p>
-    <p>A Fidelity LEAP project. Not a real brokerage.</p>
+    <p>Not a real brokerage.</p>
   </footer>
 </div>
