@@ -13,7 +13,7 @@ const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFracti
 const MAX_LISTED = 50;
 
 const ASSET_CLASS_LABELS: Record<string, string> = {
-  STOCK: 'Stock', ETF: 'ETF', BOND: 'Bond', FOREX: 'Forex', CRYPTO: 'Crypto',
+  STOCK: 'Stock', ETF: 'ETF', FOREX: 'Forex', CRYPTO: 'Crypto',
 };
 
 @Component({

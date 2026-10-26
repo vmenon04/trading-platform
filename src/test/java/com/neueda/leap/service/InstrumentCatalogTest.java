@@ -160,7 +160,6 @@ class InstrumentCatalogTest {
         assertEquals(InstrumentType.ETF, InstrumentCatalog.assetClass("etf"));
         assertEquals(InstrumentType.FOREX, InstrumentCatalog.assetClass("fx"));
         assertEquals(InstrumentType.CRYPTO, InstrumentCatalog.assetClass("crypto"));
-        assertEquals(InstrumentType.BOND, InstrumentCatalog.assetClass("bond"));
         assertEquals(InstrumentType.STOCK, InstrumentCatalog.assetClass(null));
     }
 }

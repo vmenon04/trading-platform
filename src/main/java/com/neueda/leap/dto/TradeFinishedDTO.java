@@ -23,4 +23,9 @@ public record TradeFinishedDTO(
         BigDecimal price,
         String reason
 ) {
+
+    // the trade.accepted message for this outcome; only call it for a fulfilled trade (one with a price)
+    public TradeAcceptedDTO toTradeAcceptedDTO() {
+        return new TradeAcceptedDTO(tradeId, accountId, instrumentId, side, quantity, price);
+    }
 }

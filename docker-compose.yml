@@ -234,7 +234,7 @@ services:
       TRADE_STAGE_RECORDING_ENABLED: "true"
       TRADE_STAGE_EXECUTION_ENABLED: "false"
 
-  # trade.recorded -> trade.finished
+  # trade.recorded -> trade.accepted (fulfilled trades only), trade.finished
   execution:
     <<: *app
     environment:
