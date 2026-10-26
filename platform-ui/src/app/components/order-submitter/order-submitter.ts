@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, output, signal, untracked } from '@angular/core';
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
@@ -30,6 +30,8 @@ export class OrderSubmitter {
   search = '';
   quantity = 0;
   selectedInstrument: Instrument | null = null;
+  // the instrument picked for the order, or null when the choice is cleared (e.g. switching between buy and sell)
+  readonly instrumentChange = output<Instrument | null>();
 
   submitting = signal(false);
   result = signal<{ ok: boolean; message: string } | null>(null);
@@ -145,11 +147,20 @@ export class OrderSubmitter {
     this.instrumentService.setQuery('');
     this.searchMiss.set('');
     this.selectedInstrument = null;
+    this.instrumentChange.emit(null);
     this.result.set(null);
   }
 
+  // clicking the instrument that's already picked unpicks it, so the order form and the news go back to their defaults
   selectInstrument(instrument: Instrument): void {
+    if (this.selectedInstrument?.symbol === instrument.symbol) {
+      this.selectedInstrument = null;
+      this.instrumentChange.emit(null);
+      this.result.set(null);
+      return;
+    }
     this.selectedInstrument = instrument;
+    this.instrumentChange.emit(instrument);
     this.result.set(null);
   }
 
