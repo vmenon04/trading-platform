@@ -2,6 +2,7 @@ package com.neueda.leap.security;
 
 import com.neueda.leap.controller.AccountController;
 import com.neueda.leap.controller.ClientController;
+import com.neueda.leap.controller.LiveTradeController;
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.repository.AccountHoldingMapper;
@@ -10,6 +11,7 @@ import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.ClientService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.TradeTrackerService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
 import com.nimbusds.jose.JWSHeader;
@@ -66,7 +68,8 @@ class OwnershipAuthorizationTest {
     @EnableWebMvc
     @EnableWebSecurity
     @EnableMethodSecurity
-    @Import({SecurityConfig.class, AccountController.class, ClientController.class, GlobalExceptionHandler.class})
+    @Import({SecurityConfig.class, AccountController.class, ClientController.class, LiveTradeController.class,
+            GlobalExceptionHandler.class})
     static class TestConfig {
         // the name the @PreAuthorize expressions use: @accessControlService
         @Bean
@@ -103,6 +106,11 @@ class OwnershipAuthorizationTest {
         InstrumentService instrumentService() {
             return mock(InstrumentService.class);
         }
+
+        @Bean
+        TradeTrackerService tradeTrackerService() {
+            return mock(TradeTrackerService.class);
+        }
     }
 
     @Autowired
@@ -117,6 +125,9 @@ class OwnershipAuthorizationTest {
     @Autowired
     private ClientService clientService;
 
+    @Autowired
+    private TradeTrackerService tradeTrackerService;
+
     private MockMvc mockMvc;
 
     private final UUID accountId = UUID.randomUUID();
@@ -125,7 +136,7 @@ class OwnershipAuthorizationTest {
     @BeforeEach
     void setUp() {
         // the mocks are beans shared by every test, so start each one clean
-        reset(accessControlService, accountService, clientService);
+        reset(accessControlService, accountService, clientService, tradeTrackerService);
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
@@ -157,6 +168,27 @@ class OwnershipAuthorizationTest {
         postDeposit().andExpect(status().isNoContent());
 
         verify(accountService).deposit(5L, new BigDecimal("250.50"));
+    }
+
+    @Test
+    void liveTrades_accountOwnedBySomeoneElse_returns403AndReadsNothing() throws Exception {
+        when(accessControlService.userOwnsAccount(accountId, USER_ID)).thenReturn(false);
+
+        mockMvc.perform(get("/v1/accounts/{accountId}/trades/live", accountId)
+                        .header("Authorization", "Bearer " + clientToken()))
+                .andExpect(status().isForbidden());
+
+        verify(tradeTrackerService, never()).recentTrades(any());
+    }
+
+    @Test
+    void liveTrades_ownedAccount_returns200() throws Exception {
+        when(accessControlService.userOwnsAccount(accountId, USER_ID)).thenReturn(true);
+        when(tradeTrackerService.recentTrades(accountId)).thenReturn(List.of());
+
+        mockMvc.perform(get("/v1/accounts/{accountId}/trades/live", accountId)
+                        .header("Authorization", "Bearer " + clientToken()))
+                .andExpect(status().isOk());
     }
 
     @Test
