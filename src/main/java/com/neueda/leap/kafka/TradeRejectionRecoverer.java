@@ -9,14 +9,16 @@ import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.listener.ConsumerRecordRecoverer;
+import org.springframework.kafka.support.KafkaUtils;
 import org.springframework.stereotype.Component;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Gets each message the Kafka error handler gives up on (after its retries) and logs it. A trade that failed
- * validation never reaches the database, so it is also published to trade.rejected for the trade tracker. Never
- * throws: that would have the error handler try the message again.
+ * validation never reaches the database, so it is also published to trade.rejected for the trade tracker. Only a
+ * failure in validation's consumer group counts: the tracker reads trade.submitted too. Never throws: that would
+ * have the error handler try the message again.
  */
 @Component
 public class TradeRejectionRecoverer implements ConsumerRecordRecoverer {
@@ -34,7 +36,8 @@ public class TradeRejectionRecoverer implements ConsumerRecordRecoverer {
     @Override
     public void accept(ConsumerRecord<?, ?> failed, Exception failure) {
         LOGGER.error("Skipping {}-{}@{} after it failed", failed.topic(), failed.partition(), failed.offset(), failure);
-        if (!KafkaTopics.TRADE_SUBMITTED.equals(failed.topic())) {
+        if (!KafkaTopics.TRADE_SUBMITTED.equals(failed.topic())
+                || !ValidationConsumer.GROUP_ID.equals(KafkaUtils.getConsumerGroupId())) {
             return;
         }
         UUID externalTradeId = externalTradeId(failed);

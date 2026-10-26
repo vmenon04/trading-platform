@@ -19,6 +19,8 @@ import org.springframework.stereotype.Component;
 @Component
 public class ValidationConsumer {
 
+    public static final String GROUP_ID = "validation-service";
+
     private static final Logger LOGGER = LoggerFactory.getLogger(ValidationConsumer.class);
 
     private final ValidationService validationService;
@@ -30,7 +32,7 @@ public class ValidationConsumer {
     }
 
     // waits for the send so a failed publish fails the listener and the message is redelivered
-    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = "validation-service")
+    @KafkaListener(topics = KafkaTopics.TRADE_SUBMITTED, groupId = GROUP_ID)
     public void onTradeSubmitted(TradeSubmittedDTO trade) throws InterruptedException, ExecutionException {
         LOGGER.info("Received submitted trade event. Trade ID: {}", trade.externalTradeId());
 

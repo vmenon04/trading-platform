@@ -34,7 +34,8 @@ class ExecutionConsumerTest {
     private ExecutionConsumer executionConsumer;
 
     private final TradeRecordedDTO trade = new TradeRecordedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L, UUID.fromString("22222222-2222-2222-2222-222222222222"));
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L,
+            UUID.fromString("22222222-2222-2222-2222-222222222222"));
 
     private final TradeFinishedDTO outcome = new TradeFinishedDTO(
             42L, 1L, 10L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("100"), null,

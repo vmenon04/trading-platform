@@ -7,12 +7,14 @@ import com.neueda.leap.service.TradeEventProducer;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.kafka.listener.ListenerExecutionFailedException;
+import org.springframework.kafka.support.KafkaUtils;
 import tools.jackson.databind.json.JsonMapper;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -25,7 +27,8 @@ import static org.mockito.Mockito.when;
 class TradeRejectionRecovererTest {
 
     private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
-    private static final String SUBMITTED = "{\"instrumentId\":10,\"accountId\":\"11111111-1111-1111-1111-111111111111\","
+    private static final String SUBMITTED = "{\"instrumentId\":10,"
+            + "\"accountId\":\"11111111-1111-1111-1111-111111111111\","
             + "\"side\":\"BUY\",\"quantity\":5,\"externalTradeId\":\"" + EXTERNAL_TRADE_ID + "\"}";
 
     @Mock
@@ -36,6 +39,13 @@ class TradeRejectionRecovererTest {
     @BeforeEach
     void setUp() {
         recoverer = new TradeRejectionRecoverer(tradeEventProducer, JsonMapper.builder().build());
+        // set by the listener container on its consumer thread
+        KafkaUtils.setConsumerGroupId(ValidationConsumer.GROUP_ID);
+    }
+
+    @AfterEach
+    void clearGroup() {
+        KafkaUtils.clearConsumerGroupId();
     }
 
     private static ConsumerRecord<String, String> consumerRecord(String topic, String value) {
@@ -76,6 +86,17 @@ class TradeRejectionRecovererTest {
                 failure(new RuntimeException("Database down")));
         recoverer.accept(consumerRecord(KafkaTopics.TRADE_VALIDATED, SUBMITTED),
                 failure(new RuntimeException("Database down")));
+
+        verifyNoInteractions(tradeEventProducer);
+    }
+
+    // the trade tracker reads trade.submitted too; its failures aren't the trade's
+    @Test
+    void submittedTradeThatFailedInAnotherGroup_isOnlyLogged() {
+        KafkaUtils.setConsumerGroupId(TradeTrackerConsumer.GROUP_ID);
+
+        recoverer.accept(consumerRecord(KafkaTopics.TRADE_SUBMITTED, SUBMITTED),
+                failure(new RuntimeException("Redis down")));
 
         verifyNoInteractions(tradeEventProducer);
     }

@@ -27,7 +27,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
 | `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) + `reporting/analytics_database.sql` (creates the `analytics` database) once, only when its volume is empty |
-| `redis` | `redis:7.4-alpine` | Fauxnance price cache and daily call count, and the Finnhub news cache; password-protected, kept on disk (append-only file) so the count survives a restart |
+| `redis` | `redis:7.4-alpine` | Fauxnance price cache and daily call count, the Finnhub news cache, and the last hour's trades as they go through (the trade page's live list); password-protected, kept on disk (append-only file) so the count survives a restart |
 | `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
@@ -102,18 +102,19 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `jwt.shared-secret` | Same value as `JWT_SHARED_SECRET` in `.env`. Every endpoint except `/actuator/health` needs a login token signed with it |
 | `trade.stage.{api,validation,recording,execution}.enabled` | Which stages run; unset counts as `true` |
 | `spring.kafka.listener.concurrency` | Optional: listener threads per stage (default 1) |
+| `trade.tracker.ttl` | Optional: how long a trade stays in the trade page's live list after its last step (default `1h`) |
 
 ## Kafka
 
 | Topic | Partitions | Producer → consumer group |
 |---|---|---|
-| `trade.submitted` | 8 | API → `validation-service` |
-| `trade.validated` | 8 | validation → `recording-service` |
-| `trade.recorded` | 8 | recording → `execution-service` |
-| `trade.finished` | 8 | execution → (none yet) |
-| `trade.rejected` | 8 | validation, for a trade that failed it (after retries) → (none yet) |
+| `trade.submitted` | 8 | API → `validation-service`, `trade-tracker` |
+| `trade.validated` | 8 | validation → `recording-service`, `trade-tracker` |
+| `trade.recorded` | 8 | recording → `execution-service`, `trade-tracker` |
+| `trade.finished` | 8 | execution → `trade-tracker` |
+| `trade.rejected` | 8 | validation, for a trade that failed it (after retries) → `trade-tracker` |
 
-Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.finished` is keyed by trade ID and `trade.rejected` by external trade ID.
+Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.finished` is keyed by trade ID and `trade.rejected` by external trade ID. `trade-tracker` runs in the `api` container and keeps each trade's steps in Redis for `GET /v1/accounts/{accountId}/trades/live`. The reporting consumer reads `trade.recorded` and `trade.finished` too.
 
 ## CI (Jenkins, `Jenkinsfile`)
 
