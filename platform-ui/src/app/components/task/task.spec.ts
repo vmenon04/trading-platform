@@ -135,12 +135,12 @@ describe('Task', () => {
     expect(text[3]).toContain("Couldn't be processed");
   });
 
-  // they're in Order History; a rejected one that failed validation isn't, so it stays
-  it('hides trades that were already fulfilled when the page opened', async () => {
+  it('keeps trades that were already finished when the page opened', async () => {
     await respond([fulfilled('t1'), trade('t2', { stage: 'REJECTED', rejectionCode: 'UNKNOWN' })]);
 
-    expect(rows().length).toBe(1);
-    expect(rows()[0].textContent).toContain('Rejected');
+    expect(rows().length).toBe(2);
+    expect(status(rows()[0]).textContent).toContain('Fulfilled');
+    expect(status(rows()[1]).textContent).toContain('Rejected');
   });
 
   it('asks again every second while a trade is going through, and stops once they have all finished', async () => {
@@ -177,6 +177,6 @@ describe('Task', () => {
   it('says so when there are no trades', async () => {
     await respond([]);
 
-    expect(fixture.nativeElement.textContent).toContain('No orders in progress');
+    expect(fixture.nativeElement.textContent).toContain('No recent orders');
   });
 });
