@@ -23,6 +23,8 @@ form label { color: var(--muted); font-size: 0.68rem; font-weight: 700; }
 .currency { padding-left: 16px; color: var(--muted); font-weight: 700; }
 input { min-width: 0; flex: 1; padding: 11px 8px; border: 0; outline: 0; background: transparent; color: var(--ink); font: inherit; }
 .deposit-row button { min-height: 44px; padding: 0 20px; border: 0; border-left: var(--card-border); background: var(--green-bright); color: var(--ink); font-weight: 700; cursor: pointer; }
+.logout-button:hover { background: var(--green-soft); }
+.deposit-row button:hover:not(:disabled) { background: #069a37; }
 .deposit-row button:disabled { cursor: wait; opacity: 0.6; }
 .form-message { margin: 12px 18px 0; font-size: 0.68rem; line-height: 1.45; }
 .form-message.success { color: var(--green); }.form-message.error { color: var(--red); }

@@ -12,6 +12,7 @@
   min-height: 100vh;
   padding: 24px 16px;
   background: var(--color-navigation);
+  view-transition-name: navbar;
 }
 
 .navbar-brand {

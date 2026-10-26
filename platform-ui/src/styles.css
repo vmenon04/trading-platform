@@ -83,3 +83,22 @@ input { font-size: var(--type-input); }
 .pitch-copy { position: relative; z-index: 1; max-width: 530px; }.pitch-kicker { color: var(--green); font-size: var(--type-caption); font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }.pitch-copy h1 { max-width: 520px; margin: 26px 0; font-family: var(--font-display); font-size: var(--type-hero); font-weight: 800; line-height: 1.02; letter-spacing: -0.02em; }.pitch-copy p { max-width: 480px; color: var(--muted); font-size: var(--type-body); line-height: 1.6; }.pitch-stats { display: flex; gap: clamp(24px, 5vw, 70px); margin-top: 36px; padding-top: 25px; border-top: 1px solid var(--line); }.pitch-stats strong { display: block; color: var(--green); font-size: var(--type-body); }.pitch-stats span { display: block; margin-top: 8px; color: var(--muted); font-size: var(--type-caption); }.pitch-foot { position: relative; z-index: 1; color: var(--muted); font-size: var(--type-caption); }.auth-form-panel { display: flex; align-items: center; justify-content: center; padding: 40px 7vw; }.auth-form-panel main { width: 100%; max-width: 410px; padding: 0; }.auth-form-panel form { display: grid; gap: 16px; width: 100%; max-width: none; padding: 0; border: 0; border-radius: 0; }.auth-form-panel form h2 { margin: 0; font-family: var(--font-display); font-size: 2rem; font-weight: 800; }.auth-subtitle { margin: -8px 0 18px; color: var(--muted); font-size: var(--type-body); }.auth-form-panel .field { gap: 7px; }.auth-form-panel .field label { color: var(--ink); font-size: var(--type-caption); }.auth-form-panel .field input { min-height: 48px; padding: 0 14px; border: 2px solid #c7d4c2; border-radius: 12px; background: #fff; font-size: var(--type-input); }.auth-form-panel .field input:focus { border-color: var(--ink); outline: 3px solid var(--green-soft); }.auth-form-panel .field input.invalid { border-color: var(--red); }.auth-form-panel button[type=submit] { min-height: 48px; margin-top: 4px; border: var(--card-border); border-radius: 999px; background: var(--green-bright); box-shadow: var(--pill-shadow); color: var(--ink); font-size: var(--type-control); font-weight: 700; }.auth-form-panel button[type=submit]:hover:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }.auth-form-panel button[type=submit]:disabled { opacity: 0.6; cursor: wait; }.auth-switch { padding-top: 20px; border-top: 1px solid var(--line); color: var(--muted); text-align: center; font-size: var(--type-body); }.auth-switch a { color: var(--green); font-weight: 800; text-decoration: none; }.auth-terms { margin-top: 26px; color: var(--muted); text-align: center; font-size: var(--type-caption); }
 @media (max-width: 760px) { .auth-page { grid-template-columns: 1fr; }.auth-pitch { min-height: 360px; padding: 24px; border-right: 0; border-bottom: var(--card-border); }.pitch-copy h1 { margin: 32px 0 18px; font-size: 2.6rem; }.pitch-stats { margin-top: 20px; }.pitch-foot { display: none; }.auth-form-panel { padding: 40px 24px; } }
 
+/* motion: buttons and links ease between states, pages slide and fade into each other */
+button, a, input, select { transition: background-color 160ms ease, border-color 160ms ease, color 160ms ease, box-shadow 120ms ease, transform 120ms ease; }
+
+::view-transition-old(page) { animation: page-out 140ms ease-in both; }
+::view-transition-new(page) { animation: page-in 280ms cubic-bezier(0.2, 0.7, 0.2, 1) 60ms both; }
+::view-transition-old(navbar), ::view-transition-new(navbar) { animation-duration: 160ms; }
+@keyframes page-out { to { opacity: 0; transform: translateY(-6px); } }
+@keyframes page-in { from { opacity: 0; transform: translateY(14px); } }
+
+/* shared by the dialogs and pop-up menus */
+@keyframes fade-in { from { opacity: 0; } }
+@keyframes pop-in { from { opacity: 0; transform: translateY(10px) scale(0.97); } }
+@keyframes drop-in { from { opacity: 0; transform: translateY(-6px); } }
+@keyframes row-in { from { opacity: 0; transform: translateX(-10px); } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; animation-delay: 0ms !important; transition-duration: 1ms !important; }
+  ::view-transition-group(*), ::view-transition-old(*), ::view-transition-new(*) { animation: none !important; }
+}

@@ -86,6 +86,7 @@
   border-radius: 10px;
   background: #182f23;
   box-shadow: 0 10px 24px #0b1a1255;
+  animation: drop-in 160ms ease-out;
 }
 
 .account-option {
@@ -107,14 +108,16 @@
 .open-account:disabled { opacity: 0.6; cursor: wait; }
 
 /* confirmation before opening another account (same look as the Deposit funds dialog) */
-.dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: #10171966; }
-.confirm-dialog { display: grid; gap: 12px; width: min(420px, 100%); padding: 24px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: 0 20px 50px #10171933; }
+.dialog-backdrop { position: fixed; inset: 0; z-index: 50; display: grid; place-items: center; padding: 16px; background: #10171966; animation: fade-in 160ms ease-out; }
+.confirm-dialog { display: grid; gap: 12px; width: min(420px, 100%); padding: 24px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); color: var(--ink); box-shadow: 0 20px 50px #10171933; animation: pop-in 220ms cubic-bezier(0.2, 0.7, 0.2, 1); }
 .confirm-dialog h2 { margin: 0; font-family: var(--font-display); font-size: 1.1rem; font-weight: 800; }
 .confirm-dialog p { margin: 0; color: var(--muted); font-size: 0.8rem; }
 .confirm-error { padding: 10px 12px; border-radius: 9px; background: var(--red-soft); color: var(--red) !important; }
 .dialog-actions { display: flex; justify-content: flex-end; gap: 10px; }
 .dialog-actions button { min-height: 42px; padding: 0 18px; border: var(--card-border); border-radius: 999px; background: var(--surface); color: var(--ink); font-weight: 700; cursor: pointer; }
 .dialog-actions button.primary { background: var(--green-bright); box-shadow: var(--pill-shadow); color: var(--ink); }
+.dialog-actions button:hover:not(.primary):not(:disabled) { background: var(--green-soft); }
+.dialog-actions button.primary:hover:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }
 .dialog-actions button:disabled { opacity: 0.6; cursor: wait; }
 
 /* Shared client typography */

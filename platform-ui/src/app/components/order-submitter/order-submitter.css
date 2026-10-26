@@ -17,7 +17,7 @@
 .allocation span { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.65rem; }.allocation i { display: block; height: 6px; margin-top: 7px; border-radius: 99px; background: linear-gradient(90deg, var(--green-bright) 77%, var(--line) 77%); }
 .submit-order { min-height: 46px; border: var(--card-border); border-radius: 999px; background: var(--green-bright); box-shadow: var(--pill-shadow); color: var(--ink); font-weight: 700; cursor: pointer; }.submit-order:hover:not(:disabled) { transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }.disclaimer { color: var(--muted); text-align: center; font-size: 0.58rem; }
 .submit-order:disabled { border-color: #a8b2ad; background: #dfe5dc; box-shadow: none; color: #7b8a80; opacity: 1; cursor: not-allowed; }
-.order-result { margin: 0; padding: 12px 14px; border-radius: 12px; background: var(--green-soft); color: var(--green); font-size: 0.68rem; }
+.order-result { margin: 0; padding: 12px 14px; border-radius: 12px; animation: drop-in 200ms ease-out; background: var(--green-soft); color: var(--green); font-size: 0.68rem; }
 .order-result.error { background: var(--red-soft); color: var(--red); }
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.62rem; }
 .pager button { min-height: 30px; padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; }
