@@ -27,7 +27,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
 | `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) + `reporting/analytics_database.sql` (creates the `analytics` database) once, only when its volume is empty |
-| `redis` | `redis:7.4-alpine` | Fauxnance price cache and daily call count; password-protected, kept on disk (append-only file) so the count survives a restart |
+| `redis` | `redis:7.4-alpine` | Fauxnance price cache and daily call count, and the Finnhub news cache; password-protected, kept on disk (append-only file) so the count survives a restart |
 | `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
@@ -55,6 +55,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `API_PORT` | Host port for the `api` service (`8081`) |
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY` | Fauxnance price API |
 | `MARKET_DATA_CACHE_TTL` | How long a price stays cached (`5m`) |
+| `FINNHUB_API_KEY` | Finnhub key for the dashboard's market news (optional: without it there is no news) |
 | `REDIS_PORT`, `REDIS_PASSWORD` | Host port (`8083`) and password for Redis |
 | `JWT_SHARED_SECRET` | Secret login tokens are signed (auth-service, as its `JWT_SECRET`) and checked (the app and the reporting API) with, at least 32 characters |
 | `AUTH_PORT` | Host port for auth-service (`8084`) |
@@ -71,6 +72,7 @@ All four app services use the one image built from `Dockerfile`; each switches o
 | `SPRING_SQL_INIT_MODE` | `never` (Postgres creates the schema; `schema.sql` drops every table) |
 | `SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE` | `5` (Postgres allows 100 connections) |
 | `MARKET_DATA_BASE_URL`, `MARKET_DATA_API_KEY`, `MARKET_DATA_CACHE_TTL` | from `.env` |
+| `NEWS_API_KEY` | `${FINNHUB_API_KEY}`, empty if unset |
 | `SPRING_DATA_REDIS_HOST`, `SPRING_DATA_REDIS_PORT` | `redis`, `6379` |
 | `SPRING_DATA_REDIS_PASSWORD` | `${REDIS_PASSWORD}` |
 | `MANAGEMENT_HEALTH_REDIS_ENABLED` | `false` (Redis is only a cache, so it doesn't decide whether the app is UP) |
@@ -90,6 +92,8 @@ Note that every property can also be set as an environment variable (`spring.kaf
 | `spring.sql.init.data-locations` | `classpath:sample-data.sql` (with `always`) |
 | `market.data.base-url`, `market.data.api-key` | Fauxnance |
 | `market.data.cache-ttl` | How long a price stays in the Redis cache, e.g. `5m` |
+| `news.api-key` | Finnhub key for market news (optional: without it there is no news) |
+| `news.cache-ttl` | How long news stays in the Redis cache (default `10m`) |
 | `spring.data.redis.host` / `.port` / `.password` | `10.18.64.177`, `8083`, and `REDIS_PASSWORD` from `.env` |
 | `management.health.redis.enabled` | `false`: if Redis is down, prices come straight from Fauxnance |
 | `jwt.shared-secret` | Same value as `JWT_SHARED_SECRET` in `.env`. Every endpoint except `/actuator/health` needs a login token signed with it |
