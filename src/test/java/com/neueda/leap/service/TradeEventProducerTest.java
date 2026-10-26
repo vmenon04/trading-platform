@@ -60,7 +60,7 @@ class TradeEventProducerTest {
     @Test
     void tradeRecordedIsKeyedByAccountId() {
         TradeRecordedDTO event = new TradeRecordedDTO(
-                INSTRUMENT_ID, ACCOUNT_ID, TradeSide.SELL, QUANTITY, PRICE, TRADE_ID);
+                INSTRUMENT_ID, ACCOUNT_ID, TradeSide.SELL, QUANTITY, PRICE, TRADE_ID, EXTERNAL_TRADE_ID);
         when(kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, "1", event)).thenReturn(sent);
 
         assertSame(sent, producer.publishTradeRecorded(event));
@@ -69,7 +69,7 @@ class TradeEventProducerTest {
     @Test
     void tradeFinishedIsKeyedByTradeId() {
         TradeFinishedDTO event = new TradeFinishedDTO(
-                TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY, PRICE, null);
+                TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY, PRICE, null, EXTERNAL_TRADE_ID, null);
         when(kafkaTemplate.send(KafkaTopics.TRADE_FINISHED, "42", event)).thenReturn(sent);
 
         assertSame(sent, producer.publishTradeFinished(event));

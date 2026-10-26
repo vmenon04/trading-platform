@@ -9,6 +9,7 @@ import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.junit.jupiter.api.Test;
@@ -28,6 +29,8 @@ import static org.mockito.Mockito.mock;
 
 class KafkaConsumerConfigTest {
 
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
+
     private final RecordMessageConverter converter = new KafkaConsumerConfig().messageConverter();
 
     private static ConsumerRecord<String, String> consumerRecord(String json) {
@@ -37,7 +40,7 @@ class KafkaConsumerConfigTest {
     @Test
     void convertsJsonToTheListenerParameterType() {
         String json = "{\"instrumentId\":10,\"accountId\":1,\"side\":\"BUY\",\"quantity\":5,"
-                + "\"quote\":100.25,\"tradeId\":42}";
+                + "\"quote\":100.25,\"tradeId\":42,\"externalTradeId\":\"22222222-2222-2222-2222-222222222222\"}";
 
         Message<?> message = converter.toMessage(consumerRecord(json), null, null, TradeRecordedDTO.class);
 
@@ -48,13 +51,14 @@ class KafkaConsumerConfigTest {
         assertEquals(TradeSide.BUY, trade.side());
         assertEquals(0, trade.quantity().compareTo(new BigDecimal("5")));
         assertEquals(0, trade.quote().compareTo(new BigDecimal("100.25")));
+        assertEquals(EXTERNAL_TRADE_ID, trade.externalTradeId());
     }
 
     // what KafkaProducerConfig's JsonSerializer writes must convert back for the listener on the other side
     @Test
     void readsWhatTheProducerWrites() {
         TradeRecordedDTO sent = new TradeRecordedDTO(10L, 1L, TradeSide.BUY, new BigDecimal("5"),
-                new BigDecimal("100.25"), 42L);
+                new BigDecimal("100.25"), 42L, EXTERNAL_TRADE_ID);
 
         Message<?> message = converter.toMessage(consumerRecord(produce(sent)), null, null, TradeRecordedDTO.class);
 
@@ -65,7 +69,7 @@ class KafkaConsumerConfigTest {
     @Test
     void rejectsADoubleEncodedMessage() throws Exception {
         TradeRecordedDTO sent = new TradeRecordedDTO(10L, 1L, TradeSide.BUY, new BigDecimal("5"),
-                new BigDecimal("100.25"), 42L);
+                new BigDecimal("100.25"), 42L, EXTERNAL_TRADE_ID);
         ConsumerRecord<String, String> doubleEncoded = consumerRecord(produce(new ObjectMapper().writeValueAsString(sent)));
 
         assertThrows(ConversionException.class,
