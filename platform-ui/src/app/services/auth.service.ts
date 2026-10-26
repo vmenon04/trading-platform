@@ -55,9 +55,9 @@ export class AuthService {
     return this.tokens()?.accessToken ?? null;
   }
 
-  // POST /auth/register accepts only username + password (extra fields are rejected with a 400)
-  async register(username: string, password: string): Promise<void> {
-    await firstValueFrom(this.http.post('/auth/register', { username, password }));
+  // POST /auth/register checks username and email uniqueness before creating the client login.
+  async register(username: string, password: string, email: string): Promise<void> {
+    await firstValueFrom(this.http.post('/auth/register', { username, password, email }));
   }
 
   async login(username: string, password: string): Promise<void> {

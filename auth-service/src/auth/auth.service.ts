@@ -27,13 +27,25 @@ export class AuthService {
     async register(
         username: string,
         password: string,
+        email: string,
         roles: UserRole[] = ["CLIENT"],
     ): Promise<{ username: string; registered: true }> {
         if (await this.userRepository.existsByUsername(username)) {
             throw new ConflictException(`${username} is already registered`);
         }
+        if (await this.userRepository.existsByEmail(email)) {
+            throw new ConflictException(`${email} is already registered`);
+        }
         const passwordHash = await bcrypt.hash(password, SALT_ROUNDS);
-        await this.userRepository.createUser({username, passwordHash, roles: roles});
+        try {
+            await this.userRepository.createUser({username, passwordHash, roles: roles});
+        } catch (error) {
+            // The username unique constraint covers a race after the pre-check.
+            if (isUniqueViolation(error)) {
+                throw new ConflictException(`${username} is already registered`);
+            }
+            throw error;
+        }
         return { username, registered: true };
     }
 
@@ -132,4 +144,8 @@ export class AuthService {
         }
         return secret;
     }
+}
+
+function isUniqueViolation(error: unknown): boolean {
+    return typeof error === "object" && error !== null && "code" in error && error.code === "23505";
 }

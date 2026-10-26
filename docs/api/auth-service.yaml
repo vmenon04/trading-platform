@@ -24,16 +24,10 @@ paths:
             example:
               username: johndoe
               password: "P@ssw0rd!"
-              first_name: John
-              last_name: Doe
-              dob: 1990-01-01
+              email: john.doe@example.com
       responses:
-        '200':
-          description: Registration successful — returns access and refresh tokens
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TokensResponse'
+        '201':
+          description: Registration successful — a CLIENT login was created
         '400':
           description: Invalid registration request
           content:
@@ -41,7 +35,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '409':
-          description: User already exists
+          description: Username or email is already registered
           content:
             application/json:
               schema:
@@ -148,20 +142,16 @@ components:
   schemas:
     RegisterRequest:
       type: object
-      required: [username, password, first_name, last_name, dob]
+      required: [username, password, email]
       properties:
         username:
           type: string
         password:
           type: string
           format: password
-        first_name:
+        email:
           type: string
-        last_name:
-          type: string
-        dob:
-          type: string
-          format: date
+          format: email
 
     LoginRequest:
       type: object
