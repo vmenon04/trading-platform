@@ -1,5 +1,8 @@
 .order-card { display: grid; gap: 16px; padding: 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.instrument-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; max-height: 220px; overflow-y: auto; }
+.instrument-list { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; height: 220px; overflow-y: auto; align-content: start; }
+.instrument-loading { grid-column: 1 / -1; display: flex; align-items: center; justify-content: center; gap: 12px; height: 100%; color: var(--muted); font-size: var(--type-body); }
+.loading-spinner { width: 24px; height: 24px; flex: 0 0 24px; border: 3px solid var(--line); border-top-color: var(--green); border-radius: 50%; animation: instrument-spin 750ms linear infinite; }
+@keyframes instrument-spin { to { transform: rotate(360deg); } }
 .empty-state, .selection-hint { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: 0.68rem; text-align: center; }
 .segmented, .stepper { display: grid; grid-template-columns: 1fr 1fr; gap: 2px; padding: 3px; border-radius: 8px; background: #eef3f0; }
 .segmented button, .stepper button { min-height: 30px; border: 0; border-radius: 6px; background: transparent; color: var(--muted); cursor: pointer; }
@@ -19,3 +22,10 @@
 .pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.62rem; }
 .pager button { min-height: 28px; padding: 0 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); color: var(--ink); cursor: pointer; }
 .pager button:disabled { color: #a8b2ad; cursor: not-allowed; }
+.pager { min-height: 28px; }
+.pager-hidden { visibility: hidden; }
+.empty-state, .selection-hint, .order-result { font-size: var(--type-body); }
+.eyebrow, .asset-picker small, .estimate small, .disclaimer { font-size: var(--type-caption); }
+.allocation span, .pager { font-size: var(--type-caption); }
+.estimate strong { font-size: var(--type-value); }
+.submit-order, .segmented button, .stepper button, .pager button { font-size: var(--type-control); }

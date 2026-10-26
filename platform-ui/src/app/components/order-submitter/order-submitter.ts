@@ -28,7 +28,7 @@ export class OrderSubmitter {
 
   mode: 'buy' | 'sell' = 'buy';
   search = '';
-  quantity = 0;
+  quantity: number | null = null;
   selectedInstrument: Instrument | null = null;
   // the instrument picked for the order, or null when the choice is cleared (e.g. switching between buy and sell)
   readonly instrumentChange = output<Instrument | null>();
@@ -167,12 +167,13 @@ export class OrderSubmitter {
   // selling more than you hold would be rejected by the backend, so it's stopped here first
   get overSelling(): boolean {
     const shares = this.selectedInstrument?.shares;
-    return this.mode === 'sell' && shares !== undefined && this.quantity > shares;
+    return this.mode === 'sell' && shares !== undefined && this.quantity !== null && this.quantity > shares;
   }
 
   async submitOrder(): Promise<void> {
     const instrument = this.selectedInstrument;
-    if (!instrument || this.quantity <= 0 || this.overSelling || this.submitting()) {
+    const quantity = this.quantity;
+    if (!instrument || quantity === null || quantity <= 0 || this.overSelling || this.submitting()) {
       return;
     }
     if (instrument.instrumentId === undefined) {
@@ -183,7 +184,7 @@ export class OrderSubmitter {
     this.submitting.set(true);
     this.result.set(null);
     try {
-      await this.account.submitTrade(instrument.instrumentId, this.mode === 'buy' ? 'BUY' : 'SELL', this.quantity);
+      await this.account.submitTrade(instrument.instrumentId, this.mode === 'buy' ? 'BUY' : 'SELL', quantity);
       this.result.set({ ok: true, message: 'Order submitted. Follow it in Recent orders.' });
     } catch (error) {
       this.result.set({ ok: false, message: this.errorMessage(error) });
@@ -220,12 +221,14 @@ export class OrderSubmitter {
   }
 
   adjustQuantity(amount: number): void {
-    this.quantity = Math.max(1, this.quantity + amount);
+    this.quantity = Math.max(1, (this.quantity ?? 0) + amount);
   }
 
   // estimate from the backend's current price; the order itself is priced by the backend when it executes
   get total(): string {
     const price = this.selectedInstrument?.priceValue;
-    return price === null || price === undefined ? '—' : usd.format(price * this.quantity);
+    return price === null || price === undefined || this.quantity === null || this.quantity <= 0
+      ? '—'
+      : usd.format(price * this.quantity);
   }
 }

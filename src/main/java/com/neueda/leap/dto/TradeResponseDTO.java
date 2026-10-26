@@ -1,6 +1,7 @@
 package com.neueda.leap.dto;
 
 import java.math.BigDecimal;
+import java.time.OffsetDateTime;
 import java.util.UUID;
 
 public record TradeResponseDTO(
@@ -8,6 +9,7 @@ public record TradeResponseDTO(
         String ticker,
         String name,
         UUID tradeId,
+        OffsetDateTime tradeTime,
         String side,
         BigDecimal quantity,
         BigDecimal ppu,

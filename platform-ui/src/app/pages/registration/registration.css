@@ -50,7 +50,7 @@ form h2 {
 
 .field label {
 	color: #333;
-	font-size: 0.875rem;
+	font-size: var(--type-body);
 	font-weight: 600;
 }
 
@@ -58,7 +58,7 @@ form h2 {
 	padding: 10px 12px;
 	border: 1px solid #ccc;
 	border-radius: 4px;
-	font-size: 1rem;
+	font-size: var(--type-input);
 }
 
 .field input.invalid {
@@ -71,7 +71,7 @@ button {
 	color: white;
 	border: 0;
 	border-radius: 4px;
-	font-size: 1rem;
+	font-size: var(--type-control);
 	cursor: pointer;
 }
 
@@ -79,7 +79,7 @@ button {
 	margin: 0;
 	padding: 10px 12px;
 	border-radius: 4px;
-	font-size: 0.875rem;
+	font-size: var(--type-body);
 }
 
 .message.hidden {
@@ -126,6 +126,6 @@ button {
   padding: 4px 8px;
   background: transparent;
   color: #174D3C;
-  font-size: 0.8rem;
+	font-size: var(--type-body);
   font-weight: 600;
 }

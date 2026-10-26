@@ -1,36 +1,36 @@
 .task-card { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .task-heading { display: flex; align-items: center; gap: 10px; }
 .task-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); }
-.eyebrow { color: var(--green); font-size: 0.55rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.task-card h2 { margin: 3px 0 0; font-size: 0.9rem; }
+.eyebrow { color: var(--green); font-size: var(--type-caption); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.task-card h2 { margin: 3px 0 0; font-size: var(--type-card-title); }
 
 /* scrolls sideways inside the card on a phone rather than squeezing the columns */
 .task-table { overflow-x: auto; }
 /* the same columns for the header and every row */
 .task-head, .task-row { display: grid; grid-template-columns: minmax(70px, 1.3fr) minmax(34px, 0.6fr) minmax(34px, 0.6fr) minmax(62px, 0.9fr) minmax(84px, 1.1fr); align-items: center; gap: 10px; padding: 0 4px; min-width: 330px; }
-.task-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: 0.55rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-.task-row { min-height: 46px; border-bottom: 1px solid var(--line); font-size: 0.68rem; }
+.task-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--type-caption); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.task-row { min-height: 46px; border-bottom: 1px solid var(--line); font-size: var(--type-body); }
 .task-row:last-child { border-bottom: 0; }
 
 .order { display: flex; align-items: center; gap: 8px; min-width: 0; }
 /* also holds the ticker's first letter when there is no logo */
-.logo { display: grid; flex: none; width: 22px; height: 22px; place-items: center; border-radius: 6px; background: #e8f0ff; color: #4775ce; font-size: 0.6rem; font-weight: 700; }
+.logo { display: grid; flex: none; width: 22px; height: 22px; place-items: center; border-radius: 6px; background: #e8f0ff; color: #4775ce; font-size: var(--type-caption); font-weight: 700; }
 .side { color: var(--green); font-weight: 600; }
 .side.sell { color: var(--red); }
-.number { font-family: var(--font-numeric); font-size: 0.64rem; }
+.number { font-family: var(--font-numeric); font-size: var(--type-body); }
 
 .state { display: grid; justify-items: start; gap: 3px; }
-.status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font-size: 0.62rem; font-weight: 600; white-space: nowrap; }
+.status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .status.moving::before { animation: pulse 1s ease-in-out infinite alternate; }
 .status.submitted, .status.validated { background: #f1f4f2; color: var(--muted); }
 .status.pending { background: #fff4dc; color: #a0700b; }
 .status.fulfilled { background: var(--green-soft); color: var(--green); }
 .status.rejected { background: var(--red-soft); color: var(--red); }
-.reason { color: var(--muted); font-size: 0.56rem; }
+.reason { color: var(--muted); font-size: var(--type-caption); }
 
-.task-empty { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: 0.65rem; text-align: center; }
-.task-card > a { color: var(--green); font-size: 0.62rem; font-weight: 700; text-decoration: none; }
+.task-empty { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: var(--type-caption); text-align: center; }
+.task-card > a { color: var(--green); font-size: var(--type-control); font-weight: 700; text-decoration: none; }
 
 @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) { .status.moving::before { animation: none; } }
