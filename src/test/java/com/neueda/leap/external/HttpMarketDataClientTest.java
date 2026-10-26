@@ -1,5 +1,6 @@
 package com.neueda.leap.external;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
@@ -100,7 +101,7 @@ class HttpMarketDataClientTest {
         server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
                 .andRespond(withStatus(HttpStatus.UNAUTHORIZED));
 
-        assertThrows(IllegalStateException.class, () -> client.getPrice("AAPL"));
+        assertThrows(PriceUnavailableException.class, () -> client.getPrice("AAPL"));
     }
 
     @Test
@@ -109,7 +110,7 @@ class HttpMarketDataClientTest {
                 .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS)
                         .contentType(MediaType.APPLICATION_JSON).body(errorJson("RATE_LIMITED")));
 
-        assertThrows(IllegalStateException.class, () -> client.getPrice("AAPL"));
+        assertThrows(PriceUnavailableException.class, () -> client.getPrice("AAPL"));
     }
 
     @Test
@@ -117,7 +118,7 @@ class HttpMarketDataClientTest {
         server.expect(requestTo(BASE_URL + "/quotes/AAPL"))
                 .andRespond(withServiceUnavailable());
 
-        assertThrows(IllegalStateException.class, () -> client.getPrice("AAPL"));
+        assertThrows(PriceUnavailableException.class, () -> client.getPrice("AAPL"));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientHoldingsException;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
@@ -103,7 +104,7 @@ class AccountHoldingServiceTest {
     void removeQuantityThrowsWhenInsufficient() {
         givenActiveQuantity("100");
         BigDecimal quantity = new BigDecimal("100.5");
-        assertThrows(IllegalStateException.class,
+        assertThrows(InsufficientHoldingsException.class,
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, quantity));
         verifyNothingChanged();
     }
@@ -112,7 +113,7 @@ class AccountHoldingServiceTest {
     void removeQuantityThrowsWhenNoActiveHolding() {
         givenActiveQuantity(null);
         BigDecimal quantity = new BigDecimal("10");
-        assertThrows(IllegalStateException.class,
+        assertThrows(InsufficientHoldingsException.class,
                 () -> accountHoldingService.removeQuantity(ACCOUNT_ID, INSTRUMENT_ID, quantity));
         verifyNothingChanged();
     }

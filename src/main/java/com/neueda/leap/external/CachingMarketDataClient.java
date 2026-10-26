@@ -1,5 +1,6 @@
 package com.neueda.leap.external;
 
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
@@ -64,7 +65,7 @@ public class CachingMarketDataClient implements MarketDataClient {
             return null;
         }
         if (!trySpend(1, dailyLimit)) {
-            throw new IllegalStateException("Fauxnance's daily quota is used up; prices are available again after "
+            throw new PriceUnavailableException("Fauxnance's daily quota is used up; prices are available again after "
                     + "midnight UTC");
         }
         BigDecimal price = delegate.getPrice(ticker);
