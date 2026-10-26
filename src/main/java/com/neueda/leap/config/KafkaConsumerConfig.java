@@ -1,5 +1,7 @@
 package com.neueda.leap.config;
 
+import com.neueda.leap.exception.InsufficientFundsException;
+import com.neueda.leap.exception.InsufficientHoldingsException;
 import java.util.NoSuchElementException;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -25,11 +27,13 @@ public class KafkaConsumerConfig {
     // Also attached by Spring Boot. A listener that throws is retried twice, 2 s apart (Spring's default is 9 retries
     // with no wait, each one able to spend a Fauxnance call), so a passing Fauxnance or database error has time to
     // clear; after that the message is logged and skipped. A bad order (invalid quantity or side, unknown account or
-    // instrument) fails the same way every time, so it is skipped at once.
+    // instrument) or one the account can't cover (not enough cash or shares) fails the same way every time, so it is
+    // skipped at once.
     @Bean
     public DefaultErrorHandler kafkaErrorHandler() {
         DefaultErrorHandler handler = new DefaultErrorHandler(new FixedBackOff(RETRY_INTERVAL_MS, RETRIES));
-        handler.addNotRetryableExceptions(IllegalArgumentException.class, NoSuchElementException.class);
+        handler.addNotRetryableExceptions(IllegalArgumentException.class, NoSuchElementException.class,
+                InsufficientFundsException.class, InsufficientHoldingsException.class);
         return handler;
     }
 }

@@ -3,6 +3,9 @@ package com.neueda.leap.config;
 import tools.jackson.databind.ObjectMapper;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.enums.TradeSide;
+import com.neueda.leap.exception.InsufficientFundsException;
+import com.neueda.leap.exception.InsufficientHoldingsException;
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
 import java.util.NoSuchElementException;
@@ -114,5 +117,25 @@ class KafkaConsumerConfigTest {
     @Test
     void errorHandler_unknownAccountOrInstrument_isSkippedWithoutARetry() {
         assertTrue(fails(new NoSuchElementException("No instrument with id 99")));
+    }
+
+    // the balance or holding won't change in the 4 s the retries take
+    @Test
+    void errorHandler_insufficientFunds_isSkippedWithoutARetry() {
+        assertTrue(fails(new InsufficientFundsException("Insufficient funds in account 1")));
+    }
+
+    @Test
+    void errorHandler_insufficientHoldings_isSkippedWithoutARetry() {
+        assertTrue(fails(new InsufficientHoldingsException("Insufficient quantity of instrument 10")));
+    }
+
+    @Test
+    void errorHandler_noPrice_isRetriedTwiceThenSkipped() {
+        PriceUnavailableException noPrice = new PriceUnavailableException("Fauxnance returned 503 for AAPL");
+
+        assertFalse(fails(noPrice));
+        assertFalse(fails(noPrice));
+        assertTrue(fails(noPrice));
     }
 }
