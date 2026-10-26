@@ -1,0 +1,59 @@
+import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { FLY_COUNT, FrogGame } from './frog-game';
+import { Landing } from './landing';
+
+describe('Landing', () => {
+  let fixture: ComponentFixture<Landing>;
+
+  beforeEach(async () => {
+    await TestBed.configureTestingModule({
+      imports: [Landing],
+      providers: [provideRouter([])],
+    }).compileComponents();
+
+    fixture = TestBed.createComponent(Landing);
+    await fixture.whenStable();
+  });
+
+  it('links to the login and registration pages', () => {
+    const hrefs = Array.from(fixture.nativeElement.querySelectorAll('a') as NodeListOf<HTMLAnchorElement>)
+      .map((a) => a.getAttribute('href'));
+    expect(hrefs).toContain('/login');
+    expect(hrefs).toContain('/registration');
+  });
+
+  it('draws every fly', () => {
+    expect(fixture.nativeElement.querySelectorAll('svg g[opacity]').length).toBe(FLY_COUNT);
+  });
+});
+
+describe('FrogGame', () => {
+  it('catches flies and keeps a running total', () => {
+    let seed = 1;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const game = new FrogGame(random);
+    let tongueSeen = false;
+    for (let i = 0; i < 60 * 30; i++) {
+      game.step(1 / 60);
+      if (game.view().tongue) tongueSeen = true;
+    }
+    const view = game.view();
+    expect(tongueSeen).toBe(true);
+    expect(view.caught).toBeGreaterThan(0);
+    expect(Number(view.total)).toBeGreaterThan(0);
+  });
+
+  it('stays on screen and keeps catching when a phone crops the scene', () => {
+    let seed = 7;
+    const random = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+    const game = new FrogGame(random);
+    game.setVisibleRange(392, 1048);
+    for (let i = 0; i < 60 * 30; i++) game.step(1 / 60);
+    const view = game.view();
+    const frogX = Number(/translate\(([-\d.]+)/.exec(view.frog)![1]);
+    expect(frogX).toBeGreaterThanOrEqual(392);
+    expect(frogX).toBeLessThanOrEqual(1048);
+    expect(view.caught).toBeGreaterThan(0);
+  });
+});

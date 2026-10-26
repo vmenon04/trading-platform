@@ -1,14 +1,18 @@
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter } from '@angular/router';
+import { Component } from '@angular/core';
+import { provideRouter, Router } from '@angular/router';
 import { App } from './app';
+
+@Component({ template: '' })
+class Blank {}
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [App],
-      providers: [provideRouter([]), provideHttpClient(), provideHttpClientTesting()],
+      providers: [provideRouter([{ path: '', component: Blank }, { path: 'dashboard', component: Blank }]), provideHttpClient(), provideHttpClientTesting()],
     }).compileComponents();
   });
 
@@ -18,10 +22,19 @@ describe('App', () => {
     expect(app).toBeTruthy();
   });
 
-  it('should show the navbar outside the login and registration pages', async () => {
+  it('should show the navbar outside the landing, login and registration pages', async () => {
     const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/dashboard');
     await fixture.whenStable();
     const compiled = fixture.nativeElement as HTMLElement;
     expect(compiled.querySelector('app-navbar')).toBeTruthy();
+  });
+
+  it('should hide the navbar on the landing page', async () => {
+    const fixture = TestBed.createComponent(App);
+    await TestBed.inject(Router).navigateByUrl('/');
+    await fixture.whenStable();
+    const compiled = fixture.nativeElement as HTMLElement;
+    expect(compiled.querySelector('app-navbar')).toBeNull();
   });
 });

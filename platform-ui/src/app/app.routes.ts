@@ -3,7 +3,8 @@ import { Dashboard } from './pages/dashboard/dashboard';
 import { Login } from './pages/login/login';
 
 import { Registration } from './pages/registration/registration';
-import { homeRedirect, roleGuard } from './services/auth.guard';
+import { Landing } from './pages/landing/landing';
+import { homeRedirect, landingGuard, roleGuard } from './services/auth.guard';
 
 // each role has its own pages: clients trade, analysts look at clients and instruments, admins at every order
 const client = roleGuard('CLIENT');
@@ -11,7 +12,7 @@ const analyst = roleGuard('ANALYST');
 const admin = roleGuard('ADMIN');
 
 export const routes: Routes = [
-    { path: '', redirectTo: homeRedirect, pathMatch: 'full' },
+    { path: '', component: Landing, canActivate: [landingGuard], pathMatch: 'full', title: 'F-Trade' },
     { path: 'dashboard', component: Dashboard, canActivate: [client] },
     { path: 'trade', loadComponent: () => import('./pages/trade/trade').then((m) => m.Trade), canActivate: [client] },
     { path: 'login', component: Login },

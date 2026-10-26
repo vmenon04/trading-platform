@@ -24,3 +24,9 @@ export function roleGuard(role: Role): CanActivateFn {
 
 // "/" opens the logged-in user's home page: the dashboard for clients, the analyst or admin pages for staff
 export const homeRedirect: RedirectFunction = () => inject(AuthService).homeUrl();
+
+// "/" shows the landing page only to logged-out visitors; logged-in users go to their home page as before
+export const landingGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  return auth.isLoggedIn() ? inject(Router).parseUrl(auth.homeUrl()) : true;
+};
