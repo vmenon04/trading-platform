@@ -120,14 +120,19 @@ describe('OrderSubmitter', () => {
   it('shows where the page is in the matches, once there is more than one page', async () => {
     await answerPage('', [ORACLE], 0, 334);
     expect(pager()?.textContent).toContain('1–50 of 334');
+    expect(pager()?.classList).not.toContain('pager-hidden');
 
     instruments.nextPage();
     await answerPage('', [ORACLE], 50, 334);
     expect(pager()?.textContent).toContain('51–100 of 334');
   });
 
+  // the pager keeps its space so the form doesn't jump, but it is hidden and can't be used
   it('has no page controls when the matches fit on one page', async () => {
     await answerPage('', [ORACLE], 0, 1);
-    expect(pager()).toBeNull();
+    const nav = pager() as HTMLElement;
+    expect(nav.classList).toContain('pager-hidden');
+    expect(nav.getAttribute('aria-hidden')).toBe('true');
+    nav.querySelectorAll('button').forEach((button) => expect(button.disabled).toBe(true));
   });
 });
