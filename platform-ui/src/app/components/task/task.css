@@ -19,7 +19,7 @@
 .side.sell { color: var(--red); }
 .number { font-family: var(--font-numeric); font-size: var(--type-body); }
 
-.state { display: grid; justify-items: start; gap: 3px; }
+.state { position: relative; display: flex; align-items: center; }
 .status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; transition: background-color 300ms ease, color 300ms ease; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .status.moving::before { animation: pulse 1s ease-in-out infinite alternate; }
@@ -27,7 +27,13 @@
 .status.pending { background: #fff4dc; color: #a0700b; }
 .status.fulfilled { background: var(--green-soft); color: var(--green); }
 .status.rejected { background: var(--red-soft); color: var(--red); }
-.reason { color: var(--muted); font-size: var(--type-caption); }
+/* a rejected trade's reason: a tooltip to the left of the badge, on hover or keyboard focus. To the left rather than
+   above, so the table's sideways scrolling doesn't clip it on the first row */
+.status[tabindex] { cursor: help; }
+.status[tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.reason { position: absolute; top: 50%; right: calc(100% + 10px); z-index: 1; padding: 6px 10px; border-radius: 10px; background: var(--ink); color: #fff; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transform: translate(4px, -50%); transition: opacity 140ms ease, transform 140ms ease; }
+.reason::after { content: ""; position: absolute; top: 50%; left: 100%; border: 5px solid transparent; border-left-color: var(--ink); transform: translateY(-50%); }
+.status:hover + .reason, .status:focus-visible + .reason { opacity: 1; transform: translate(0, -50%); }
 
 .task-empty { margin: 0; padding: 14px; border-radius: 12px; background: var(--canvas); color: var(--muted); font-size: var(--type-caption); text-align: center; }
 .task-card > a { color: var(--green); font-size: var(--type-control); font-weight: 700; text-decoration: none; }

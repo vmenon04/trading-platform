@@ -117,7 +117,12 @@ describe('Task', () => {
 
     const [row] = rows();
     expect(status(row).textContent).toContain('Rejected');
-    expect(row.querySelector('.reason')?.textContent).toContain('Not enough cash');
+    // a tooltip on the badge, which keyboard users can reach too
+    const reason = row.querySelector('.reason')!;
+    expect(reason.textContent).toContain('Not enough cash');
+    expect(reason.getAttribute('role')).toBe('tooltip');
+    expect(status(row).getAttribute('tabindex')).toBe('0');
+    expect(status(row).getAttribute('aria-describedby')).toBe(reason.id);
   });
 
   it('says why for each rejection code', async () => {
