@@ -5,9 +5,9 @@
 	</div>
 
 	<div class="task-list" role="list" aria-label="Recent orders">
-		@if (account.orders.isLoading() && !account.orders.hasValue()) {
+		@if (live.isLoading() && !live.hasValue()) {
 			<p class="task-empty">Loading orders…</p>
-		} @else if (account.orders.error()) {
+		} @else if (live.error() && !live.hasValue()) {
 			<p class="task-empty">Couldn't load your orders.</p>
 		} @else {
 			@for (task of tasks(); track task.key) {
@@ -17,10 +17,18 @@
 					<span class="quantity">{{ task.quantity }}</span>
 					<span class="side" [class.sell]="task.side === 'Sell'">{{ task.side }}</span>
 					<strong class="quoted-price">{{ task.price }}</strong>
-					<span class="status" [class]="'status ' + task.status">● {{ task.status }}</span>
+					<span [class]="'status ' + task.status">● {{ task.label }}</span>
+					<ol class="steps" [attr.aria-label]="task.label">
+						@for (step of task.steps; track step.name) {
+							<li [class]="'step ' + step.state" [title]="step.name"></li>
+						}
+					</ol>
+					@if (task.reason) {
+						<span class="reason">{{ task.reason }}</span>
+					}
 				</div>
 			} @empty {
-				<p class="task-empty">No orders yet. Orders you place appear here.</p>
+				<p class="task-empty">No orders in progress. Orders you place appear here as they go through.</p>
 			}
 		}
 	</div>

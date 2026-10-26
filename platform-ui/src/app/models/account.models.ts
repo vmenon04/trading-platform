@@ -80,3 +80,23 @@ export interface Trade {
   status: TradeStatus;
   reason: string | null;
 }
+
+export type TradeStage = 'SUBMITTED' | 'VALIDATED' | 'PENDING' | 'FULFILLED' | 'REJECTED';
+export type RejectionCode = 'INSUFFICIENT_FUNDS' | 'INSUFFICIENT_SHARES' | 'PRICE_UNAVAILABLE' | 'INVALID_ORDER' | 'UNKNOWN';
+
+// GET /v1/accounts/{accountId}/trades/live: the account's trades from the last hour, newest first, with the time
+// each step was reached (null until then). finishedAt is when it was fulfilled or rejected
+export interface LiveTrade {
+  tradeId: string;
+  ticker: string | null;
+  name: string | null;
+  side: TradeSide;
+  quantity: number;
+  stage: TradeStage;
+  submittedAt: string;
+  validatedAt: string | null;
+  recordedAt: string | null;
+  finishedAt: string | null;
+  price: number | null;
+  rejectionCode: RejectionCode | null;
+}
