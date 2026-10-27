@@ -10,7 +10,8 @@ import org.springframework.kafka.annotation.KafkaListener;
 import org.springframework.stereotype.Component;
 
 /**
- * Consumes recorded trades, executes them and publishes each outcome to trade.finished.
+ * Consumes recorded trades, executes them and publishes each outcome to trade.finished. A fulfilled trade is
+ * published to trade.accepted first, so the reporting consumer sees its ACCEPTED step.
  * Runs unless trade.stage.execution.enabled=false, so a container can run only some of the stages.
  */
 @ConditionalOnProperty(name = "trade.stage.execution.enabled", havingValue = "true", matchIfMissing = true)
@@ -28,6 +29,9 @@ public class ExecutionConsumer {
     @KafkaListener(topics = KafkaTopics.TRADE_RECORDED, groupId = "execution-service")
     public void onTradeRecorded(TradeRecordedDTO trade) throws InterruptedException, ExecutionException {
         TradeFinishedDTO outcome = executionService.execute(trade);
+        if (outcome.price() != null) {
+            tradeEventProducer.publishTradeAccepted(outcome.toTradeAcceptedDTO()).get();
+        }
         tradeEventProducer.publishTradeFinished(outcome).get();
     }
 }

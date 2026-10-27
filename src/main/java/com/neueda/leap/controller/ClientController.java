@@ -1,13 +1,11 @@
 package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.ClientResponseDTO;
-import com.neueda.leap.dto.ErrorResponseDTO;
 import com.neueda.leap.dto.OpenAccountRequestDTO;
 import com.neueda.leap.entity.Client;
 import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.ClientService;
 import jakarta.validation.Valid;
-import org.springframework.dao.DuplicateKeyException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -20,7 +18,6 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.NoSuchElementException;
 import java.util.UUID;
 
 @RestController
@@ -47,29 +44,13 @@ public class ClientController {
         return clientResponse(externalClientId);
     }
 
-    // opens the logged-in user's first trading account (with no cash) from their details
-    @PostMapping("/me")
-    public ResponseEntity<?> openAccount(@AuthenticationPrincipal Jwt jwt,
-                                         @Valid @RequestBody OpenAccountRequestDTO request) {
-        try {
-            accountOpeningService.openAccount(Long.parseLong(jwt.getSubject()), request);
-        } catch (IllegalStateException e) {
-            return conflict("You already have a trading account");
-        } catch (DuplicateKeyException e) {
-            return conflict("That email is already used by another client");
-        }
-        return ResponseEntity.status(HttpStatus.CREATED).body(getLoggedInClient(jwt).getBody());
-    }
-
-    // opens another individual brokerage account (with no cash) for a user who already has one
+    // opens a trading account (with no cash) for the logged-in user; their first one also creates their client,
+    // so it needs their details. Errors are turned into responses by GlobalExceptionHandler.
     @PostMapping("/me/accounts")
-    public ResponseEntity<?> openAdditionalAccount(@AuthenticationPrincipal Jwt jwt) {
-        try {
-            accountOpeningService.openAdditionalAccount(Long.parseLong(jwt.getSubject()));
-        } catch (NoSuchElementException e) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ErrorResponseDTO.of(HttpStatus.NOT_FOUND,
-                    "Not Found", "Open your first trading account before adding another"));
-        }
+    public ResponseEntity<ClientResponseDTO> openAccount(@AuthenticationPrincipal Jwt jwt,
+                                                         @Valid @RequestBody(required = false) OpenAccountRequestDTO request) {
+        accountOpeningService.openAccount(Long.parseLong(jwt.getSubject()), request);
+        // the user has a client now, so this always finds one
         return ResponseEntity.status(HttpStatus.CREATED).body(getLoggedInClient(jwt).getBody());
     }
 
@@ -90,10 +71,5 @@ public class ClientController {
             externalClientId,
             client.getFirstName() + " " + client.getLastName(),
             clientService.getTradingAccounts(externalClientId)));
-    }
-
-    private static ResponseEntity<ErrorResponseDTO> conflict(String message) {
-        return ResponseEntity.status(HttpStatus.CONFLICT)
-                .body(ErrorResponseDTO.of(HttpStatus.CONFLICT, "Conflict", message));
     }
 }

@@ -20,7 +20,7 @@ export interface ClientProfile {
   tradingAccounts: { accountId: string }[];
 }
 
-// POST /v1/clients/me (birthDate as yyyy-mm-dd)
+// the clientDetails of POST /v1/clients/me/accounts, sent for the first account (birthDate as yyyy-mm-dd)
 export interface OpenAccountRequest {
   firstName: string;
   lastName: string;

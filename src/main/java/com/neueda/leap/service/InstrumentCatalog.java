@@ -100,7 +100,6 @@ public class InstrumentCatalog {
             case "etf" -> InstrumentType.ETF;
             case "fx", "forex" -> InstrumentType.FOREX;
             case "crypto" -> InstrumentType.CRYPTO;
-            case "bond" -> InstrumentType.BOND;
             default -> InstrumentType.STOCK;
         };
     }

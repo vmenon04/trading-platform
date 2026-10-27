@@ -115,12 +115,6 @@
       </figure>
     }
 
-    <figure class="card wide">
-      <figcaption>Top {{ clientCount() }} clients trading {{ scopeName() }}<small>By traded value in the period</small></figcaption>
-      @if (clientChart(); as config) { <app-chart [config]="config" [height]="rankingHeight(clientCount())" /> }
-      @else { <p class="chart-empty">No trades in this period.</p> }
-    </figure>
-
     @if (one()) {
       <figure class="card wide">
         <figcaption>Latest trades<small>The newest {{ tradeRows().length }} orders in {{ scopeName() }}, in any status</small></figcaption>

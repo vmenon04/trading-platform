@@ -12,6 +12,7 @@ GROUP_ID = "analytics-service"
 
 # Same strings as KafkaTopics.java
 TRADE_RECORDED = "trade.recorded"
+TRADE_ACCEPTED = "trade.accepted"
 TRADE_FINISHED = "trade.finished"
 
 UPSERT_RECORDED = """
@@ -21,6 +22,21 @@ UPSERT_RECORDED = """
             NULL, NULL, :at, 'PENDING', :at)
     ON CONFLICT (trade_id) DO UPDATE
         SET trade_time = LEAST(trades.trade_time, EXCLUDED.trade_time)
+"""
+
+# trade.accepted and trade.finished are separate topics, so a trade's FULFILLED message can be
+# processed before its ACCEPTED one. Only moving on from PENDING keeps a late ACCEPTED from undoing it.
+UPSERT_ACCEPTED = """
+    INSERT INTO trades (trade_id, account_id, instrument_id, trade_type, quantity,
+                        price, notional, trade_time, status, status_time)
+    VALUES (:trade_id, :account_id, :instrument_id, :trade_type, :quantity,
+            :price, :notional, :at, 'ACCEPTED', :at)
+    ON CONFLICT (trade_id) DO UPDATE
+        SET status      = EXCLUDED.status,
+            price       = EXCLUDED.price,
+            notional    = EXCLUDED.notional,
+            status_time = EXCLUDED.status_time
+        WHERE trades.status = 'PENDING'
 """
 
 UPSERT_FINISHED = """
@@ -34,7 +50,7 @@ UPSERT_FINISHED = """
             notional      = EXCLUDED.notional,
             status_time   = EXCLUDED.status_time,
             reject_reason = EXCLUDED.reject_reason
-        WHERE trades.status = 'PENDING'
+        WHERE trades.status IN ('PENDING', 'ACCEPTED')
 """
 
 
@@ -52,7 +68,7 @@ def build_consumer():
         "auto.offset.reset": "earliest",
         "enable.auto.commit": False
     })
-    consumer.subscribe([TRADE_RECORDED, TRADE_FINISHED])
+    consumer.subscribe([TRADE_RECORDED, TRADE_ACCEPTED, TRADE_FINISHED])
     return consumer
 
 
@@ -76,6 +92,25 @@ def handle_recorded(conn, event, at):
     conn.execute(text(INSERT_STATUS), {
         "trade_id": event["tradeId"],
         "status": "PENDING",
+        "at": at
+    })
+
+
+# Only fulfilled trades are published to trade.accepted, so the price is always there
+def handle_accepted(conn, event, at):
+    conn.execute(text(UPSERT_ACCEPTED), {
+        "trade_id": event["tradeId"],
+        "account_id": event["accountId"],
+        "instrument_id": event["instrumentId"],
+        "trade_type": event["side"],
+        "quantity": event["quantity"],
+        "price": event["price"],
+        "notional": event["price"] * event["quantity"],
+        "at": at
+    })
+    conn.execute(text(INSERT_STATUS), {
+        "trade_id": event["tradeId"],
+        "status": "ACCEPTED",
         "at": at
     })
 
@@ -107,6 +142,7 @@ def handle_finished(conn, event, at):
 
 HANDLERS = {
     TRADE_RECORDED: handle_recorded,
+    TRADE_ACCEPTED: handle_accepted,
     TRADE_FINISHED: handle_finished
 }
 
@@ -132,7 +168,7 @@ def main():
         conn.exec_driver_sql((REPORTING_DIR / "analytics_schema.sql").read_text())
 
     consumer = build_consumer()
-    print(f"Listening to {TRADE_RECORDED} and {TRADE_FINISHED} as {GROUP_ID}. Ctrl+C to stop.")
+    print(f"Listening to {TRADE_RECORDED}, {TRADE_ACCEPTED} and {TRADE_FINISHED} as {GROUP_ID}. Ctrl+C to stop.")
     try:
         while True:
             msg = consumer.poll(1.0)

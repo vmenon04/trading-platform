@@ -71,7 +71,7 @@ components:
           description: Current price, the last known one if the quote is stale; null when there is none right now
         assetClass:
           type: string
-          enum: [STOCK, ETF, FOREX, CRYPTO, BOND]
+          enum: [STOCK, ETF, FOREX, CRYPTO]
 
   securitySchemes:
     bearerAuth:

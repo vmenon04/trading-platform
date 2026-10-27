@@ -76,7 +76,7 @@ CREATE TABLE instruments (
         CHECK (UPPER(ticker) = ticker),
     -- same values as the Java InstrumentType enum
     asset_class TEXT NOT NULL
-        CHECK (asset_class IN ('STOCK', 'ETF', 'BOND', 'FOREX', 'CRYPTO'))
+        CHECK (asset_class IN ('STOCK', 'ETF', 'FOREX', 'CRYPTO'))
 );
 
 CREATE TABLE account_holdings (

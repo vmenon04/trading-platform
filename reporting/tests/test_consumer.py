@@ -20,9 +20,11 @@ FINISHED = {"tradeId": 9001, "accountId": 1, "instrumentId": 2, "side": "BUY", "
 class FakeConnection:
     def __init__(self):
         self.statements = []
+        self.sql = []
 
     def execute(self, statement, params):
         self.statements.append(params)
+        self.sql.append(str(statement))
 
 
 def test_rejected_trade_keeps_its_reason():
@@ -50,6 +52,35 @@ def test_rejection_without_a_reason_field_still_works():
     conn = FakeConnection()
     consumer.handle_finished(conn, {**FINISHED, "price": None}, AT)
     assert conn.statements[0]["reject_reason"] is None
+
+
+def test_accepted_trade_is_saved_with_its_price_and_history_step():
+    conn = FakeConnection()
+    consumer.handle_accepted(conn, {**FINISHED, "price": Decimal("150.30")}, AT)
+
+    trade, step = conn.statements
+    assert trade["trade_id"] == 9001
+    assert trade["price"] == Decimal("150.30")
+    assert trade["notional"] == Decimal("1503.00")
+    assert step == {"trade_id": 9001, "status": "ACCEPTED", "at": AT}
+
+
+def test_accepted_never_overwrites_a_finished_trade():
+    # trade.finished can be processed first, so ACCEPTED may only replace PENDING
+    conn = FakeConnection()
+    consumer.handle_accepted(conn, {**FINISHED, "price": Decimal("150.30")}, AT)
+    assert "WHERE trades.status = 'PENDING'" in conn.sql[0]
+
+
+def test_finished_moves_an_accepted_trade_on():
+    # ACCEPTED is normally processed first, so FULFILLED must still replace it
+    conn = FakeConnection()
+    consumer.handle_finished(conn, {**FINISHED, "price": Decimal("150.30"), "reason": None}, AT)
+    assert "WHERE trades.status IN ('PENDING', 'ACCEPTED')" in conn.sql[0]
+
+
+def test_accepted_topic_has_a_handler():
+    assert consumer.HANDLERS[consumer.TRADE_ACCEPTED] is consumer.handle_accepted
 
 
 def test_sync_keeps_the_reason_the_consumer_saved(monkeypatch):

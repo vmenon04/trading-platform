@@ -92,6 +92,19 @@ export class UserRepository implements OnModuleDestroy {
 		return result.rows[0]?.exists ?? false;
 	}
 
+	async existsByEmail(email: string): Promise<boolean> {
+		const result = await this.pool.query<{ exists: boolean }>(
+			`SELECT EXISTS(
+				SELECT 1
+				FROM clients
+				WHERE LOWER(email) = LOWER($1)
+			) AS exists`,
+			[email.trim()],
+		);
+
+		return result.rows[0]?.exists ?? false;
+	}
+
 	async createUser(input: CreateUserInput): Promise<UserRecord> {
 		const userExternalId = input.externalUserId ?? randomUUID();
 		const roles = this.normalizeRoles(input.roles ?? []);
@@ -101,7 +114,7 @@ export class UserRepository implements OnModuleDestroy {
 				`INSERT INTO users (external_user_id, username, password_hash, client_id)
 				 VALUES ($1, $2, $3, $4)
 				 RETURNING user_id, external_user_id, username, password_hash, client_id, created_at`,
-							[userExternalId, input.username, input.passwordHash, input.clientId ?? null],
+				[userExternalId, input.username, input.passwordHash, input.clientId ?? null],
 			);
 
 			const user = inserted.rows[0];
