@@ -252,6 +252,18 @@ class CachingMarketDataClientTest {
         verifyNoInteractions(delegate);
     }
 
+    // one failed batch (e.g. Fauxnance's 500s) mustn't throw away the prices Redis already had
+    @Test
+    void getPrices_apiFails_keepsCachedPricesAndFallsBackToTheLastKnownOnes() {
+        when(values.multiGet(List.of("price:AAPL", "price:MSFT"))).thenReturn(Arrays.asList("189.25", null));
+        when(values.multiGet(List.of("unknown:MSFT"))).thenReturn(Arrays.asList((String) null));
+        when(delegate.getPrices(List.of("MSFT"))).thenThrow(new IllegalStateException("Fauxnance returned 500"));
+        when(values.multiGet(List.of("price:last:MSFT"))).thenReturn(List.of("405.00"));
+
+        assertEquals(Map.of("AAPL", fresh("189.25"), "MSFT", stale("405.00")),
+                client.getPrices(List.of("AAPL", "MSFT")));
+    }
+
     @Test
     void getPrices_noPriceFromTheApi_fallsBackToTheLastKnownPriceMarkedStale() {
         when(values.multiGet(List.of("price:AAPL"))).thenReturn(Arrays.asList((String) null));

@@ -24,11 +24,13 @@
 .baseline { stroke: var(--line); stroke-width: 1; }
 .crosshair { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 3 3; }
 
-/* the value line draws itself in from the left, then the fill under it and the invested line fade in */
-.value { fill: none; stroke: var(--green); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; stroke-dasharray: 1; animation: draw-line 1100ms cubic-bezier(0.3, 0.6, 0.2, 1) both; }
+/* the value line draws itself in from the left, then the fill under it and the invested line fade in. Revealed by a
+   clip rather than a dash: the svg is stretched with non-scaling strokes, so a dash sized with pathLength would only
+   cover part of the line */
+.value { fill: none; stroke: var(--green); stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round; animation: draw-line 1100ms cubic-bezier(0.3, 0.6, 0.2, 1) both; }
 .area { animation: fade-in 600ms ease-out 500ms both; }
 .invested { fill: none; stroke: var(--muted); stroke-width: 1.5; stroke-dasharray: 5 5; animation: fade-in 400ms ease-out 300ms both; }
-@keyframes draw-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+@keyframes draw-line { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
 
 .dot { position: absolute; width: 12px; height: 12px; border: 2px solid var(--surface); border-radius: 50%; pointer-events: none; transform: translate(-50%, -50%); }
 .value-dot { background: var(--green); box-shadow: 0 0 0 2px var(--green); }

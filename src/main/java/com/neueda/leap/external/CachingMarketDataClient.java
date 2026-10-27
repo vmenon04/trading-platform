@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.client.RestClientException;
 
 // Caches what another MarketDataClient (Fauxnance) returns in Redis, to save its daily quota, and counts that quota.
 // Redis is only a cache: if it is down, everything comes straight from the API (and calls aren't counted).
@@ -125,7 +126,7 @@ public class CachingMarketDataClient implements MarketDataClient {
 
         Set<String> newlyUnknown = new HashSet<>();
         if (!toFetch.isEmpty() && trySpend(batches(toFetch.size()), displayLimit())) {
-            delegate.getPrices(toFetch).forEach((ticker, quote) -> {
+            fetchForDisplay(toFetch).forEach((ticker, quote) -> {
                 if (quote.price() == null) {
                     markUnknown(ticker);
                     newlyUnknown.add(ticker);
@@ -150,6 +151,18 @@ public class CachingMarketDataClient implements MarketDataClient {
             }
         }
         return prices;
+    }
+
+    // the API's prices for showing; if it fails (an outage, a timeout), none, so the prices Redis already had and the
+    // last known ones are still shown
+    private Map<String, PriceQuote> fetchForDisplay(List<String> tickers) {
+        try {
+            return delegate.getPrices(tickers);
+        } catch (IllegalStateException | RestClientException e) {
+            LOGGER.warn("No prices from Fauxnance for {} symbols, showing the last known ones: {}", tickers.size(),
+                    e.getMessage());
+            return Map.of();
+        }
     }
 
     // name and type, cached for a day; a symbol Fauxnance doesn't know is remembered for an hour

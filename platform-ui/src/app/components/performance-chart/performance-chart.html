@@ -38,7 +38,7 @@
 					<line class="baseline" x1="0" [attr.x2]="width" [attr.y1]="bottom" [attr.y2]="bottom" />
 					<path class="area" [attr.d]="g.area" fill="url(#performance-fill)" />
 					<path class="invested" [attr.d]="g.invested" />
-					<path class="value" [attr.d]="g.line" pathLength="1" />
+					<path class="value" [attr.d]="g.line" />
 					@if (tip(); as tip) {
 						<line class="crosshair" [attr.x1]="tip.x" [attr.x2]="tip.x" y1="0" [attr.y2]="bottom" />
 					}
