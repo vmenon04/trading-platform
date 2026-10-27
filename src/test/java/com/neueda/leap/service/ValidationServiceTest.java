@@ -1,5 +1,7 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientHoldingsException;
+import com.neueda.leap.exception.InsufficientFundsException;
 import com.neueda.leap.dto.TradeSubmittedDTO;
 import com.neueda.leap.dto.TradeValidatedDTO;
 import com.neueda.leap.entity.Instrument;
@@ -78,7 +80,7 @@ class ValidationServiceTest {
     void buyRejectsInsufficientCash() {
         givenInstrumentAndBalance();
         TradeSubmittedDTO buy = order("BUY", "11");
-        assertThrows(IllegalStateException.class, () -> validationService.validate(buy));
+        assertThrows(InsufficientFundsException.class, () -> validationService.validate(buy));
     }
 
     @Test
@@ -94,7 +96,7 @@ class ValidationServiceTest {
         givenInstrumentAndBalance();
         when(accountHoldingService.getQuantity(ACCOUNT_ID, INSTRUMENT_ID)).thenReturn(new BigDecimal("10"));
         TradeSubmittedDTO sell = order("SELL", "11");
-        assertThrows(IllegalStateException.class, () -> validationService.validate(sell));
+        assertThrows(InsufficientHoldingsException.class, () -> validationService.validate(sell));
     }
 
     @Test

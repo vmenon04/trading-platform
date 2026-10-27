@@ -1,4 +1,4 @@
-# Kafka, Postgres, Redis, auth-service and the app for the trading platform
+# Kafka, Postgres, Redis, auth-service, the app, the web app and reporting for the trading platform
 #
 # All values come from .env
 # The app is one image run as four services, one per stage of the trade pipeline.
@@ -44,8 +44,25 @@ x-app-environment: &app-environment
   SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
   # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
   MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # Finnhub market news on the dashboard; optional: without a key there is simply no news
+  NEWS_API_KEY: ${FINNHUB_API_KEY:-}
   # verifies the login tokens issued by auth-service, which compose gives the same secret
   JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+
+# shared by the three reporting services (reporting/Dockerfile): one image, each runs its own script
+x-reporting: &reporting
+  build:
+    context: ./reporting
+    additional_contexts:
+      # requirements.txt is at the repo root
+      project: .
+  image: trading-platform-reporting
+  restart: unless-stopped
+
+x-reporting-environment: &reporting-environment
+  # the trading database, which reporting only reads (database_connection.py), and its own analytics copy of it
+  MISSION_DB_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+  ANALYTICS_DB_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/analytics
 
 services:
   kafka:
@@ -96,6 +113,8 @@ services:
       - ./src/main/resources/auth_test_data.sql:/docker-entrypoint-initdb.d/3-auth_test_data.sql:ro
       # the analyst and admin logins, which registration can't create
       - ./src/main/resources/staff_users.sql:/docker-entrypoint-initdb.d/4-staff_users.sql:ro
+      # the analytics database the reporting services fill
+      - ./reporting/analytics_database.sql:/docker-entrypoint-initdb.d/5-analytics_database.sql:ro
     healthcheck:
       # $$ so the variables are read inside the container, not by compose
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
@@ -108,8 +127,11 @@ services:
   redis:
     image: redis:7.4-alpine
     container_name: trading-redis
-    # only a cache, so nothing is saved to disk (no snapshots, no append-only file)
-    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "no"]
+    # kept on disk in an append-only file (no snapshots), so the count of today's Fauxnance calls survives a restart;
+    # without it the count starts again at 0 while Fauxnance's doesn't, and the reserve kept for trades gets used up
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
     ports:
       # published like Postgres, so the app can use it when run on the VM
       - "${HOST_IP:?HOST_IP is not set}:${REDIS_PORT:?REDIS_PORT is not set}:6379"
@@ -187,6 +209,129 @@ services:
       KAFKA_CLUSTERS_0_READONLY: "true"
     restart: unless-stopped
 
+  # the API behind the analyst and admin pages (reporting/scripts/api.py); not published, the frontend's nginx
+  # forwards /api to it. It checks login tokens with the same secret auth-service signs them with
+  reporting-api:
+    <<: *reporting
+    container_name: trading-reporting-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+    healthcheck:
+      # every /api address needs a login, so check the API's own description instead
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8050/openapi.json')"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+
+  # copies the trading database into the analytics one: everything the first time, then what changed, every hour
+  # (the pages say the data is out of date if a sync is more than two hours old)
+  reporting-sync:
+    <<: *reporting
+    container_name: trading-reporting-sync
+    command: ["sh", "-c", "while true; do python sync.py; sleep 3600; done"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+
+  # adds trades to the analytics database as they happen, from trade.recorded and trade.finished
+  reporting-consumer:
+    <<: *reporting
+    container_name: trading-reporting-consumer
+    command: ["python", "consumer.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+      KAFKA_BOOTSTRAP_SERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+
+  frontend:
+    build: ./platform-ui
+    image: trading-platform-frontend
+    container_name: trading-frontend
+    depends_on:
+      api:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      # nginx needs it to start, for the /api route
+      reporting-api:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}:80"
+    environment:
+      # logo.dev's publishable key, added to /logo requests by nginx; logos fall back to a letter without it
+      LOGO_DEV_CRED_KEY: ${LOGO_DEV_CRED_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # Prints where to find everything once every service is up and answering: in the log of `docker compose up`, or
+  # later with `docker compose logs ready`. It then stays running and does nothing, because
+  # `docker compose up --wait` counts a container that exits, even successfully, as a failure
+  ready:
+    image: alpine:3.20
+    container_name: trading-ready
+    depends_on:
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      validation:
+        condition: service_healthy
+      recording:
+        condition: service_healthy
+      execution:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      reporting-api:
+        condition: service_healthy
+      # no health checks: started is as much as compose can tell
+      reporting-sync:
+        condition: service_started
+      reporting-consumer:
+        condition: service_started
+    environment:
+      UI_URL: http://${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}
+      API_URL: http://${HOST_IP:?HOST_IP is not set}:${API_PORT:?API_PORT is not set}
+      AUTH_URL: http://${HOST_IP:?HOST_IP is not set}:${AUTH_PORT:?AUTH_PORT is not set}
+      TOOLS: >-
+        Redis Insight :${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set},
+        Kafka UI :${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set},
+        Adminer :${ADMINER_PORT:?ADMINER_PORT is not set}
+    # $$ so the variables are read inside the container, not by compose; the file marks the banner as printed
+    command:
+      - sh
+      - -c
+      - |
+        printf '\n  ✔ Trading platform is up\n\n'
+        printf '  %-8s %s\n' App "$$UI_URL" API "$$API_URL" Auth "$$AUTH_URL"
+        printf '  %-8s %s\n' Tools "docker compose --profile tools up -d ($$TOOLS)"
+        printf '\n'
+        touch /tmp/printed
+        exec tail -f /dev/null
+    # stops at once on `docker compose down` (sh, as process 1, would ignore the stop signal)
+    init: true
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/printed"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    restart: unless-stopped
+
   # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env
   adminer:
     image: adminer:6.1.2
@@ -246,3 +391,4 @@ services:
 
 volumes:
   postgres-data:
+  redis-data:

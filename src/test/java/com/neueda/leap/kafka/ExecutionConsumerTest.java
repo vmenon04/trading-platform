@@ -3,10 +3,12 @@ package com.neueda.leap.kafka;
 import com.neueda.leap.dto.TradeAcceptedDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.enums.RejectionCode;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.service.ExecutionService;
 import com.neueda.leap.service.TradeEventProducer;
 import java.math.BigDecimal;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import org.apache.kafka.common.errors.TimeoutException;
@@ -38,10 +40,12 @@ class ExecutionConsumerTest {
     private ExecutionConsumer executionConsumer;
 
     private final TradeRecordedDTO trade = new TradeRecordedDTO(
-            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L);
+            10L, 1L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("99"), 42L,
+            UUID.fromString("22222222-2222-2222-2222-222222222222"));
 
     private final TradeFinishedDTO outcome = new TradeFinishedDTO(
-            42L, 1L, 10L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("100"), null);
+            42L, 1L, 10L, TradeSide.BUY, new BigDecimal("5"), new BigDecimal("100"), null,
+            UUID.fromString("22222222-2222-2222-2222-222222222222"), null);
 
     @BeforeEach
     void setUp() {
@@ -77,7 +81,8 @@ class ExecutionConsumerTest {
     @Test
     void rejectedTradeIsNotPublishedAsAccepted() throws Exception {
         TradeFinishedDTO rejected = new TradeFinishedDTO(
-                42L, 1L, 10L, TradeSide.BUY, new BigDecimal("5"), null, "Insufficient funds");
+                42L, 1L, 10L, TradeSide.BUY, new BigDecimal("5"), null, "Insufficient funds",
+                UUID.fromString("22222222-2222-2222-2222-222222222222"), RejectionCode.INSUFFICIENT_FUNDS);
         when(executionService.execute(trade)).thenReturn(rejected);
         when(tradeEventProducer.publishTradeFinished(rejected)).thenReturn(CompletableFuture.completedFuture(null));
 

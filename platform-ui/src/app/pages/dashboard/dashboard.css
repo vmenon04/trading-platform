@@ -5,3 +5,15 @@
 .no-account { margin: 0; padding: 10px 12px; border-radius: 9px; background: var(--green-soft); color: var(--ink); font-size: 0.75rem; }
 .no-account a { color: var(--green); font-weight: 700; }
 .primary-action { cursor: pointer; }
+.dashboard-grid { grid-template-columns: minmax(0, 1fr); }
+.allocation-content { display: grid; grid-template-columns: minmax(96px, 0.8fr) minmax(0, 1.2fr); align-items: center; gap: 16px; }
+.allocation-content .donut { margin: 20px auto 12px; }
+.page-header h1, .welcome-row h2 { font-size: var(--type-page-title); }
+.page-header span, .eyebrow, .card-heading span, .allocation-card > span, .chart-axis, .chart-value small { font-size: var(--type-caption); }
+.welcome-row p, .no-account, .allocation-card ul, .chart-empty { font-size: var(--type-body); }
+.primary-action { font-size: var(--type-control); }
+.card-heading h2, .allocation-card h2 { font-size: var(--type-card-title); }
+.chart-value { font-size: var(--type-value); }
+.donut strong { font-size: var(--type-card-title); }
+.donut small { font-size: var(--type-caption); }
+.periods button { font-size: var(--type-control); }

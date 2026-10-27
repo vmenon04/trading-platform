@@ -2,7 +2,9 @@ import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { FinancialCard } from '../../components/financial-card/financial-card';
 import { HoldingsSummary } from '../../components/holdings-summary/holdings-summary';
+import { NewsFeed } from '../../components/news-feed/news-feed';
 import { AccountService } from '../../services/account.service';
+
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const usdCompact = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', notation: 'compact', maximumFractionDigits: 1 });
@@ -24,9 +26,9 @@ interface Slice {
 }
 
 // Everything shown here comes from the backend: the client (/v1/clients/me), the account summary
-// (/v1/accounts/{id}) and the holdings with their market prices (/v1/accounts/{id}/holdings).
+// (/v1/accounts/{id}), the holdings with their market prices (/v1/accounts/{id}/holdings) and market news (/v1/news).
 @Component({
-  imports: [FinancialCard, HoldingsSummary, RouterLink],
+  imports: [FinancialCard, HoldingsSummary, NewsFeed, RouterLink],
   selector: 'app-dashboard',
   styleUrl: './dashboard.css',
   templateUrl: './dashboard.html',

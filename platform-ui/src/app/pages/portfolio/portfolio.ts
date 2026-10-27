@@ -51,7 +51,7 @@ export class Portfolio {
     });
   }
 
-  totalValue = this.format((s) => s.investmentValue + s.cashBalance);
+  totalValue = this.format((s) => s.portfolioValue);
   investments = this.format((s) => s.investmentValue);
   cashBalance = this.format((s) => s.cashBalance);
   costBasis = this.format((s) => s.costBasis);

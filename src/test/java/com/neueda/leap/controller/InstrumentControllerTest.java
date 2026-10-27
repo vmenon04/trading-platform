@@ -2,6 +2,7 @@ package com.neueda.leap.controller;
 
 import com.neueda.leap.service.InstrumentCatalog;
 import com.neueda.leap.service.InstrumentCatalog.CatalogInstrument;
+import com.neueda.leap.service.InstrumentCatalog.Page;
 import com.neueda.leap.service.InstrumentService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -17,11 +18,14 @@ import java.util.List;
 import java.util.Map;
 
 import static org.hamcrest.Matchers.hasSize;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -49,7 +53,7 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_listsTheCatalogueWithCurrentPrices() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of(APPLE, BITCOIN));
+        when(instrumentCatalog.search(null, 50, 0)).thenReturn(new Page(List.of(APPLE, BITCOIN), 2));
         when(instrumentService.getCurrentPrices(List.of("AAPL", "BTC-USD"))).thenReturn(Map.of(
                 "AAPL", new BigDecimal("189.50"), "BTC-USD", new BigDecimal("64000.00")));
 
@@ -69,7 +73,7 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_instrumentWithoutPrice_isStillListedWithNullPrice() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of(APPLE, BITCOIN));
+        when(instrumentCatalog.search(null, 50, 0)).thenReturn(new Page(List.of(APPLE, BITCOIN), 2));
         when(instrumentService.getCurrentPrices(List.of("AAPL", "BTC-USD"))).thenReturn(Map.of("AAPL", new BigDecimal("189.50")));
 
         mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
@@ -81,12 +85,37 @@ class InstrumentControllerTest {
 
     @Test
     void getInstruments_emptyCatalogue_returnsEmptyList() throws Exception {
-        when(instrumentCatalog.known()).thenReturn(List.of());
+        when(instrumentCatalog.search(null, 50, 0)).thenReturn(new Page(List.of(), 0));
         when(instrumentService.getCurrentPrices(List.of())).thenReturn(Map.of());
 
         mockMvc.perform(get("/api/v1/instruments").contextPath("/api"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void getInstruments_q_listsAPageOfMatchingInstruments() throws Exception {
+        when(instrumentCatalog.search("app", 20, 40)).thenReturn(new Page(List.of(APPLE), 61));
+        when(instrumentService.getCurrentPrices(List.of("AAPL"))).thenReturn(Map.of("AAPL", new BigDecimal("189.50")));
+
+        mockMvc.perform(get("/api/v1/instruments").param("q", "app").param("limit", "20").param("offset", "40")
+                        .contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", "61"))
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].ticker").value("AAPL"))
+                .andExpect(jsonPath("$[0].price").value(189.50));
+    }
+
+    // only the page is priced, so a large limit can't make one request price the whole catalogue
+    @Test
+    void getInstruments_limitAndOffset_areKeptInRange() throws Exception {
+        when(instrumentCatalog.search(null, InstrumentController.MAX_LIMIT, 0)).thenReturn(new Page(List.of(), 0));
+        when(instrumentService.getCurrentPrices(List.of())).thenReturn(Map.of());
+
+        mockMvc.perform(get("/api/v1/instruments").param("limit", "100000").param("offset", "-5").contextPath("/api"))
+                .andExpect(status().isOk());
+        verify(instrumentCatalog).search(null, InstrumentController.MAX_LIMIT, 0);
     }
 
     @Test
@@ -97,11 +126,12 @@ class InstrumentControllerTest {
 
         mockMvc.perform(get("/api/v1/instruments").param("search", "orcl").contextPath("/api"))
                 .andExpect(status().isOk())
+                .andExpect(header().string("X-Total-Count", "1"))
                 .andExpect(jsonPath("$", hasSize(1)))
                 .andExpect(jsonPath("$[0].instrumentId").value(22))
                 .andExpect(jsonPath("$[0].ticker").value("ORCL"))
                 .andExpect(jsonPath("$[0].price").value(130.16));
-        verify(instrumentCatalog, never()).known();
+        verify(instrumentCatalog, never()).search(any(), anyInt(), anyInt());
     }
 
     @Test

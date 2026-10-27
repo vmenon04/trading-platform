@@ -1,45 +1,80 @@
-import { Injectable, computed, inject, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { HttpClient, httpResource } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { InstrumentQuote } from '../models/account.models';
 import { AuthService } from './auth.service';
 
-// The instrument catalogue from GET /v1/instruments: every instrument the backend has in Redis, with current
-// prices. search() looks up a symbol that isn't in it yet (backend: Redis, then Fauxnance, then caches it).
+// the buy list shows this many instruments a page; the backend prices only the page shown
+export const PAGE_SIZE = 50;
+
+// A page of the instrument catalogue from GET /v1/instruments, with current prices: the instruments whose ticker or
+// name contains `query` (all of them when it's blank), PAGE_SIZE at a time. search() looks up a symbol that isn't in
+// the database yet (backend: Redis, then Fauxnance, then adds it).
 @Injectable({ providedIn: 'root' })
 export class InstrumentService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
-  private readonly catalogue = httpResource<InstrumentQuote[]>(() => (this.auth.isLoggedIn() ? '/v1/instruments' : undefined));
+  private readonly searchText = signal('');
+  private readonly start = signal(0);
 
-  // symbols found by search since the catalogue was loaded
-  private readonly found = signal<InstrumentQuote[]>([]);
+  readonly query = this.searchText.asReadonly();
+  // how many matches come before this page
+  readonly offset = this.start.asReadonly();
 
-  readonly isLoading = computed(() => this.catalogue.isLoading());
-  readonly error = computed(() => this.catalogue.error());
+  // a new query or page cancels the request for the previous one, so an older, slower answer can't replace a newer one
+  private readonly page = httpResource<InstrumentQuote[]>(() => (this.auth.isLoggedIn()
+    ? { url: '/v1/instruments', params: { q: this.searchText(), limit: PAGE_SIZE, offset: this.start() } }
+    : undefined));
 
-  // catalogue plus searched symbols, one entry per ticker, sorted by ticker
-  readonly instruments = computed(() => {
-    const byTicker = new Map((this.catalogue.value() ?? []).map((instrument) => [instrument.ticker, instrument]));
-    for (const instrument of this.found()) {
-      byTicker.set(instrument.ticker, instrument);
-    }
-    return [...byTicker.values()].sort((a, b) => a.ticker.localeCompare(b.ticker));
+  readonly instruments = computed(() => this.page.value() ?? []);
+  readonly isLoading = computed(() => this.page.isLoading());
+  readonly error = computed(() => this.page.error());
+
+  // how many instruments match the query across every page (the X-Total-Count header); the last count is kept while
+  // the next page loads, so the page controls don't disappear in between
+  private readonly count = linkedSignal<string | null | undefined, number>({
+    source: () => this.page.headers()?.get('X-Total-Count'),
+    computation: (count, previous) => (count == null ? previous?.value ?? 0 : Number(count)),
   });
+  readonly total = this.count.asReadonly();
+  readonly hasPrevious = computed(() => this.start() > 0);
+  readonly hasNext = computed(() => this.start() + PAGE_SIZE < this.total());
 
-  // GET /v1/instruments?search= -> the instrument, or null if the symbol is unknown
+  // a new search starts again from its first page
+  setQuery(query: string): void {
+    this.searchText.set(query.trim());
+    this.start.set(0);
+  }
+
+  nextPage(): void {
+    if (this.hasNext()) {
+      this.start.update((start) => start + PAGE_SIZE);
+    }
+  }
+
+  previousPage(): void {
+    this.start.update((start) => Math.max(0, start - PAGE_SIZE));
+  }
+
+  // GET /v1/instruments?search= -> the instrument, or null if the symbol is unknown. A symbol that's found is now in
+  // the database, so the page is loaded again to include it
   async search(symbol: string): Promise<InstrumentQuote | null> {
     const results = await firstValueFrom(
       this.http.get<InstrumentQuote[]>('/v1/instruments', { params: { search: symbol.trim() } }));
     const instrument = results[0] ?? null;
     if (instrument) {
-      this.found.update((found) => [...found.filter((other) => other.ticker !== instrument.ticker), instrument]);
+      this.page.reload();
     }
     return instrument;
   }
 
+  // the first page again, with fresh prices
   refresh(): void {
-    this.catalogue.reload();
+    if (this.searchText() || this.start()) {
+      this.setQuery('');
+    } else {
+      this.page.reload();
+    }
   }
 }

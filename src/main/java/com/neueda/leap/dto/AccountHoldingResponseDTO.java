@@ -10,5 +10,7 @@ public record AccountHoldingResponseDTO(
         BigDecimal quantity,
         BigDecimal price,
         // the id to sell this holding with (POST /v1/accounts/{accountId}/trades)
-        Long instrumentId
+        Long instrumentId,
+        // the InstrumentType name, e.g. STOCK
+        String assetClass
 ) {}

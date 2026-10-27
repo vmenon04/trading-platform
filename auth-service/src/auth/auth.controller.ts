@@ -10,7 +10,7 @@ export class AuthController {
 
     @Post("register")
     register(@Body() body: RegisterDto) {
-        return this.authService.register(body.username, body.password);
+        return this.authService.register(body.username, body.password, body.email);
     }
 
     @Post("login")
@@ -23,5 +23,11 @@ export class AuthController {
     @HttpCode(200)
     refresh(@Body() body: RefreshDto) {
         return this.authService.refresh(body.refreshToken);
+    }
+
+    @Post("logout")
+    @HttpCode(200)
+    logout(@Body() body: RefreshDto) {
+        return this.authService.logout(body.refreshToken);
     }
 }

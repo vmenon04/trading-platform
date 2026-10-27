@@ -6,6 +6,7 @@ import org.apache.ibatis.annotations.Select;
 import org.apache.ibatis.annotations.Update;
 import org.apache.ibatis.annotations.Delete;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 import com.neueda.leap.entity.Instrument;
 import java.util.List;
 
@@ -25,13 +26,25 @@ public interface InstrumentMapper {
     @Select("SELECT " + COLUMNS + " FROM instruments WHERE ticker = #{ticker}")
     Instrument findByTicker(String ticker);
 
-    // the id an instrument already has in our database, or null; the oldest row if a ticker appears twice
-    @Select("SELECT instrument_id FROM instruments WHERE ticker = #{ticker} ORDER BY instrument_id LIMIT 1")
-    Long findIdByTicker(String ticker);
+    // a page of the instruments whose ticker or name matches the ILIKE pattern (case-insensitive): an exact ticker
+    // match first, then by ticker
+    @Select("SELECT " + COLUMNS + " FROM instruments WHERE ticker ILIKE #{pattern} OR name ILIKE #{pattern} "
+            + "ORDER BY ticker = #{ticker} DESC, ticker LIMIT #{limit} OFFSET #{offset}")
+    List<Instrument> search(@Param("pattern") String pattern, @Param("ticker") String ticker,
+                            @Param("limit") int limit, @Param("offset") int offset);
+
+    // how many instruments search matches in all, across every page
+    @Select("SELECT count(*) FROM instruments WHERE ticker ILIKE #{pattern} OR name ILIKE #{pattern}")
+    long countMatching(String pattern);
 
     @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType})")
     @Options(useGeneratedKeys = true, keyProperty = "instrumentId", keyColumn = "instrument_id")
     void insert(Instrument instrument);
+
+    // adds the instrument unless its ticker is already there (tickers are unique); returns how many rows were added
+    @Insert("INSERT INTO instruments(ticker, name, asset_class) VALUES(#{ticker}, #{name}, #{instrumentType}) "
+            + "ON CONFLICT (ticker) DO NOTHING")
+    int insertIfAbsent(Instrument instrument);
 
     @Update("UPDATE instruments SET name = #{name}, ticker = #{ticker}, asset_class = #{instrumentType} WHERE instrument_id = #{instrumentId}")
     void update(Instrument instrument);

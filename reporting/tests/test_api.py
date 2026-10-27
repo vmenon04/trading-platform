@@ -49,6 +49,21 @@ def test_bad_token_returns_401(bad):
     assert response.status_code == 401
 
 
+def test_unsigned_token_returns_401():
+    # "alg": "none" means no signature; only HS256 tokens signed with the shared secret count
+    unsigned = jwt.encode({"sub": "1", "roles": ["ADMIN"], "exp": int(time.time()) + 60}, None, algorithm="none")
+    response = anonymous.get("/api/admin/orders", headers={"Authorization": f"Bearer {unsigned}"})
+    assert response.status_code == 401
+
+
+def test_every_api_endpoint_needs_a_token():
+    # catches a new endpoint added without dependencies=ANALYST / ADMIN / STAFF
+    for route in api.app.routes:
+        path = getattr(route, "path", "")
+        if path.startswith("/api/"):
+            assert anonymous.get(path.replace("{trade_id}", "1")).status_code == 401, path
+
+
 @pytest.mark.parametrize("roles, url", [
     (["CLIENT"], f"/api/analyst/volume?{DATES}"),
     (["CLIENT"], "/api/clients?q=a"),

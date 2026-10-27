@@ -88,6 +88,7 @@ paths:
               example:
                 accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                 investmentValue: 125430.75
+                portfolioValue: 135665.25
                 cashBalance: 10234.50
                 costBasis: 98000.25
         '400':
@@ -139,7 +140,9 @@ paths:
               example:
                 instrumentId: 44
                 ticker: "AAPL"
+                name: "Apple Inc."
                 tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                tradeTime: "2026-10-25T14:30:00Z"
                 side: "BUY"
                 quantity: 10.5
                 ppu: 151.23
@@ -193,11 +196,13 @@ paths:
                   ticker: "AAPL"
                   quantity: 25.0
                   price: 151.23
+                  instrumentId: 44
                 - accountId: "3fa85f64-5717-4562-b3fc-2c963f66afa6"
                   name: "Microsoft Corp."
                   ticker: "MSFT"
                   quantity: 10.0
-                  price: 305.40
+                  price: null
+                  instrumentId: 12
         '400':
           description: Bad request
           content:
@@ -250,7 +255,9 @@ paths:
               example:
                 - instrumentId: 44
                   ticker: "AAPL"
+                  name: "Apple Inc."
                   tradeId: "3f2b8c1e-7a4d-4e9b-9c2a-5d6e7f8a9b0c"
+                  tradeTime: "2026-10-25T14:30:00Z"
                   side: "BUY"
                   quantity: 10.5
                   ppu: 151.00
@@ -259,7 +266,9 @@ paths:
                   reason: null
                 - instrumentId: 12
                   ticker: "MSFT"
+                  name: "Microsoft Corporation"
                   tradeId: "9a1d2c3b-4e5f-4a6b-8c7d-0e1f2a3b4c5d"
+                  tradeTime: "2026-10-25T13:45:00Z"
                   side: "SELL"
                   quantity: 5.0
                   ppu: null
@@ -298,12 +307,15 @@ components:
 
     AccountSummary:
       type: object
-      required: [accountId, investmentValue, cashBalance, costBasis]
+      required: [accountId, investmentValue, portfolioValue, cashBalance, costBasis]
       properties:
         accountId:
           type: string
           format: uuid
         investmentValue:
+          type: number
+          format: double
+        portfolioValue:
           type: number
           format: double
         cashBalance:
@@ -327,6 +339,11 @@ components:
         tradeId:
           type: string
           format: uuid
+        tradeTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the latest recorded trade status
         side:
           type: string
           enum: [BUY, SELL]
@@ -351,7 +368,7 @@ components:
 
     AccountHolding:
       type: object
-      required: [accountId, name, ticker, quantity, price]
+      required: [accountId, name, ticker, quantity, instrumentId]
       properties:
         accountId:
           type: string
@@ -366,6 +383,12 @@ components:
         price:
           type: number
           format: double
+          nullable: true
+          description: Current price, the last known one if the quote is stale; null when there is none right now
+        instrumentId:
+          type: integer
+          format: int64
+          description: The id to sell this holding with (POST /accounts/{account_id}/trades)
 
     Trade:
       type: object
@@ -381,6 +404,11 @@ components:
         tradeId:
           type: string
           format: uuid
+        tradeTime:
+          type: string
+          format: date-time
+          nullable: true
+          description: Timestamp of the latest recorded trade status
         side:
           type: string
           enum: [BUY, SELL]

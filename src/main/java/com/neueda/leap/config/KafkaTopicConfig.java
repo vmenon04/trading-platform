@@ -36,4 +36,9 @@ public class KafkaTopicConfig {
     public NewTopic tradeFinishedTopic() {
         return new NewTopic(KafkaTopics.TRADE_FINISHED, PARTITIONS, (short) 1);
     }
+
+    @Bean
+    public NewTopic tradeRejectedTopic() {
+        return new NewTopic(KafkaTopics.TRADE_REJECTED, PARTITIONS, (short) 1);
+    }
 }

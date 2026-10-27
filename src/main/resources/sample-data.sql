@@ -181,7 +181,10 @@ WITH real_instruments AS (
     ('Vanguard Dividend ETF', 'VYM', 'ETF'), ('iShares Select Dividend', 'DVYD', 'ETF'), ('SPDR S&P Dividend ETF', 'SPDV', 'ETF')
   ) AS t(instrument_name, ticker_symbol, asset_class)
 )
-SELECT instrument_name, ticker_symbol, asset_class
+-- crypto is stored as Fauxnance symbols (BTC -> X:BTC-USD): on Fauxnance a bare BTC is a different, stock symbol
+SELECT instrument_name,
+       CASE WHEN asset_class = 'CRYPTO' THEN 'X:' || ticker_symbol || '-USD' ELSE ticker_symbol END,
+       asset_class
 FROM real_instruments
 LIMIT 334;
 
@@ -262,21 +265,13 @@ SELECT
     CASE WHEN random() < 0.8 THEN 'ACTIVE' ELSE 'INACTIVE' END
 FROM generate_series(0, 9999) AS i;
 
--- users: one CLIENT login per client (e.g. james.smith1), plus one ADMIN and one ANALYST.
--- password_hash is a placeholder; real hashes come from the app's sign-up flow.
+-- users: one CLIENT login per client (e.g. james.smith1). The password_hash is a placeholder; real client
+-- hashes come from the app's sign-up flow. The ADMIN and ANALYST logins are in staff_users.sql.
 INSERT INTO users (external_user_id, username, password_hash, client_id)
 SELECT gen_random_uuid(), lower(first_name || '.' || last_name) || client_id, 'placeholder-not-a-real-hash', client_id
 FROM clients;
 
-INSERT INTO users (external_user_id, username, password_hash)
-VALUES (gen_random_uuid(), 'admin', 'placeholder-not-a-real-hash'),
-       (gen_random_uuid(), 'analyst', 'placeholder-not-a-real-hash');
-
--- roles: what each login may do
+-- roles: every login here is a client
 INSERT INTO roles (user_id, role)
-SELECT user_id,
-       CASE WHEN client_id IS NOT NULL THEN 'CLIENT'
-            WHEN username = 'admin'    THEN 'ADMIN'
-            ELSE 'ANALYST'
-       END
+SELECT user_id, 'CLIENT'
 FROM users;

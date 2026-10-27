@@ -18,6 +18,13 @@ market.data.base-url=<fauxnance-base-url>
 market.data.api-key=<fauxnance-api-key>
 # how long a price stays in the Redis cache before Fauxnance is asked again
 market.data.cache-ttl=5m
+# Fauxnance calls allowed a day (the key's quota); showing prices stops at 90%, keeping the rest for trades
+market.data.daily-limit=2000
+
+# Market news (Finnhub), shown on the dashboard. Optional: without a key there is no news. Free keys allow 60 calls a
+# minute, so news is cached in Redis
+news.api-key=<finnhub-api-key>
+news.cache-ttl=10m
 
 # Redis (price cache). If it is down, prices come straight from Fauxnance, so it is left out of /actuator/health.
 spring.data.redis.host=<redis-host>

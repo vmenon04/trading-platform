@@ -26,7 +26,7 @@ export class TickerLogo {
   protected src = computed(() => {
     const ticker = this.ticker().toUpperCase();
     return this.assetClass() === 'CRYPTO'
-      ? `/logo/crypto/${encodeURIComponent(ticker.toLowerCase())}`
+      ? `/logo/crypto/${encodeURIComponent(coin(ticker))}`
       : `/logo/ticker/${encodeURIComponent(ticker)}`;
   });
 
@@ -37,4 +37,9 @@ export class TickerLogo {
       this.failed.set(false);
     });
   }
+}
+
+// crypto tickers are Fauxnance symbols (X:BTC-USD); logo.dev wants the coin (btc)
+function coin(ticker: string): string {
+  return ticker.replace(/^X:/, '').replace(/-[A-Z]+$/, '').toLowerCase();
 }

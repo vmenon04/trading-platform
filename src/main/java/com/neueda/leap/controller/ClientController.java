@@ -8,6 +8,7 @@ import com.neueda.leap.service.ClientService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -39,7 +40,8 @@ public class ClientController {
             // a user who only registered a login has no client or accounts yet
             return ResponseEntity.notFound().build();
         }
-        return getClient(externalClientId);
+        // the user's own client, so no ownership check is needed here
+        return clientResponse(externalClientId);
     }
 
     // opens a trading account (with no cash) for the logged-in user; their first one also creates their client,
@@ -52,12 +54,19 @@ public class ClientController {
         return ResponseEntity.status(HttpStatus.CREATED).body(getLoggedInClient(jwt).getBody());
     }
 
+    @PreAuthorize("@accessControlService.canAccessClientData(#externalClientId, #jwt.getSubject())")
     @GetMapping("/{clientId}")
-    public ResponseEntity<ClientResponseDTO> getClient(@PathVariable("clientId") UUID externalClientId) {
+    public ResponseEntity<ClientResponseDTO> getClient(@PathVariable("clientId") UUID externalClientId,
+                                                       @AuthenticationPrincipal Jwt jwt) {
+        return clientResponse(externalClientId);
+    }
+
+    private ResponseEntity<ClientResponseDTO> clientResponse(UUID externalClientId) {
         Client client = clientService.getClientByExternalId(externalClientId);
         if (client == null) {
             return ResponseEntity.notFound().build();
         }
+
         return ResponseEntity.ok(new ClientResponseDTO(
             externalClientId,
             client.getFirstName() + " " + client.getLastName(),

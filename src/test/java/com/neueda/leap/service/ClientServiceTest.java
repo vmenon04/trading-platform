@@ -73,4 +73,19 @@ class ClientServiceTest {
                 List.of(new AccountDTO(firstAccountId), new AccountDTO(secondAccountId)),
                 clientService.getTradingAccounts(externalClientId));
     }
+
+    @Test
+    void getExternalClientIdForUserReturnsTheLinkedClientsId() {
+        UUID externalClientId = UUID.randomUUID();
+        when(clientMapper.findExternalClientIdByUserId(7L)).thenReturn(externalClientId);
+
+        assertEquals(externalClientId, clientService.getExternalClientIdForUser(7L));
+    }
+
+    @Test
+    void getExternalClientIdForUserIsNullWhenTheUserHasNoClient() {
+        when(clientMapper.findExternalClientIdByUserId(7L)).thenReturn(null);
+
+        assertNull(clientService.getExternalClientIdForUser(7L));
+    }
 }

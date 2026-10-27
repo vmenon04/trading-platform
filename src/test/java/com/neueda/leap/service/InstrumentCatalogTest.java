@@ -6,45 +6,26 @@ import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.external.SymbolInfo;
 import com.neueda.leap.repository.InstrumentMapper;
 import com.neueda.leap.service.InstrumentCatalog.CatalogInstrument;
-import org.junit.jupiter.api.BeforeEach;
+import com.neueda.leap.service.InstrumentCatalog.Page;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
-import org.mockito.junit.jupiter.MockitoSettings;
-import org.mockito.quality.Strictness;
-import org.springframework.data.redis.RedisConnectionFailureException;
-import org.springframework.data.redis.core.HashOperations;
-import org.springframework.data.redis.core.SetOperations;
-import org.springframework.data.redis.core.StringRedisTemplate;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @ExtendWith(MockitoExtension.class)
-@MockitoSettings(strictness = Strictness.LENIENT)
 class InstrumentCatalogTest {
-
-    @Mock
-    private StringRedisTemplate redis;
-
-    @Mock
-    private HashOperations<String, Object, Object> hashes;
-
-    @Mock
-    private SetOperations<String, String> sets;
 
     @Mock
     private MarketDataClient marketDataClient;
@@ -52,106 +33,128 @@ class InstrumentCatalogTest {
     @Mock
     private InstrumentMapper instrumentMapper;
 
+    @InjectMocks
     private InstrumentCatalog catalog;
 
-    @BeforeEach
-    void setUp() {
-        when(redis.<Object, Object>opsForHash()).thenReturn(hashes);
-        when(redis.opsForSet()).thenReturn(sets);
-        catalog = new InstrumentCatalog(redis, marketDataClient, instrumentMapper);
+    private static Instrument instrument(Long id, String ticker, String name, InstrumentType type) {
+        Instrument instrument = new Instrument(name, ticker, type);
+        instrument.setInstrumentId(id);
+        return instrument;
     }
 
     @Test
-    void lookup_cachedInRedis_doesNotCallTheApiOrDatabase() {
-        when(hashes.entries("instrument:ORCL")).thenReturn(Map.of("id", "22", "name", "Oracle Corporation", "assetClass", "STOCK"));
+    void lookup_inTheDatabase_doesNotCallTheMarketDataApi() {
+        when(instrumentMapper.findByTicker("ORCL"))
+                .thenReturn(instrument(22L, "ORCL", "Oracle Corporation", InstrumentType.STOCK));
 
         assertEquals(new CatalogInstrument(22L, "ORCL", "Oracle Corporation", "STOCK"), catalog.lookup(" orcl "));
-        verifyNoInteractions(marketDataClient, instrumentMapper);
-    }
-
-    @Test
-    void lookup_newSymbol_getsADatabaseIdAndIsCachedInRedis() {
-        when(hashes.entries("instrument:ORCL")).thenReturn(Map.of());
-        when(marketDataClient.getSymbol("ORCL")).thenReturn(new SymbolInfo("ORCL", "Oracle Corporation", "equity"));
-        when(instrumentMapper.findIdByTicker("ORCL")).thenReturn(null);
-        doAnswer(invocation -> {
-            invocation.<Instrument>getArgument(0).setInstrumentId(400L);
-            return null;
-        }).when(instrumentMapper).insert(any(Instrument.class));
-
-        CatalogInstrument found = catalog.lookup("ORCL");
-
-        assertEquals(new CatalogInstrument(400L, "ORCL", "Oracle Corporation", "STOCK"), found);
-        ArgumentCaptor<Instrument> inserted = ArgumentCaptor.forClass(Instrument.class);
-        verify(instrumentMapper).insert(inserted.capture());
-        assertEquals("ORCL", inserted.getValue().getTicker());
-        assertEquals(InstrumentType.STOCK, inserted.getValue().getInstrumentType());
-        verify(hashes).putAll("instrument:ORCL", Map.of("id", "400", "name", "Oracle Corporation", "assetClass", "STOCK"));
-        verify(sets).add("instruments:known", "ORCL");
-    }
-
-    @Test
-    void lookup_symbolAlreadyInTheDatabase_reusesItsId() {
-        when(hashes.entries("instrument:AAPL")).thenReturn(Map.of());
-        when(marketDataClient.getSymbol("AAPL")).thenReturn(new SymbolInfo("AAPL", "Apple Inc", "equity"));
-        when(instrumentMapper.findIdByTicker("AAPL")).thenReturn(1L);
-
-        assertEquals(1L, catalog.lookup("AAPL").instrumentId());
-        verify(instrumentMapper, never()).insert(any());
-    }
-
-    @Test
-    void lookup_unknownSymbol_returnsNullAndStoresNothing() {
-        when(hashes.entries("instrument:NOPE")).thenReturn(Map.of());
-        when(marketDataClient.getSymbol("NOPE")).thenReturn(null);
-
-        assertNull(catalog.lookup("NOPE"));
-        verifyNoInteractions(instrumentMapper);
-        verify(sets, never()).add(anyString(), any(String[].class));
-    }
-
-    @Test
-    void lookup_apiFailure_returnsNull() {
-        when(hashes.entries("instrument:ORCL")).thenReturn(Map.of());
-        when(marketDataClient.getSymbol("ORCL")).thenThrow(new IllegalStateException("Fauxnance returned 429"));
-
-        assertNull(catalog.lookup("ORCL"));
-    }
-
-    @Test
-    void lookup_blankSymbol_returnsNull() {
-        assertNull(catalog.lookup("  "));
         verifyNoInteractions(marketDataClient);
     }
 
     @Test
-    void lookup_redisDown_stillFindsTheSymbol() {
-        when(hashes.entries("instrument:ORCL")).thenThrow(new RedisConnectionFailureException("Redis down"));
+    void lookup_newSymbol_isAddedToTheDatabase() {
+        when(instrumentMapper.findByTicker("ORCL"))
+                .thenReturn(null)
+                .thenReturn(instrument(400L, "ORCL", "Oracle Corporation", InstrumentType.STOCK));
         when(marketDataClient.getSymbol("ORCL")).thenReturn(new SymbolInfo("ORCL", "Oracle Corporation", "equity"));
-        when(instrumentMapper.findIdByTicker("ORCL")).thenReturn(22L);
-        when(sets.add(anyString(), anyString())).thenThrow(new RedisConnectionFailureException("Redis down"));
-        doAnswer(invocation -> {
-            throw new RedisConnectionFailureException("Redis down");
-        }).when(hashes).putAll(anyString(), any());
+        when(instrumentMapper.insertIfAbsent(any(Instrument.class))).thenReturn(1);
+
+        assertEquals(new CatalogInstrument(400L, "ORCL", "Oracle Corporation", "STOCK"), catalog.lookup("ORCL"));
+
+        ArgumentCaptor<Instrument> inserted = ArgumentCaptor.forClass(Instrument.class);
+        verify(instrumentMapper).insertIfAbsent(inserted.capture());
+        assertEquals("ORCL", inserted.getValue().getTicker());
+        assertEquals("Oracle Corporation", inserted.getValue().getName());
+        assertEquals(InstrumentType.STOCK, inserted.getValue().getInstrumentType());
+    }
+
+    // two lookups of a new symbol at once: the second insert does nothing (UNIQUE ticker), and both get the one row
+    @Test
+    void lookup_addedByAnotherRequestMeanwhile_usesTheExistingRow() {
+        when(instrumentMapper.findByTicker("ORCL"))
+                .thenReturn(null)
+                .thenReturn(instrument(22L, "ORCL", "Oracle Corporation", InstrumentType.STOCK));
+        when(marketDataClient.getSymbol("ORCL")).thenReturn(new SymbolInfo("ORCL", "Oracle Corporation", "equity"));
+        when(instrumentMapper.insertIfAbsent(any(Instrument.class))).thenReturn(0);
 
         assertEquals(22L, catalog.lookup("ORCL").instrumentId());
     }
 
     @Test
-    void known_returnsEveryCachedInstrumentSortedByTicker() {
-        when(sets.members("instruments:known")).thenReturn(Set.of("ORCL", "AAPL"));
-        when(hashes.entries("instrument:AAPL")).thenReturn(Map.of("id", "1", "name", "Apple Inc", "assetClass", "STOCK"));
-        when(hashes.entries("instrument:ORCL")).thenReturn(Map.of("id", "22", "name", "Oracle Corporation", "assetClass", "STOCK"));
+    void lookup_noNameFromTheApi_usesTheTicker() {
+        when(instrumentMapper.findByTicker("X:BTC-USD"))
+                .thenReturn(null)
+                .thenReturn(instrument(5L, "X:BTC-USD", "X:BTC-USD", InstrumentType.CRYPTO));
+        when(marketDataClient.getSymbol("X:BTC-USD")).thenReturn(new SymbolInfo("X:BTC-USD", " ", "crypto"));
 
-        assertEquals(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK"),
-                new CatalogInstrument(22L, "ORCL", "Oracle Corporation", "STOCK")), catalog.known());
+        catalog.lookup("x:btc-usd");
+
+        ArgumentCaptor<Instrument> inserted = ArgumentCaptor.forClass(Instrument.class);
+        verify(instrumentMapper).insertIfAbsent(inserted.capture());
+        assertEquals("X:BTC-USD", inserted.getValue().getName());
+        assertEquals(InstrumentType.CRYPTO, inserted.getValue().getInstrumentType());
     }
 
     @Test
-    void known_redisDown_returnsEmptyList() {
-        when(sets.members("instruments:known")).thenThrow(new RedisConnectionFailureException("Redis down"));
+    void lookup_unknownSymbol_returnsNullAndAddsNothing() {
+        when(instrumentMapper.findByTicker("NOPE")).thenReturn(null);
+        when(marketDataClient.getSymbol("NOPE")).thenReturn(null);
 
-        assertEquals(List.of(), catalog.known());
+        assertNull(catalog.lookup("NOPE"));
+        verify(instrumentMapper, never()).insertIfAbsent(any());
+    }
+
+    // e.g. still being fetched, quota used up or the API down: nothing to add right now
+    @Test
+    void lookup_apiFailure_returnsNull() {
+        when(instrumentMapper.findByTicker("ORCL")).thenReturn(null);
+        when(marketDataClient.getSymbol("ORCL")).thenThrow(new IllegalStateException("Fauxnance returned 429"));
+
+        assertNull(catalog.lookup("ORCL"));
+        verify(instrumentMapper, never()).insertIfAbsent(any());
+    }
+
+    @Test
+    void lookup_blankSymbol_returnsNull() {
+        assertNull(catalog.lookup("  "));
+        verifyNoInteractions(marketDataClient, instrumentMapper);
+    }
+
+    @Test
+    void search_findsTickersAndNamesContainingTheQuery() {
+        when(instrumentMapper.search("%apple%", "APPLE", 50, 0)).thenReturn(List.of(
+                instrument(1L, "AAPL", "Apple Inc", InstrumentType.STOCK)));
+        when(instrumentMapper.countMatching("%apple%")).thenReturn(1L);
+
+        assertEquals(new Page(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK")), 1),
+                catalog.search(" apple ", 50, 0));
+        verifyNoInteractions(marketDataClient);
+    }
+
+    @Test
+    void search_countsTheMatchesOnEveryPage() {
+        when(instrumentMapper.search("%%", "", 50, 300)).thenReturn(List.of(
+                instrument(334L, "ZTS", "Zoetis Inc", InstrumentType.STOCK)));
+        when(instrumentMapper.countMatching("%%")).thenReturn(334L);
+
+        assertEquals(334, catalog.search("", 50, 300).total());
+    }
+
+    @Test
+    void search_blankQuery_matchesEveryInstrument() {
+        when(instrumentMapper.search("%%", "", 50, 100)).thenReturn(List.of());
+
+        assertEquals(new Page(List.of(), 0), catalog.search(null, 50, 100));
+        verify(instrumentMapper).search("%%", "", 50, 100);
+    }
+
+    @Test
+    void search_wildcardCharacters_areMatchedLiterally() {
+        when(instrumentMapper.search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0)).thenReturn(List.of());
+
+        catalog.search("50%_x\\", 50, 0);
+
+        verify(instrumentMapper).search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0);
     }
 
     @Test

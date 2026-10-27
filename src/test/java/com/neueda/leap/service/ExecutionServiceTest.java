@@ -2,9 +2,14 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
+import com.neueda.leap.exception.InsufficientFundsException;
+import com.neueda.leap.exception.InsufficientHoldingsException;
+import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
 import java.util.NoSuchElementException;
+import java.util.UUID;
 
+import com.neueda.leap.enums.RejectionCode;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountTradePriceMapper;
@@ -31,6 +36,7 @@ class ExecutionServiceTest {
     private static final Long INSTRUMENT_ID = 10L;
     private static final Long TRADE_ID = 42L;
     private static final BigDecimal PRICE = new BigDecimal("100");
+    private static final UUID EXTERNAL_TRADE_ID = UUID.fromString("22222222-2222-2222-2222-222222222222");
 
     @Mock
     private AccountService accountService;
@@ -65,7 +71,7 @@ class ExecutionServiceTest {
 
     private static TradeRecordedDTO recorded(TradeSide side, String quantity) {
         return new TradeRecordedDTO(INSTRUMENT_ID, ACCOUNT_ID, side, new BigDecimal(quantity),
-                new BigDecimal("99"), TRADE_ID);
+                new BigDecimal("99"), TRADE_ID, EXTERNAL_TRADE_ID);
     }
 
     @Test
@@ -90,8 +96,10 @@ class ExecutionServiceTest {
         assertEquals(INSTRUMENT_ID, outcome.instrumentId());
         assertEquals(TradeSide.BUY, outcome.side());
         assertEquals(0, outcome.quantity().compareTo(new BigDecimal("5")));
+        assertEquals(EXTERNAL_TRADE_ID, outcome.externalTradeId());
         assertEquals(0, outcome.price().compareTo(PRICE));
         assertNull(outcome.reason());
+        assertNull(outcome.rejectionCode());
     }
 
     @Test
@@ -115,7 +123,7 @@ class ExecutionServiceTest {
     @Test
     void recordedBuyIsRejectedWhenFundsAreInsufficient() {
         when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(PRICE);
-        doThrow(new IllegalStateException("Insufficient funds"))
+        doThrow(new InsufficientFundsException("Insufficient funds"))
                 .when(accountService).purchase(eq(ACCOUNT_ID), any());
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.BUY, "5"));
@@ -129,12 +137,14 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("Insufficient funds", outcome.reason());
+        assertEquals(RejectionCode.INSUFFICIENT_FUNDS, outcome.rejectionCode());
+        assertEquals(EXTERNAL_TRADE_ID, outcome.externalTradeId());
     }
 
     @Test
     void recordedSellIsRejectedWhenHoldingsAreInsufficient() {
         when(instrumentService.getCurrentPrice(INSTRUMENT_ID)).thenReturn(PRICE);
-        doThrow(new IllegalStateException("Insufficient quantity"))
+        doThrow(new InsufficientHoldingsException("Insufficient quantity"))
                 .when(accountHoldingService).removeQuantity(eq(ACCOUNT_ID), eq(INSTRUMENT_ID), any());
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.SELL, "5"));
@@ -145,12 +155,13 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("Insufficient quantity", outcome.reason());
+        assertEquals(RejectionCode.INSUFFICIENT_SHARES, outcome.rejectionCode());
     }
 
     @Test
     void recordedTradeIsRejectedWhenNoPriceIsAvailable() {
         when(instrumentService.getCurrentPrice(INSTRUMENT_ID))
-                .thenThrow(new IllegalStateException("No price available for X:BTC-USD"));
+                .thenThrow(new PriceUnavailableException("No price available for X:BTC-USD"));
 
         TradeFinishedDTO outcome = executionService.execute(recorded(TradeSide.BUY, "5"));
 
@@ -158,6 +169,7 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("No price available for X:BTC-USD", outcome.reason());
+        assertEquals(RejectionCode.PRICE_UNAVAILABLE, outcome.rejectionCode());
     }
 
     @Test
@@ -171,6 +183,7 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("No instrument with id 10", outcome.reason());
+        assertEquals(RejectionCode.INVALID_ORDER, outcome.rejectionCode());
     }
 
     @Test
@@ -184,6 +197,7 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("Fauxnance unavailable", outcome.reason());
+        assertEquals(RejectionCode.PRICE_UNAVAILABLE, outcome.rejectionCode());
     }
 
     @Test
@@ -214,6 +228,7 @@ class ExecutionServiceTest {
         verify(accountTradePriceMapper, never()).insertTradePrice(any(), any(), any());
         assertEquals(TRADE_ID, outcome.tradeId());
         assertEquals(0, outcome.price().compareTo(PRICE));
+        assertNull(outcome.rejectionCode());
     }
 
     @Test
@@ -227,6 +242,9 @@ class ExecutionServiceTest {
         verifyNoInteractions(instrumentService, accountService, accountHoldingService, transactionManager);
         verify(accountTradeStatusMapper, never()).insertTradeStatus(any(), any());
         assertNull(outcome.price());
+        // the first rejection's reason isn't stored
+        assertEquals(RejectionCode.UNKNOWN, outcome.rejectionCode());
+        assertEquals(EXTERNAL_TRADE_ID, outcome.externalTradeId());
     }
 
     @Test
@@ -240,5 +258,6 @@ class ExecutionServiceTest {
         verify(accountTradeStatusMapper).insertTradeStatus(TRADE_ID, TradeStatus.REJECTED);
         assertNull(outcome.price());
         assertEquals("Side must be BUY or SELL, got null", outcome.reason());
+        assertEquals(RejectionCode.INVALID_ORDER, outcome.rejectionCode());
     }
 }

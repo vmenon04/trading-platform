@@ -49,8 +49,7 @@ public class ClientService {
      * @return the client's external id, or {@code null} when the user has no client (e.g. only registered a login)
      */
     public UUID getExternalClientIdForUser(Long userId) {
-        String externalClientId = clientMapper.findExternalClientIdByUserId(userId);
-        return externalClientId == null ? null : UUID.fromString(externalClientId);
+        return clientMapper.findExternalClientIdByUserId(userId);
     }
 
     public List<AccountDTO> getTradingAccounts(UUID externalClientId) {

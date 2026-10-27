@@ -1,5 +1,7 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientHoldingsException;
+import com.neueda.leap.exception.InsufficientFundsException;
 import java.math.BigDecimal;
 import java.util.UUID;
 
@@ -61,7 +63,7 @@ public class ValidationService {
     private void checkSufficientInstrumentQuantity(Long accountId, Long instrumentId, BigDecimal quantity) {
         BigDecimal held = accountHoldingService.getQuantity(accountId, instrumentId);
         if (held.compareTo(quantity) < 0) {
-            throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
+            throw new InsufficientHoldingsException("Insufficient quantity of instrument " + instrumentId
                     + " in account " + accountId + ": holding " + held + ", order quantity " + quantity);
         }
     }
@@ -69,7 +71,7 @@ public class ValidationService {
     private void checkSufficientFunds(BigDecimal quote, BigDecimal quantity, BigDecimal balance, Long accountId) {
         BigDecimal cost = quote.multiply(quantity);
         if (balance.compareTo(cost) < 0) {
-            throw new IllegalStateException("Insufficient funds in account " + accountId
+            throw new InsufficientFundsException("Insufficient funds in account " + accountId
                     + ": balance " + balance + ", order cost " + cost);
         }
     }

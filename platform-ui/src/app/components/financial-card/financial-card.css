@@ -33,3 +33,7 @@
 .metric-card.negative .metric-change {
 	color: var(--red);
 }
+
+.metric-label { font-size: var(--type-caption); }
+.metric-card strong { font-size: var(--type-value); }
+.metric-change { font-size: var(--type-body); }

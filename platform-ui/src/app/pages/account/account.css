@@ -27,3 +27,10 @@ input { min-width: 0; flex: 1; padding: 11px 8px; border: 0; outline: 0; backgro
 .form-message { margin: 12px 18px 0; font-size: 0.68rem; line-height: 1.45; }
 .form-message.success { color: var(--green); }.form-message.error { color: var(--red); }
 @media (max-width: 720px) { .account-page { padding: 24px 18px; }.account-intro { align-items: start; flex-direction: column; }.account-grid { grid-template-columns: 1fr; } }
+.account-intro h2 { font-size: var(--type-page-title); }
+.account-intro p, .account-details dl div, .form-message { font-size: var(--type-body); }
+.card-heading h2 { font-size: var(--type-card-title); }
+.card-heading span, .account-label, form label { font-size: var(--type-caption); }
+.balance { font-size: var(--type-value); }
+.logout-button, select, .deposit-row button { font-size: var(--type-control); }
+input { font-size: var(--type-input); }

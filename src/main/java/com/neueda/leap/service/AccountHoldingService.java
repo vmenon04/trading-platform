@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.exception.InsufficientHoldingsException;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import java.math.BigDecimal;
@@ -64,7 +65,7 @@ public class AccountHoldingService {
         requirePositive(quantity);
         BigDecimal current = getQuantity(accountId, instrumentId);
         if (current.compareTo(quantity) < 0) {
-            throw new IllegalStateException("Insufficient quantity of instrument " + instrumentId
+            throw new InsufficientHoldingsException("Insufficient quantity of instrument " + instrumentId
                     + " in account " + accountId + ": holding " + current + ", requested " + quantity);
         }
         BigDecimal newQuantity = current.subtract(quantity);

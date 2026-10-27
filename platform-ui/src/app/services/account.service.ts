@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 
 // trades go through Kafka, so reload a few times after submitting until the new order has settled
 const REFRESH_DELAYS_MS = [3000, 8000, 15000];
+const VALUATION_REFRESH_MS = 10 * 60 * 1000;
 
 // upper-cases only the first letter of each word, so "mcDonald" stays "McDonald"
 function capitalizeWords(name: string): string {
@@ -46,6 +47,9 @@ export class AccountService {
     return error?.status === 404 || (this.client.hasValue() && this.client.value().tradingAccounts.length === 0);
   });
 
+  // goes up each time an order is submitted, so the trade page's live list knows to look for it
+  readonly submissions = signal(0);
+
   // null = all orders
   readonly orderSide = signal<TradeSide | null>(null);
 
@@ -69,6 +73,13 @@ export class AccountService {
     return { url: `/v1/accounts/${accountId}/orders`, params };
   });
 
+  constructor() {
+    setInterval(() => {
+      this.summary.reload();
+      this.holdings.reload();
+    }, VALUATION_REFRESH_MS);
+  }
+
   // POST /v1/accounts/{accountId}/trades -> 202 Accepted with an empty body.
   // Resolves once the order is accepted; rejects with the HttpErrorResponse otherwise.
   async submitTrade(instrumentId: number, side: TradeSide, quantity: number): Promise<void> {
@@ -78,6 +89,7 @@ export class AccountService {
     }
     const body: TradeRequest = { accountId, instrumentId, side, quantity };
     await firstValueFrom(this.http.post(`/v1/accounts/${accountId}/trades`, body));
+    this.submissions.update((count) => count + 1);
     this.refreshAfterTrade();
   }
 

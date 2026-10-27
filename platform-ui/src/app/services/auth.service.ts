@@ -55,9 +55,9 @@ export class AuthService {
     return this.tokens()?.accessToken ?? null;
   }
 
-  // POST /auth/register accepts only username + password (extra fields are rejected with a 400)
-  async register(username: string, password: string): Promise<void> {
-    await firstValueFrom(this.http.post('/auth/register', { username, password }));
+  // POST /auth/register checks username and email uniqueness before creating the client login.
+  async register(username: string, password: string, email: string): Promise<void> {
+    await firstValueFrom(this.http.post('/auth/register', { username, password, email }));
   }
 
   async login(username: string, password: string): Promise<void> {
@@ -82,6 +82,12 @@ export class AuthService {
   }
 
   logout(): void {
+    const refreshToken = this.tokens()?.refreshToken;
+    if (refreshToken) {
+      void firstValueFrom(this.http.post('/auth/logout', { refreshToken })).catch(() => {
+        // ignore errors: the refresh token is invalidated on the server, so a 401 or 403 is fine
+      });
+    }
     this.setTokens(null);
     this.router.navigate(['/login']);
   }

@@ -1,15 +1,15 @@
 <section class="order-card">
 	<div class="segmented"><button type="button" [class.selected]="mode === 'buy'" (click)="setMode('buy')">↓ Buy</button><button type="button" [class.selected]="mode === 'sell'" (click)="setMode('sell')">↑ Sell</button></div>
 	<label class="eyebrow" for="investment">{{ mode === 'buy' ? 'Search an investment' : 'Your investments' }}</label>
-	<input id="investment" class="search" [(ngModel)]="search" (ngModelChange)="onSearchChange($event)" [placeholder]="mode === 'buy' ? '⌕  Search by name, or type a ticker like ORCL' : '⌕  Search your investments'">
+	<input id="investment" class="search" [(ngModel)]="search" (ngModelChange)="onSearchChange($event)" [placeholder]="mode === 'buy' ? '⌕  Search by ticker' : '⌕  Search your investments'">
 	<div class="instrument-list">
 		@if (listLoading) {
-			<p class="empty-state">Loading {{ mode === 'buy' ? 'instruments and prices' : 'your holdings' }}…</p>
+			<div class="instrument-loading" role="status"><span class="loading-spinner" aria-hidden="true"></span><span>Loading {{ mode === 'buy' ? 'instruments and prices' : 'your holdings' }}…</span></div>
 		} @else if (listFailed) {
 			<p class="empty-state">Couldn't load {{ mode === 'buy' ? 'instruments' : 'your holdings' }}. Is the backend running?</p>
 		} @else {
 			@for (instrument of visibleInstruments; track instrument.symbol) {
-				<app-instrument-summary [instrument]="instrument" (selected)="selectInstrument($event)"></app-instrument-summary>
+				<app-instrument-summary [instrument]="instrument" [active]="instrument.symbol === selectedInstrument?.symbol" (selected)="selectInstrument($event)"></app-instrument-summary>
 			} @empty {
 				@if (searching()) {
 					<p class="empty-state">Looking up {{ search.trim().toUpperCase() }}…</p>
@@ -25,23 +25,27 @@
 			}
 		}
 	</div>
+	<nav class="pager" aria-label="Instrument pages" [class.pager-hidden]="!paged" [attr.aria-hidden]="!paged">
+			<button type="button" [disabled]="!paged || !instrumentService.hasPrevious()" (click)="instrumentService.previousPage()">‹ Previous</button>
+			<span>{{ pageLabel }}</span>
+			<button type="button" [disabled]="!paged || !instrumentService.hasNext()" (click)="instrumentService.nextPage()">Next ›</button>
+	</nav>
 	@if (selectedInstrument; as instrument) {
 		<label class="eyebrow" for="quantity">Selected instrument · market price</label>
 		<app-instrument-summary [instrument]="instrument" variant="selected"></app-instrument-summary>
 		<label class="eyebrow" for="quantity">Quantity</label>
-		<div class="stepper"><button type="button" (click)="adjustQuantity(-1)">−</button><input id="quantity" type="number" min="1" [max]="instrument.shares ?? null" [(ngModel)]="quantity"><button type="button" (click)="adjustQuantity(1)">+</button></div>
+		<div class="stepper"><button type="button" (click)="adjustQuantity(-1)">−</button><input id="quantity" type="number" step="any" placeholder="0" [(ngModel)]="quantity"><button type="button" (click)="adjustQuantity(1)">+</button></div>
 		@if (overSelling) {
 			<p class="order-result error" role="alert">You only own {{ instrument.shares }} shares of {{ instrument.symbol }}.</p>
 		}
-		<div class="estimate"><span>Estimated total<small>{{ quantity }} shares at the current market price</small></span><strong>{{ total }}</strong></div>
+		<div class="estimate"><span>Estimated total<small>{{ quantity ?? 0 }} shares at the current market price</small></span><strong>{{ total }}</strong></div>
 		@if (instrument.priceValue === null) {
 			<p class="selection-hint">There's no live price for {{ instrument.symbol }} right now, so the order may be rejected.</p>
 		}
-		<div class="allocation"><span>▣ Cash allocation <small>{{ investedLabel() }} · {{ cashLabel() }}</small></span><i [style.background]="'linear-gradient(90deg, var(--green) ' + invested() * 100 + '%, #dce6e1 ' + invested() * 100 + '%)'"></i></div>
-		<button type="button" class="submit-order" [disabled]="submitting() || !selectedInstrument || quantity <= 0 || overSelling" (click)="submitOrder()">{{ submitting() ? 'Submitting…' : (mode === 'buy' ? 'Buy' : 'Sell') }}</button>
+		<button type="button" class="submit-order" [disabled]="submitting() || !selectedInstrument || quantity === null || quantity <= 0 || overSelling" (click)="submitOrder()">{{ submitting() ? 'Submitting…' : (mode === 'buy' ? 'Buy' : 'Sell') }}</button>
 		@if (result(); as result) {
 			<p class="order-result" [class.error]="!result.ok" role="status">{{ result.message }}</p>
 		}
-	} @else { <p class="selection-hint">Select an instrument to see its current market price and place an order.</p> }
+	} @else { <p class="selection-hint">Select an instrument to see its current market price and place an order. Click it again to unselect it.</p> }
 	<small class="disclaimer">Orders are priced by the backend at the live market price when they execute.</small>
 </section>
