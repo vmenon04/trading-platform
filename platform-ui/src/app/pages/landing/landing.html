@@ -1,0 +1,125 @@
+<div class="landing">
+  <header class="landing-nav">
+    <a routerLink="/" class="landing-logo" aria-label="F-Trade home"><img src="assets/nav-bar-logo.png" alt="F-Trade"></a>
+    <nav aria-label="Primary">
+      <a routerLink="/login" class="nav-link">Log in</a>
+      <a routerLink="/registration" class="pill pill-dark">Create an account</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h1>F-Trade</h1>
+    <p class="lead">F-Trade is a trading platform: open an account, fund it, place buy and sell orders at live prices, and follow your portfolio and the market news in one place.</p>
+    <div class="hero-actions">
+      <a routerLink="/registration" class="pill pill-green">Create an account</a>
+      <a routerLink="/login" class="pill pill-light">Log in</a>
+    </div>
+  </section>
+
+  <div class="stage">
+    <svg viewBox="0 0 1440 640" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
+      <rect width="1440" height="640" fill="#e8efe2" />
+      <circle cx="1210" cy="150" r="78" fill="#f4e6b6" />
+      <path [attr.d]="art.FAR_PINES" fill="#cedcc8" />
+      <polygon points="1150,0 1250,0 800,640 600,640" fill="#fff" opacity="0.22" />
+      <polygon points="1290,0 1340,0 1060,640 960,640" fill="#fff" opacity="0.16" />
+      <path [attr.d]="art.MID_PINES" fill="#a9c4a8" />
+      <g fill="#557f64">
+        @for (d of art.TRUNKS; track $index) { <path [attr.d]="d" /> }
+      </g>
+      <g fill="#6a9775">
+        @for (c of art.CANOPY; track $index) { <circle [attr.cx]="c.cx" [attr.cy]="c.cy" [attr.r]="c.r" /> }
+      </g>
+      <path d="M0 520 C240 490 420 540 700 526 C980 512 1180 482 1440 500 L1440 640 L0 640 Z" fill="#3d6a50" />
+      <ellipse cx="700" cy="594" rx="330" ry="46" fill="#24493f" />
+      <ellipse cx="700" cy="594" rx="270" ry="30" fill="none" stroke="#5e8e78" stroke-width="2" opacity="0.5" />
+
+      <g>
+        <path d="M182 513 L318 513 L325 562 L342 577 L158 577 L175 562 Z" fill="#6b4b33" />
+        <ellipse cx="250" cy="513" rx="68" ry="14" fill="#c49a6c" />
+        <ellipse cx="250" cy="513" rx="44" ry="9" fill="none" stroke="#9a7350" stroke-width="2" />
+        <ellipse cx="250" cy="513" rx="20" ry="4" fill="none" stroke="#9a7350" stroke-width="2" />
+        <path d="M1052 506 L1188 506 L1195 555 L1212 570 L1028 570 L1045 555 Z" fill="#6b4b33" />
+        <ellipse cx="1120" cy="506" rx="68" ry="14" fill="#c49a6c" />
+        <ellipse cx="1120" cy="506" rx="44" ry="9" fill="none" stroke="#9a7350" stroke-width="2" />
+        <ellipse cx="1120" cy="506" rx="20" ry="4" fill="none" stroke="#9a7350" stroke-width="2" />
+        <ellipse cx="560" cy="578" rx="96" ry="20" fill="#3e9b55" stroke="#1f5c34" stroke-width="2" />
+        <path d="M560 578 L650 566 L655 578 Z" fill="#24493f" />
+        <ellipse cx="835" cy="584" rx="92" ry="19" fill="#3e9b55" stroke="#1f5c34" stroke-width="2" />
+        <path d="M835 584 L752 572 L746 584 Z" fill="#24493f" />
+      </g>
+
+      <ellipse rx="78" ry="8" fill="#0b1a12" opacity="0.28" [attr.transform]="scene().shadow" />
+
+      @if (scene().tongue; as tongue) {
+        <g>
+          <polyline [attr.points]="tongue" fill="none" stroke="#fff" stroke-width="14" stroke-linejoin="round" stroke-linecap="round" />
+          <polygon [attr.points]="scene().arrow" fill="#fff" stroke="#fff" stroke-width="8" stroke-linejoin="round" />
+          <polyline [attr.points]="tongue" fill="none" stroke="#07ab3e" stroke-width="6.5" stroke-linecap="round" />
+          <polygon [attr.points]="scene().arrow" fill="#07ab3e" />
+        </g>
+      }
+
+      <g class="frog" [attr.transform]="scene().frog" (click)="ribbit()">
+        <path [attr.d]="art.FROG" fill="#fff" stroke="#fff" stroke-width="11" stroke-linejoin="round" />
+        <path [attr.d]="art.FROG" fill="#07ab3e" />
+        <circle cx="34.5" cy="-84.5" r="18" fill="#fff" />
+        <circle [attr.cx]="scene().pupilX" cy="-88.2" r="9.8" fill="#101719" />
+        <circle [attr.cx]="scene().glintX" cy="-92.4" r="3" fill="#fff" />
+      </g>
+
+      @if (ribbiting()) {
+        <g class="ribbit" [attr.transform]="scene().head">
+          <path d="M-74 -46 H74 A14 14 0 0 1 88 -32 V-14 A14 14 0 0 1 74 0 H10 L0 14 L-10 0 H-74 A14 14 0 0 1 -88 -14 V-32 A14 14 0 0 1 -74 -46 Z" fill="#fff" stroke="#101719" stroke-width="3" stroke-linejoin="round" />
+          <text y="-16" text-anchor="middle">Ribbit-ribbit!</text>
+        </g>
+      }
+
+      @for (fly of scene().flies; track $index) {
+        <g [attr.transform]="fly.transform" [attr.opacity]="fly.opacity">
+          <g transform="translate(-1 -5)">
+            <g [attr.transform]="fly.wings">
+              <g transform="rotate(-28)">
+                <rect x="-15" y="-12" width="14" height="10" rx="2.5" fill="#d4f0c8" stroke="#14301f" stroke-width="1.4" />
+                <text x="-8" y="-4" text-anchor="middle" class="bill-sign">$</text>
+              </g>
+              <g transform="rotate(22)">
+                <rect x="1" y="-12" width="14" height="10" rx="2.5" fill="#d4f0c8" stroke="#14301f" stroke-width="1.4" />
+                <text x="8" y="-4" text-anchor="middle" class="bill-sign">$</text>
+              </g>
+            </g>
+          </g>
+          <ellipse cx="-1" rx="9" ry="6.5" fill="#101719" />
+          <circle cx="8.5" cy="-1.5" r="5.5" fill="#101719" />
+          <circle cx="10.5" cy="-3" r="1.7" fill="#fff" />
+        </g>
+      }
+
+      @if (scene().pop; as pop) {
+        <text class="pop" text-anchor="middle" [attr.x]="pop.x" [attr.y]="pop.y" [attr.opacity]="pop.opacity">{{ pop.text }}</text>
+      }
+
+      <path [attr.d]="art.GRASS" fill="#22402f" />
+    </svg>
+
+    <div class="tally">
+      <span>Flies caught {{ scene().caught }}</span>
+      <span class="tally-gain">
+        <svg width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><path d="M6 1 L11 10 L1 10 Z" fill="currentColor" /></svg>
+        +${{ scene().total }}
+      </span>
+    </div>
+
+    <button type="button" class="pause" (click)="togglePause()" [attr.aria-label]="paused() ? 'Play animation' : 'Pause animation'">
+      @if (paused()) {
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2 L13 8 L4 14 Z" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round" /></svg>
+      } @else {
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path d="M5 2 L5 14 M11 2 L11 14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" /></svg>
+      }
+    </button>
+  </div>
+
+  <footer class="landing-foot">
+    <p>Not a real brokerage.</p>
+  </footer>
+</div>

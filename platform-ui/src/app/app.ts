@@ -12,4 +12,10 @@ export class App {
   protected readonly title = signal('platform-ui');
 
   constructor(protected readonly router: Router) {}
+
+  // the landing, login and registration pages fill the window, without the app's navbar
+  protected fullPage(): boolean {
+    const path = this.router.url.split(/[?#]/)[0];
+    return path === '/' || path.startsWith('/login') || path.startsWith('/registration');
+  }
 }

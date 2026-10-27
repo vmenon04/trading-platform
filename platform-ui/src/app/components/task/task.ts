@@ -1,4 +1,4 @@
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, untracked } from '@angular/core';
 import { httpResource } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
 import { TickerLogo } from '../ticker-logo/ticker-logo';
@@ -45,8 +45,8 @@ export interface TaskOrder {
 const finished = (trade: LiveTrade) => trade.stage === 'FULFILLED' || trade.stage === 'REJECTED';
 
 // The account's orders as they go through the pipeline (GET /v1/accounts/{id}/trades/live), newest first, asked for
-// every second while one is still going through. Ones already fulfilled when the page opened are left out: they're
-// in Order History. Rejected ones stay, as one that failed validation is nowhere else
+// every second while one is still going through. Finished ones stay listed, fulfilled and rejected alike, for as long
+// as the tracker keeps them
 @Component({
   imports: [RouterLink, TickerLogo],
   selector: 'app-task',
@@ -61,16 +61,11 @@ export class Task {
     return accountId ? `/v1/accounts/${accountId}/trades/live` : undefined;
   });
 
-  // the trades already fulfilled in the first answer for the account
-  private hiddenFor: string | null = null;
-  private readonly hidden = signal(new Set<string>());
-
   private pollUntil = 0;
   private timer: ReturnType<typeof setTimeout> | undefined;
 
   readonly tasks = computed<TaskOrder[]>(() =>
     (this.live.value() ?? [])
-      .filter((trade) => !this.hidden().has(trade.tradeId))
       .map((trade) => ({
         key: trade.tradeId,
         ticker: trade.ticker ?? '—',
@@ -95,16 +90,11 @@ export class Task {
       }
     });
 
-    // each answer: note what was already fulfilled the first time, then ask again while anything is moving
+    // each answer: ask again while anything is moving
     effect(() => {
       const trades = this.live.value();
       if (!trades) {
         return;
-      }
-      const accountId = untracked(() => this.account.accountId());
-      if (this.hiddenFor !== accountId) {
-        this.hiddenFor = accountId;
-        this.hidden.set(new Set(trades.filter((trade) => trade.stage === 'FULFILLED').map((trade) => trade.tradeId)));
       }
       clearTimeout(this.timer);
       if (trades.some((trade) => !finished(trade)) || Date.now() < this.pollUntil) {

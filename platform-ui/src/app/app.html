@@ -1,4 +1,4 @@
-@if (router.url.startsWith('/login') || router.url.startsWith('/registration')) {
+@if (fullPage()) {
   <main class="auth-content"><router-outlet></router-outlet></main>
 } @else {
   <div class="app-shell">

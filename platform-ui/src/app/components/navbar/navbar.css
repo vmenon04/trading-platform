@@ -12,6 +12,7 @@
   min-height: 100vh;
   padding: 24px 16px;
   background: var(--color-navigation);
+  view-transition-name: navbar;
 }
 
 .navbar-brand {
@@ -37,20 +38,26 @@ app-account-selector {
 }
 
 .navbar a {
-  padding: 12px 14px;
-  border-radius: 4px;
-  color: #b9cec5;
+  padding: 11px 16px;
+  border-radius: 999px;
+  color: #d3e3d6;
   font-size: 0.95rem;
   font-weight: 600;
   text-decoration: none;
   transition: background-color 160ms ease, color 160ms ease;
 }
 
-.navbar a:hover,
-.navbar a.active {
-  background: #245443;
+.navbar a:hover {
+  background: #ffffff14;
   color: #ffffff;
 }
+
+.navbar a.active {
+  background: var(--color-green-bright);
+  color: var(--color-ink);
+}
+
+.navbar a:focus-visible, .logout-button:focus-visible, .profile-button:focus-visible { outline: 3px solid #8fd9a0; outline-offset: 2px; }
 
 .profile-button {
   display: flex;
@@ -67,11 +74,11 @@ app-account-selector {
   cursor: pointer;
 }
 
-.nav-section { padding: 0 14px 4px; color: #8be7c5; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.nav-section { padding: 0 16px 4px; color: #8fd9a0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
 .profile-button.staff { cursor: default; }
 
-.profile-avatar { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #dcebe5; color: var(--color-navigation); font-size: 0.68rem; font-weight: 700; }
-.profile-copy { display: grid; flex: 1; gap: 3px; }.profile-copy strong { font-size: 0.72rem; }.profile-copy small { color: #8eaaa0; font-size: 0.58rem; }.profile-arrow { font-size: 0.9rem; }
+.profile-avatar { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #d4f0c8; color: var(--color-ink); font-size: 0.68rem; font-weight: 700; }
+.profile-copy { display: grid; flex: 1; gap: 3px; }.profile-copy strong { font-size: 0.72rem; }.profile-copy small { color: #a9c4a8; font-size: 0.58rem; }.profile-arrow { font-size: 0.9rem; }
 
 .easter-egg {
   position: fixed;
@@ -81,8 +88,8 @@ app-account-selector {
   padding: 12px 20px;
   border-radius: 999px;
   background: var(--color-navigation);
-  box-shadow: 0 8px 24px #10231d40;
-  color: #8be7c5;
+  box-shadow: 0 8px 24px #10171940;
+  color: #8fd9a0;
   font-size: 0.85rem;
   font-weight: 600;
   white-space: nowrap;
@@ -128,11 +135,11 @@ app-account-selector {
 }
 
 .logout-button {
-  padding: 12px 14px;
+  padding: 11px 16px;
   border: 0;
-  border-radius: 4px;
+  border-radius: 999px;
   background: transparent;
-  color: #b9cec5;
+  color: #d3e3d6;
   font: inherit;
   font-size: 0.95rem;
   font-weight: 600;
@@ -141,7 +148,7 @@ app-account-selector {
 }
 
 .logout-button:hover {
-  background: #245443;
+  background: #ffffff14;
   color: #ffffff;
 }
 
@@ -155,7 +162,7 @@ app-account-selector {
 .profile-actions .profile-button { flex: 1 1 auto; min-width: 0; margin-top: 0; padding: 0 2px; border: 0; }
 .profile-actions .profile-copy { min-width: 0; }
 .profile-actions .profile-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.profile-actions .logout-button { flex: 0 0 auto; padding: 8px 6px; border: 1px solid #ffffff2b; border-radius: 6px; color: #ffffff; font-size: var(--type-caption); }
+.profile-actions .logout-button { flex: 0 0 auto; padding: 8px 12px; border: 2px solid #ffffff3b; border-radius: 999px; color: #ffffff; font-size: var(--type-caption); }
 @media (max-width: 640px) {
   .profile-actions { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
   .profile-actions .profile-button { flex: 1 1 auto; margin-top: 0; padding: 0 2px; }

@@ -24,7 +24,7 @@ export class AccountService {
   // Only for CLIENT users: analysts and admins have no client of their own
   readonly client = httpResource<ClientProfile>(() => (this.auth.isClient() ? '/v1/clients/me' : undefined));
 
-  // the user's name for display, each word capitalized ("efe test" -> "Efe Test"); the backend keeps it as typed
+  // the user's name for display, each word capitalized ("jane doe" -> "Jane Doe"); the backend keeps it as typed
   readonly clientName = computed(() => capitalizeWords(this.client.value()?.clientName ?? ''));
   readonly accounts = computed(() => this.client.value()?.tradingAccounts ?? []);
 

@@ -1,15 +1,15 @@
-.task-card { display: grid; gap: 14px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.task-card { display: grid; gap: 14px; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
 .task-heading { display: flex; align-items: center; gap: 10px; }
-.task-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 9px; background: var(--green-soft); color: var(--green); }
+.task-icon { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 50%; background: var(--green-soft); color: var(--green); }
 .eyebrow { color: var(--green); font-size: var(--type-caption); font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.task-card h2 { margin: 3px 0 0; font-size: var(--type-card-title); }
+.task-card h2 { margin: 3px 0 0; font-family: var(--font-display); font-size: var(--type-card-title); font-weight: 700; }
 
 /* scrolls sideways inside the card on a phone rather than squeezing the columns */
 .task-table { overflow-x: auto; }
 /* the same columns for the header and every row */
 .task-head, .task-row { display: grid; grid-template-columns: minmax(70px, 1.3fr) minmax(34px, 0.6fr) minmax(34px, 0.6fr) minmax(62px, 0.9fr) minmax(84px, 1.1fr); align-items: center; gap: 10px; padding: 0 4px; min-width: 330px; }
 .task-head { padding-bottom: 8px; border-bottom: 1px solid var(--line); color: var(--muted); font-size: var(--type-caption); font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
-.task-row { min-height: 46px; border-bottom: 1px solid var(--line); font-size: var(--type-body); }
+.task-row { min-height: 46px; border-bottom: 1px solid var(--line); font-size: var(--type-body); animation: row-in 260ms ease-out; }
 .task-row:last-child { border-bottom: 0; }
 
 .order { display: flex; align-items: center; gap: 8px; min-width: 0; }
@@ -19,17 +19,23 @@
 .side.sell { color: var(--red); }
 .number { font-family: var(--font-numeric); font-size: var(--type-body); }
 
-.state { display: grid; justify-items: start; gap: 3px; }
-.status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; }
+.state { position: relative; display: flex; align-items: center; }
+.status { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 99px; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; transition: background-color 300ms ease, color 300ms ease; }
 .status::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
 .status.moving::before { animation: pulse 1s ease-in-out infinite alternate; }
 .status.submitted, .status.validated { background: #f1f4f2; color: var(--muted); }
 .status.pending { background: #fff4dc; color: #a0700b; }
 .status.fulfilled { background: var(--green-soft); color: var(--green); }
 .status.rejected { background: var(--red-soft); color: var(--red); }
-.reason { color: var(--muted); font-size: var(--type-caption); }
+/* a rejected trade's reason: a tooltip to the left of the badge, on hover or keyboard focus. To the left rather than
+   above, so the table's sideways scrolling doesn't clip it on the first row */
+.status[tabindex] { cursor: help; }
+.status[tabindex]:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+.reason { position: absolute; top: 50%; right: calc(100% + 10px); z-index: 1; padding: 6px 10px; border-radius: 10px; background: var(--ink); color: #fff; font-size: var(--type-caption); font-weight: 600; white-space: nowrap; pointer-events: none; opacity: 0; transform: translate(4px, -50%); transition: opacity 140ms ease, transform 140ms ease; }
+.reason::after { content: ""; position: absolute; top: 50%; left: 100%; border: 5px solid transparent; border-left-color: var(--ink); transform: translateY(-50%); }
+.status:hover + .reason, .status:focus-visible + .reason { opacity: 1; transform: translate(0, -50%); }
 
-.task-empty { margin: 0; padding: 14px; border-radius: 8px; background: #f7faf8; color: var(--muted); font-size: var(--type-caption); text-align: center; }
+.task-empty { margin: 0; padding: 14px; border-radius: 12px; background: var(--canvas); color: var(--muted); font-size: var(--type-caption); text-align: center; }
 .task-card > a { color: var(--green); font-size: var(--type-control); font-weight: 700; text-decoration: none; }
 
 @keyframes pulse { from { opacity: 0.3; } to { opacity: 1; } }

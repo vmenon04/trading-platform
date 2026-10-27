@@ -19,7 +19,7 @@ export class Navbar {
   protected readonly auth = inject(AuthService);
   protected readonly account = inject(AccountService);
 
-  // e.g. "Efe Test" -> "ET"
+  // e.g. "Jane Doe" -> "JD"
   protected readonly initials = computed(() =>
     this.account.clientName().split(' ').filter(Boolean).map((part) => part[0].toUpperCase()).slice(0, 2).join('') || '?');
 

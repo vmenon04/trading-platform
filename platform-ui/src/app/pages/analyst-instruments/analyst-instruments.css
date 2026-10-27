@@ -1,8 +1,8 @@
 /* the shared look is in src/analytics.css */
 
 /* the opened instrument, above its tiles */
-.instrument-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 18px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
-.instrument-hero h3 { margin: 0 0 4px; font-size: 1.2rem; }
+.instrument-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
+.instrument-hero h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; }
 .instrument-hero h3 small { margin-left: 6px; padding: 3px 7px; border-radius: 6px; background: var(--green-soft); color: var(--green); font-size: 0.6rem; vertical-align: middle; }
 .instrument-hero > div > span { color: var(--muted); font-size: 0.75rem; }
 .hero-price { display: grid; gap: 4px; margin-left: auto; text-align: right; }
