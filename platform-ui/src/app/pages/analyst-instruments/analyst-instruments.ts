@@ -6,7 +6,7 @@ import { DataFreshness } from '../../analytics/data-freshness';
 import { DateRangeComponent } from '../../analytics/date-range';
 import { count, money, moneyExact } from '../../analytics/format';
 import {
-  AssetClassRow, BuySellRow, InstrumentMatch, PriceRow, TopClientRow, TopInstrumentRow, TradeRow, VolumeRow,
+  AssetClassRow, BuySellRow, InstrumentMatch, PriceRow, TopInstrumentRow, TradeRow, VolumeRow,
 } from '../../analytics/models';
 import { dateRange, latest, problem, report } from '../../analytics/report';
 import { SearchBoxComponent } from '../../analytics/search-box';
@@ -18,7 +18,7 @@ const PERIODS = [1, 3, 6, 12];
 
 /**
  * Instruments: everything that was traded (optionally one asset class), with the most traded ones listed;
- * pick one, from the list or the search box, to open its own view: price, volume, who trades it, latest trades.
+ * pick one, from the list or the search box, to open its own view: price, volume, latest trades.
  */
 @Component({
   selector: 'app-analyst-instruments',
@@ -28,7 +28,6 @@ const PERIODS = [1, 3, 6, 12];
 })
 export class AnalystInstruments {
   protected readonly periods = PERIODS;
-  protected readonly rankingHeight = charts.rankingHeight;
   protected readonly moneyExact = moneyExact;
   protected readonly count = count;
 
@@ -59,11 +58,10 @@ export class AnalystInstruments {
     () => (this.one() || this.assetClass() ? undefined : '/api/analyst/by-asset-class'), this.params);
   // the most traded instruments; with an instrument picked, just that one (its name, class and totals)
   private readonly topInstruments = report<TopInstrumentRow[]>(() => '/api/analyst/top-instruments', this.ranked);
-  private readonly topClients = report<TopClientRow[]>(() => '/api/analyst/top-clients', this.ranked);
   private readonly trades = report<TradeRow[]>(
     () => (this.one() ? '/api/analyst/trades' : undefined), () => ({ instrument_id: this.instrumentId(), limit: 20 }));
 
-  protected readonly problem = problem(this.volume, this.buySell, this.topClients, this.topInstruments);
+  protected readonly problem = problem(this.volume, this.buySell, this.topInstruments);
 
   private readonly volumeRows = latest(this.volume);
   private readonly buySellRows = latest(this.buySell);
@@ -71,7 +69,6 @@ export class AnalystInstruments {
   private readonly classRows = latest(this.byClass);
   private readonly instrumentLatest = latest(this.topInstruments);
   protected readonly instrumentRows = computed(() => this.instrumentLatest() ?? []);
-  private readonly clientRows = latest(this.topClients);
   protected readonly tradeRows = computed(() => (this.trades.hasValue() ? this.trades.value() : []));
 
   /** The opened instrument: from its own totals, or from its trades if it had none in the period. */
@@ -127,14 +124,6 @@ export class AnalystInstruments {
     const rows = this.classRows();
     return rows?.length ? charts.assetClasses(rows) : null;
   });
-  protected readonly clientChart = computed(() => {
-    const rows = this.clientRows();
-    return rows?.length ? charts.ranking(rows, {
-      label: (row) => row.client_name, value: (row) => row.notional,
-      afterLabel: (row) => ` ${count.format(row.trade_count)} trades`,
-    }) : null;
-  });
-  protected readonly clientCount = computed(() => this.clientRows()?.length ?? 0);
 
   // ---------- actions ----------
   protected pickClass(name: string | null): void {

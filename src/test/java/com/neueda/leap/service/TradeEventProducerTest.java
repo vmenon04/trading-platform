@@ -1,5 +1,6 @@
 package com.neueda.leap.service;
 
+import com.neueda.leap.dto.TradeAcceptedDTO;
 import com.neueda.leap.dto.TradeFinishedDTO;
 import com.neueda.leap.dto.TradeRecordedDTO;
 import com.neueda.leap.dto.TradeRejectedDTO;
@@ -66,6 +67,15 @@ class TradeEventProducerTest {
         when(kafkaTemplate.send(KafkaTopics.TRADE_RECORDED, "1", event)).thenReturn(sent);
 
         assertSame(sent, producer.publishTradeRecorded(event));
+    }
+
+    @Test
+    void tradeAcceptedIsKeyedByTradeId() {
+        TradeAcceptedDTO event = new TradeAcceptedDTO(
+                TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeSide.BUY, QUANTITY, PRICE);
+        when(kafkaTemplate.send(KafkaTopics.TRADE_ACCEPTED, "42", event)).thenReturn(sent);
+
+        assertSame(sent, producer.publishTradeAccepted(event));
     }
 
     @Test

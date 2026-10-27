@@ -28,6 +28,11 @@ public class KafkaTopicConfig {
     }
 
     @Bean
+    public NewTopic tradeAcceptedTopic() {
+        return new NewTopic(KafkaTopics.TRADE_ACCEPTED, PARTITIONS, (short) 1);
+    }
+
+    @Bean
     public NewTopic tradeFinishedTopic() {
         return new NewTopic(KafkaTopics.TRADE_FINISHED, PARTITIONS, (short) 1);
     }

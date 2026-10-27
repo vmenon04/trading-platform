@@ -32,11 +32,11 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
 | `validation` | same | `trade.submitted` → `trade.validated` |
 | `recording` | same | `trade.validated` → `trade.recorded` |
-| `execution` | same | `trade.recorded` → `trade.finished` |
+| `execution` | same | `trade.recorded` → `trade.accepted` (fulfilled trades only), `trade.finished` |
 | `frontend` | `trading-platform-frontend` (built from `platform-ui/Dockerfile`) | The web app (nginx); forwards `/v1`, `/auth` and `/api` to `api`, `auth-service` and `reporting-api` |
 | `reporting-api` | `trading-platform-reporting` (built from `reporting/Dockerfile`) | The analyst and admin pages' API (`api.py`); checks login tokens with `JWT_SHARED_SECRET`. Not published: reached through `frontend` at `/api` |
 | `reporting-sync` | same | `sync.py` every hour: copies the trading database into `analytics` (everything the first time) |
-| `reporting-consumer` | same | `consumer.py`: adds trades to `analytics` as they happen, from `trade.recorded` and `trade.finished` |
+| `reporting-consumer` | same | `consumer.py`: adds trades to `analytics` as they happen, from `trade.recorded`, `trade.accepted` and `trade.finished` |
 | `redis-insight` | `redis/redisinsight:3.8` | Web UI for Redis, already connected to `redis`. `tools` profile only |
 | `kafka-ui` | `ghcr.io/kafbat/kafka-ui:v1.5.0` | Web UI for Kafka topics, messages and consumer groups (read-only). `tools` profile only |
 | `adminer` | `adminer:6.1.2` | Web UI for Postgres: browse tables, run SQL. Log in with `POSTGRES_USER` / `POSTGRES_PASSWORD`. `tools` profile only |
@@ -110,11 +110,12 @@ Note that every property can also be set as an environment variable (`spring.kaf
 |---|---|---|
 | `trade.submitted` | 8 | API → `validation-service`, `trade-tracker` |
 | `trade.validated` | 8 | validation → `recording-service`, `trade-tracker` |
-| `trade.recorded` | 8 | recording → `execution-service`, `trade-tracker` |
-| `trade.finished` | 8 | execution → `trade-tracker` |
+| `trade.recorded` | 8 | recording → `execution-service`, `trade-tracker`, `analytics-service` |
+| `trade.accepted` | 8 | execution, for fulfilled trades only → `analytics-service` (`reporting/scripts/consumer.py`) |
+| `trade.finished` | 8 | execution → `trade-tracker`, `analytics-service` (`reporting/scripts/consumer.py`) |
 | `trade.rejected` | 8 | validation, for a trade that failed it (after retries) → `trade-tracker` |
 
-Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.finished` is keyed by trade ID and `trade.rejected` by external trade ID. `trade-tracker` runs in the `api` container and keeps each trade's steps in Redis for `GET /v1/accounts/{accountId}/trades/live`. The reporting consumer reads `trade.recorded` and `trade.finished` too.
+Created by `KafkaTopicConfig` at startup (`PARTITIONS = 8`, replication 1). The first three are keyed by account ID, so each account's trades stay in order; `trade.accepted` and `trade.finished` are keyed by trade ID and `trade.rejected` by external trade ID. `trade-tracker` runs in the `api` container and keeps each trade's steps in Redis for `GET /v1/accounts/{accountId}/trades/live`.
 
 ## CI (Jenkins, `Jenkinsfile`)
 
