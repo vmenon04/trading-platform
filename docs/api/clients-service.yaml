@@ -32,51 +32,30 @@ paths:
         '403':
           description: Not a client login
         '404':
-          description: The user has only registered a login and has no client or accounts yet (open one with POST)
+          description: The user has only registered a login and has no client or accounts yet (open one with POST /clients/me/accounts)
 
+  /clients/me/accounts:
     post:
-      summary: Open the logged-in user's first trading account
-      description: Creates the client from these details and an account with no cash, and links them to the user.
+      summary: Open a trading account (with no cash) for the logged-in user
+      description: >
+        The user's first account also creates their client, so it needs clientDetails. For a user who already has a
+        client, the body can be empty or {} and any clientDetails are ignored.
       requestBody:
-        required: true
+        required: false
         content:
           application/json:
             schema:
               $ref: '#/components/schemas/OpenAccountRequest'
-            example:
-              firstName: "Jane"
-              lastName: "Doe"
-              email: "jane@example.com"
-              birthDate: "1990-01-01"
-      security:
-        - bearerAuth: []
-      responses:
-        '201':
-          description: Account opened; the user's client and accounts
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Client'
-        '400':
-          description: Missing or invalid details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-        '401':
-          description: Not logged in
-        '403':
-          description: Not a client login
-        '409':
-          description: The user already has a trading account, or another client already uses the email
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse'
-
-  /clients/me/accounts:
-    post:
-      summary: Open another trading account (with no cash) for a user who already has one
+            examples:
+              firstAccount:
+                value:
+                  clientDetails:
+                    firstName: "Jane"
+                    lastName: "Doe"
+                    email: "jane@example.com"
+                    birthDate: "1990-01-01"
+              anotherAccount:
+                value: {}
       security:
         - bearerAuth: []
       responses:
@@ -86,12 +65,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Client'
+        '400':
+          description: First account without clientDetails, or invalid details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Not logged in
         '403':
           description: Not a client login
-        '404':
-          description: The user has no client yet (open the first account with POST /clients/me)
+        '409':
+          description: Another client already uses the email, or another request opened the user's first account at the same time
           content:
             application/json:
               schema:
@@ -153,6 +138,13 @@ components:
 
     OpenAccountRequest:
       type: object
+      properties:
+        clientDetails:
+          $ref: '#/components/schemas/ClientDetails'
+
+    ClientDetails:
+      type: object
+      description: Only needed for the user's first account; every field is validated when given
       required: [firstName, lastName, email, birthDate]
       properties:
         firstName:
