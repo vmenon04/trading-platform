@@ -4,75 +4,104 @@ import { firstValueFrom } from 'rxjs';
 import { InstrumentQuote } from '../models/account.models';
 import { AuthService } from './auth.service';
 
-// the buy list shows this many instruments a page; the backend prices only the page shown
-export const PAGE_SIZE = 50;
+// the buy list loads this many instruments at a time; the backend prices only the ones asked for
+export const PAGE_SIZE = 20;
 
-// A page of the instrument catalogue from GET /v1/instruments, with current prices: the instruments whose ticker or
-// name contains `query` (all of them when it's blank), PAGE_SIZE at a time. search() looks up a symbol that isn't in
-// the database yet (backend: Redis, then Fauxnance, then adds it).
+// The instrument catalogue from GET /v1/instruments, with current prices: the instruments whose ticker or name
+// contains `query` (all of them when it's blank), optionally of one asset class, PAGE_SIZE at a time. loadMore() adds
+// the next PAGE_SIZE to the list. search() looks up a symbol that isn't in the database yet (backend: Redis, then
+// Fauxnance, then adds it).
 @Injectable({ providedIn: 'root' })
 export class InstrumentService {
   private http = inject(HttpClient);
   private auth = inject(AuthService);
 
   private readonly searchText = signal('');
+  private readonly classFilter = signal<string | null>(null);
   private readonly start = signal(0);
 
   readonly query = this.searchText.asReadonly();
-  // how many matches come before this page
+  // STOCK, ETF, FOREX or CRYPTO, or null for every class
+  readonly assetClass = this.classFilter.asReadonly();
+  // where the batch being loaded starts in the matches
   readonly offset = this.start.asReadonly();
 
-  // a new query or page cancels the request for the previous one, so an older, slower answer can't replace a newer one
-  private readonly page = httpResource<InstrumentQuote[]>(() => (this.auth.isLoggedIn()
-    ? { url: '/v1/instruments', params: { q: this.searchText(), limit: PAGE_SIZE, offset: this.start() } }
-    : undefined));
+  // a new query or batch cancels the request for the previous one, so an older, slower answer can't replace a newer one
+  private readonly page = httpResource<InstrumentQuote[]>(() => {
+    if (!this.auth.isLoggedIn()) return undefined;
+    const params: Record<string, string | number> = { q: this.searchText(), limit: PAGE_SIZE, offset: this.start() };
+    const assetClass = this.classFilter();
+    if (assetClass) params['assetClass'] = assetClass;
+    return { url: '/v1/instruments', params };
+  });
 
-  readonly instruments = computed(() => this.page.value() ?? []);
+  // every batch loaded so far for the current search: the first batch replaces the list, later ones are added to it
+  // (skipping any already there); while a batch loads, the list loaded so far stays
+  readonly instruments = linkedSignal<{ batch: InstrumentQuote[] | undefined; start: number }, InstrumentQuote[]>({
+    source: () => ({ batch: this.page.value(), start: this.start() }),
+    computation: ({ batch, start }, previous) => {
+      const loaded = previous?.value ?? [];
+      if (!batch) return start === 0 ? [] : loaded;
+      if (start === 0) return batch;
+      const known = new Set(loaded.map((quote) => quote.instrumentId));
+      return [...loaded, ...batch.filter((quote) => !known.has(quote.instrumentId))];
+    },
+  });
   readonly isLoading = computed(() => this.page.isLoading());
   readonly error = computed(() => this.page.error());
 
-  // how many instruments match the query across every page (the X-Total-Count header); the last count is kept while
-  // the next page loads, so the page controls don't disappear in between
+  // how many instruments match the query across every batch (the X-Total-Count header); the last count is kept while
+  // the next batch loads
   private readonly count = linkedSignal<string | null | undefined, number>({
     source: () => this.page.headers()?.get('X-Total-Count'),
     computation: (count, previous) => (count == null ? previous?.value ?? 0 : Number(count)),
   });
   readonly total = this.count.asReadonly();
-  readonly hasPrevious = computed(() => this.start() > 0);
-  readonly hasNext = computed(() => this.start() + PAGE_SIZE < this.total());
+  readonly hasMore = computed(() => this.instruments().length < this.total());
 
-  // a new search starts again from its first page
+  // a new search starts again from the first batch
   setQuery(query: string): void {
     this.searchText.set(query.trim());
     this.start.set(0);
   }
 
-  nextPage(): void {
-    if (this.hasNext()) {
-      this.start.update((start) => start + PAGE_SIZE);
+  setAssetClass(assetClass: string | null): void {
+    this.classFilter.set(assetClass);
+    this.start.set(0);
+  }
+
+  loadMore(): void {
+    if (this.hasMore() && !this.isLoading()) {
+      this.start.set(this.instruments().length);
     }
   }
 
-  previousPage(): void {
-    this.start.update((start) => Math.max(0, start - PAGE_SIZE));
-  }
-
   // GET /v1/instruments?search= -> the instrument, or null if the symbol is unknown. A symbol that's found is now in
-  // the database, so the page is loaded again to include it
+  // the database, so the list is loaded again from the start to include it
   async search(symbol: string): Promise<InstrumentQuote | null> {
     const results = await firstValueFrom(
       this.http.get<InstrumentQuote[]>('/v1/instruments', { params: { search: symbol.trim() } }));
     const instrument = results[0] ?? null;
     if (instrument) {
-      this.page.reload();
+      this.reloadFromStart();
     }
     return instrument;
   }
 
-  // the first page again, with fresh prices
+  // the first batch of every instrument again, with fresh prices
   refresh(): void {
-    if (this.searchText() || this.start()) {
-      this.setQuery('');
+    if (this.searchText() || this.classFilter()) {
+      this.searchText.set('');
+      this.classFilter.set(null);
+      this.start.set(0);
+    } else {
+      this.reloadFromStart();
+    }
+  }
+
+  private reloadFromStart(): void {
+    if (this.start() > 0) {
+      this.start.set(0);
     } else {
       this.page.reload();
     }

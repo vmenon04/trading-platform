@@ -4,7 +4,8 @@ import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
 import { InstrumentQuote } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
-import { InstrumentService, PAGE_SIZE } from '../../services/instrument.service';
+import { InstrumentService } from '../../services/instrument.service';
+import { formatPrice, unitName } from '../../models/instrument-format';
 
 const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
 const percent = new Intl.NumberFormat('en-US', { style: 'percent', maximumFractionDigits: 1 });
@@ -16,6 +17,15 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
   STOCK: 'Stock', ETF: 'ETF', FOREX: 'Forex', CRYPTO: 'Crypto',
 };
 
+// the tabs above the buy list; null shows every class
+const CLASS_TABS: { value: string | null; label: string }[] = [
+  { value: null, label: 'All' },
+  { value: 'STOCK', label: 'Stocks' },
+  { value: 'ETF', label: 'ETFs' },
+  { value: 'FOREX', label: 'Forex' },
+  { value: 'CRYPTO', label: 'Crypto' },
+];
+
 @Component({
   imports: [FormsModule, InstrumentSummary],
   selector: 'app-order-submitter',
@@ -25,6 +35,8 @@ const ASSET_CLASS_LABELS: Record<string, string> = {
 export class OrderSubmitter {
   protected account = inject(AccountService);
   protected instrumentService = inject(InstrumentService);
+
+  protected readonly classTabs = CLASS_TABS;
 
   mode: 'buy' | 'sell' = 'buy';
   search = '';
@@ -36,7 +48,7 @@ export class OrderSubmitter {
   submitting = signal(false);
   result = signal<{ ok: boolean; message: string } | null>(null);
 
-  // buy: a page of the instrument catalogue (GET /v1/instruments), searched by the backend
+  // buy: the instruments loaded so far from the catalogue (GET /v1/instruments), searched by the backend
   private instruments = computed<Instrument[]>(() =>
     this.instrumentService.instruments().map((quote) => this.toInstrument(quote)));
 
@@ -47,7 +59,7 @@ export class OrderSubmitter {
       symbol: holding.ticker,
       name: holding.name,
       exchange: holding.assetClass ? ASSET_CLASS_LABELS[holding.assetClass] ?? holding.assetClass : '',
-      price: holding.price === null ? '—' : usd.format(holding.price),
+      price: formatPrice(holding.price, holding.assetClass),
       change: '',
       shares: holding.quantity,
       priceValue: holding.price,
@@ -64,20 +76,16 @@ export class OrderSubmitter {
       : this.holdings();
   }
 
-  // "51–100 of 334" under the buy list
-  get pageLabel(): string {
-    const start = this.instrumentService.offset();
-    const total = this.instrumentService.total();
-    return `${start + 1}–${Math.min(start + PAGE_SIZE, total)} of ${total}`;
+  // "Showing 20 of 334" above the Load more button
+  get showingLabel(): string {
+    return `Showing ${this.instruments().length} of ${this.instrumentService.total()}`;
   }
 
-  // only when the matches don't fit on one page
-  get paged(): boolean {
-    return this.mode === 'buy' && this.instrumentService.total() > PAGE_SIZE;
-  }
-
+  // a later batch loading keeps the list on screen; only the first one shows the loading message
   get listLoading(): boolean {
-    return this.mode === 'sell' ? this.account.holdings.isLoading() : this.instrumentService.isLoading();
+    return this.mode === 'sell'
+      ? this.account.holdings.isLoading()
+      : this.instrumentService.isLoading() && this.instrumentService.offset() === 0;
   }
 
   get listFailed(): boolean {
@@ -95,7 +103,9 @@ export class OrderSubmitter {
     effect(() => {
       const symbol = this.instrumentService.query().toUpperCase();
       // an exact ticker match comes first, so only the first page can tell that the symbol isn't listed
+      // within one asset class a new symbol wouldn't show anyway, so nothing is looked up there
       if (this.instrumentService.isLoading() || this.instrumentService.offset() > 0 || !SYMBOL.test(symbol)
+          || this.instrumentService.assetClass() !== null
           || this.instrumentService.instruments().some((quote) => quote.ticker === symbol)) {
         return;
       }
@@ -139,6 +149,16 @@ export class OrderSubmitter {
     const summary = this.account.summary.value();
     return summary ? `${usd.format(summary.cashBalance)} cash available` : '';
   });
+
+  pickClass(assetClass: string | null): void {
+    this.searchMiss.set('');
+    this.instrumentService.setAssetClass(assetClass);
+  }
+
+  // "share" or "unit" for the selected instrument, plural for any amount but 1
+  unitOf(amount: number | null): string {
+    return unitName(amount ?? 0, this.selectedInstrument?.assetClass ?? null);
+  }
 
   setMode(mode: 'buy' | 'sell'): void {
     this.mode = mode;
@@ -199,7 +219,7 @@ export class OrderSubmitter {
       symbol: quote.ticker,
       name: quote.name,
       exchange: quote.assetClass ? ASSET_CLASS_LABELS[quote.assetClass] ?? quote.assetClass : '',
-      price: quote.price === null ? '—' : usd.format(quote.price),
+      price: formatPrice(quote.price, quote.assetClass),
       change: '',
       priceValue: quote.price,
       assetClass: quote.assetClass,

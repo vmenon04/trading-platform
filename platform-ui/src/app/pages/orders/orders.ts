@@ -2,9 +2,8 @@ import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { OrderItem, OrderItemData } from '../../components/order-item/order-item';
 import { Trade } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
+import { assetClassOf, formatHolding, formatPrice } from '../../models/instrument-format';
 
-const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
-const shares = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const timestamp = new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' });
 
 function csvCell(value: string | number | null): string {
@@ -56,8 +55,8 @@ export class Orders {
       reference: trade.tradeId ? trade.tradeId.slice(0, 8) : '—',
       timestamp: this.formatTimestamp(trade.tradeTime),
       side: trade.side === 'BUY' ? 'Buy' : 'Sell',
-      quantity: `${shares.format(trade.quantity)} shares`,
-      price: trade.ppu === null ? '—' : usd.format(trade.ppu),
+      quantity: formatHolding(trade.quantity, assetClassOf(trade.ticker)),
+      price: formatPrice(trade.ppu, assetClassOf(trade.ticker)),
       status: trade.status,
     })),
   );

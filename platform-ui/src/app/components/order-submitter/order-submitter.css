@@ -19,13 +19,17 @@
 .submit-order:disabled { border-color: #a8b2ad; background: #dfe5dc; box-shadow: none; color: #7b8a80; opacity: 1; cursor: not-allowed; }
 .order-result { margin: 0; padding: 12px 14px; border-radius: 12px; animation: drop-in 200ms ease-out; background: var(--green-soft); color: var(--green); font-size: 0.68rem; }
 .order-result.error { background: var(--red-soft); color: var(--red); }
-.pager { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--muted); font-size: 0.62rem; }
-.pager button { min-height: 30px; padding: 0 12px; border: 2px solid var(--ink); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; }
-.pager button:disabled { border-color: #c7d4c2; color: #a8b2ad; cursor: not-allowed; }
-.pager { min-height: 28px; }
-.pager-hidden { visibility: hidden; }
+/* the investment types above the buy list; scrolls sideways on narrow screens rather than wrapping */
+.class-tabs { display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none; }
+.class-tabs button { flex: 0 0 auto; min-height: 30px; padding: 0 14px; border: 2px solid #c7d4c2; border-radius: 999px; background: var(--surface); color: var(--muted); cursor: pointer; }
+.class-tabs button:hover { border-color: var(--ink); color: var(--ink); }
+.class-tabs button.selected { border-color: var(--ink); background: var(--green-bright); color: var(--ink); font-weight: 700; }
+.load-more { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 30px; color: var(--muted); }
+.load-more button { min-height: 30px; padding: 0 14px; border: 2px solid var(--ink); border-radius: 999px; background: var(--surface); color: var(--ink); cursor: pointer; }
+.load-more button:hover:not(:disabled) { background: var(--green-soft); }
+.load-more button:disabled { border-color: #c7d4c2; color: #a8b2ad; cursor: wait; }
 .empty-state, .selection-hint, .order-result { font-size: var(--type-body); }
 .eyebrow, .asset-picker small, .estimate small, .disclaimer { font-size: var(--type-caption); }
-.allocation span, .pager { font-size: var(--type-caption); }
+.allocation span, .load-more { font-size: var(--type-caption); }
 .estimate strong { font-size: var(--type-value); }
-.submit-order, .segmented button, .stepper button, .pager button { font-size: var(--type-control); }
+.submit-order, .segmented button, .stepper button, .class-tabs button, .load-more button { font-size: var(--type-control); }

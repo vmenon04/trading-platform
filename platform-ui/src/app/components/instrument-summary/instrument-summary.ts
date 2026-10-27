@@ -1,5 +1,6 @@
-import { Component, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 import { TickerLogo } from '../ticker-logo/ticker-logo';
+import { formatHolding } from '../../models/instrument-format';
 
 export interface Instrument {
   // database id, needed to submit a trade
@@ -28,6 +29,12 @@ export class InstrumentSummary {
   // an option that is the instrument picked for the order; clicking it again unpicks it
   active = input(false);
   selected = output<Instrument>();
+
+  // "3 shares owned" or "0.5 units owned", for a holding
+  protected readonly owned = computed(() => {
+    const shares = this.instrument().shares;
+    return shares === undefined ? null : `${formatHolding(shares, this.instrument().assetClass ?? null)} owned`;
+  });
 
   choose(): void {
     this.selected.emit(this.instrument());

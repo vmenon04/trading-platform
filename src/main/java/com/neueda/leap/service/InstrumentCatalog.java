@@ -78,17 +78,19 @@ public class InstrumentCatalog {
      * exact ticker match first, then by ticker. Only the database is searched; {@link #lookup} adds new symbols.
      *
      * @param query text to look for; blank matches every instrument
+     * @param assetClass only instruments of this class, or null for every class
      * @param limit the most instruments to return
      * @param offset how many matches to skip
      * @return the page of matching instruments, with the number of matches across every page
      */
-    public Page search(String query, int limit, int offset) {
+    public Page search(String query, InstrumentType assetClass, int limit, int offset) {
         String text = query == null ? "" : query.trim();
         // a typed % or _ is matched as itself, not as a wildcard (backslash is ILIKE's escape character)
         String pattern = "%" + text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%";
-        List<CatalogInstrument> instruments = instrumentMapper.search(pattern, text.toUpperCase(Locale.ROOT), limit,
-                offset).stream().map(InstrumentCatalog::toCatalogInstrument).toList();
-        return new Page(instruments, instrumentMapper.countMatching(pattern));
+        String type = assetClass == null ? null : assetClass.name();
+        List<CatalogInstrument> instruments = instrumentMapper.search(pattern, type, text.toUpperCase(Locale.ROOT),
+                limit, offset).stream().map(InstrumentCatalog::toCatalogInstrument).toList();
+        return new Page(instruments, instrumentMapper.countMatching(pattern, type));
     }
 
     // Fauxnance types to the asset classes the instruments table allows
