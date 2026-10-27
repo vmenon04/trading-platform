@@ -8,7 +8,7 @@
 		@if (account.orders.isLoading()) {
 			<p class="empty-orders">Loading orders…</p>
 		} @else if (account.orders.error()) {
-			<p class="empty-orders">Couldn't load your orders. Is the backend running?</p>
+			<p class="empty-orders">We couldn't load your orders right now. Please try again shortly.</p>
 		} @else {
 			@for (order of visibleOrders(); track $index) { <app-order-item [order]="order"></app-order-item> } @empty { <p class="empty-orders">No orders match this filter.</p> }
 		}

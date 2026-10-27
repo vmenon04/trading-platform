@@ -23,7 +23,7 @@ const STAGE_LABELS: Record<TradeStage, string> = {
 const REASONS: Record<RejectionCode, string> = {
   INSUFFICIENT_FUNDS: 'Not enough cash',
   INSUFFICIENT_SHARES: 'Not enough shares',
-  PRICE_UNAVAILABLE: 'No price right now',
+  PRICE_UNAVAILABLE: 'Price unavailable',
   INVALID_ORDER: 'Invalid order',
   UNKNOWN: "Couldn't be processed",
 };

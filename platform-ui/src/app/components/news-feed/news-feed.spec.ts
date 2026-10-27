@@ -42,7 +42,7 @@ describe('NewsFeed', () => {
     expect(text).toContain('Stocks rise');
     expect(text).toContain('Reuters');
     expect(text).toContain('5m ago');
-    expect(fixture.nativeElement.querySelector('a').getAttribute('href')).toBe('https://example.com/7');
+    expect(fixture.nativeElement.querySelector('.news-list a').getAttribute('href')).toBe('https://example.com/7');
   });
 
   it('asks for one company when given a symbol', async () => {

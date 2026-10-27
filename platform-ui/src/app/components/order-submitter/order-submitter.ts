@@ -2,7 +2,7 @@ import { Component, DestroyRef, computed, effect, inject, output, signal, untrac
 import { HttpErrorResponse } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { Instrument, InstrumentSummary } from '../instrument-summary/instrument-summary';
-import { ErrorResponse, InstrumentQuote } from '../../models/account.models';
+import { InstrumentQuote } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
 import { InstrumentService, PAGE_SIZE } from '../../services/instrument.service';
 
@@ -210,14 +210,17 @@ export class OrderSubmitter {
     if (!(error instanceof HttpErrorResponse)) {
       return 'Something went wrong submitting the order.';
     }
+    // the response's own message is written for developers (ids, field names), so it isn't shown
     if (error.status === 0) {
-      return "Couldn't reach the server. Is the backend running?";
+      return "We couldn't connect. Check your internet connection and try again.";
     }
-    const body = error.error as Partial<ErrorResponse> | null;
-    if (error.status === 400 && body?.fieldErrors?.length) {
-      return body.fieldErrors.map((fieldError) => `${fieldError.field}: ${fieldError.message}`).join('; ');
+    if (error.status === 400) {
+      return 'Please check your order and try again.';
     }
-    return body?.message ?? `Order failed (HTTP ${error.status}).`;
+    if (error.status === 403) {
+      return "You can't place orders on this account.";
+    }
+    return "Your order couldn't be placed. Please try again.";
   }
 
   adjustQuantity(amount: number): void {

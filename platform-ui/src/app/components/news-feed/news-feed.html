@@ -1,6 +1,6 @@
 <section class="news-card">
 	<header class="news-heading">
-		<div><h2>{{ symbol() ? symbol() + ' news' : 'Market news' }}</h2><span>Latest headlines from Finnhub</span></div>
+		<div><h2>{{ symbol() ? symbol() + ' news' : 'Market news' }}</h2><span>News by <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer">Finnhub</a></span></div>
 		<span class="live">● Live</span>
 	</header>
 	@if (failed()) {

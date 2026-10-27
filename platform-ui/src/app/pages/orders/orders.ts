@@ -80,7 +80,7 @@ export class Orders {
     try {
       // Yield once so the button can render its progress state before preparing the download.
       await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
-      const headers = ['Account ID', 'Trade ID', 'Ticker + Name', 'Side', 'Quantity', 'Price', 'Status'];
+      const headers = ['Account', 'Order', 'Investment', 'Side', 'Quantity', 'Price', 'Status'];
       const rows = trades.map((trade: Trade) => [
         accountId,
         trade.tradeId,

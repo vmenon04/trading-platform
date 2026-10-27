@@ -34,8 +34,8 @@ export function problem(...resources: HttpResourceRef<unknown>[]): Signal<string
     if (!failed) return null;
     const status = (failed.error() as { status?: number }).status;
     return status === 403
-      ? "Your login doesn't have the role this page needs."
-      : 'Could not load some of the data. Is reporting/api.py running?';
+      ? "You don't have access to this page."
+      : "Some data couldn't be loaded. Please try again shortly.";
   });
 }
 

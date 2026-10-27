@@ -8,6 +8,7 @@
 .news-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 18px; border-bottom: 1px solid var(--line); }
 .news-heading h2 { margin: 0 0 5px; font-family: var(--font-display); font-size: 0.95rem; font-weight: 700; }
 .news-heading span { color: var(--muted); font-size: 0.68rem; }
+.news-heading span a { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 2px; }
 .news-heading .live { padding: 5px 9px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 0.58rem; font-weight: 700; }
 
 /* two columns of stories on wide screens, divided by hairlines */

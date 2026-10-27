@@ -56,7 +56,7 @@ export class Login {
         return 'Invalid username or password.';
       }
       if (error.status === 0 || error.status === 502 || error.status === 504) {
-        return "Couldn't reach the login service. Is auth-service running?";
+        return "We couldn't connect. Check your internet connection and try again.";
       }
     }
     return 'Login failed. Please try again.';
