@@ -10,6 +10,7 @@
 		<app-financial-card label="Cash available" [value]="cashBalance()" ></app-financial-card>
 		<app-financial-card label="Total return" [value]="totalReturn()" [tone]="totalReturnTone()"></app-financial-card>
 	</div>
+	<app-performance-chart></app-performance-chart>
 	<div class="dashboard-grid">
 		<section class="allocation-card"><h2>Allocation</h2><span>By holding</span><div class="allocation-content"><div class="donut"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="40.5" />@for (arc of donutArcs(); track arc.label) {<circle class="arc" cx="50" cy="50" r="40.5" pathLength="100" [attr.stroke]="arc.color" [style.stroke-dasharray]="arc.length + ' 100'" [style.stroke-dashoffset]="-arc.start" [style.animation-delay.ms]="$index * 70" />}</svg><strong>{{ donutTotal() }}<small>Total</small></strong></div><ul>@for (slice of allocation(); track slice.label) {<li [style.animation-delay.ms]="$index * 70"><span><i class="dot" [style.background]="slice.color"></i>{{ slice.label }}</span><b>{{ slice.share }}</b></li>} @empty {<li><span>No holdings or cash yet</span><b>0%</b></li>}</ul></div></section>
 	</div>
