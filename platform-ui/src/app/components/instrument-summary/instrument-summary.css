@@ -1,15 +1,22 @@
 .instrument-option, .selected-summary { display: flex; align-items: center; gap: 7px; width: 100%; padding: 7px; border: 2px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); text-align: left; }
-.instrument-option { aspect-ratio: 1; flex-direction: column; justify-content: center; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease, box-shadow 120ms ease, transform 120ms ease; }
+/* a card in the buy and sell lists: name and ticker at the top, the logo centred in the space below them, the price
+   at the bottom; it fills the row height the list sets, so every card in a row has its parts in the same places */
+.instrument-option { height: 100%; flex-direction: column; justify-content: flex-start; gap: 4px; padding: 10px; cursor: pointer; transition: border-color 160ms ease, background-color 160ms ease, box-shadow 120ms ease, transform 120ms ease; }
 .instrument-option:hover { border-color: var(--ink); background: var(--green-soft); transform: translateY(-2px); }
-.instrument-icon { display: grid; flex: 0 0 24px; width: 24px; height: 24px; place-items: center; border-radius: 6px; background: #e8f0ff; color: #4775ce; font-size: 0.7rem; font-weight: 700; }
-.instrument-copy { display: grid; flex: 0 1 auto; gap: 2px; text-align: center; }.instrument-copy strong, .option-price strong { font-size: 0.68rem; }.instrument-copy small, .option-price small, .market-price small { color: var(--muted); font-size: 0.5rem; }.option-price, .market-price { display: grid; gap: 2px; text-align: center; }.option-price small, .market-price small { color: var(--green); }.negative { color: var(--red) !important; }.owned { color: var(--muted); font-size: 0.5rem; }.selected-summary .market-price { margin-left: auto; text-align: right; }.selected-summary .market-price strong { font-size: 1.1rem; }
+.instrument-icon { display: grid; flex: 0 0 40px; width: 40px; height: 40px; place-items: center; border-radius: 10px; background: #e8f0ff; color: #4775ce; font-weight: 700; }
+.instrument-copy { display: grid; flex: 0 1 auto; gap: 2px; width: 100%; min-width: 0; text-align: center; }.instrument-copy strong, .option-price strong { font-size: 0.68rem; }.instrument-copy small, .option-price small, .market-price small { color: var(--muted); font-size: 0.5rem; }.option-price, .market-price { display: grid; gap: 2px; text-align: center; }.option-price small, .market-price small { color: var(--green); }.negative { color: var(--red) !important; }.owned { color: var(--muted); font-size: 0.5rem; }.selected-summary .market-price { margin-left: auto; text-align: right; }.selected-summary .market-price strong { font-size: 1.1rem; }
+/* the name gets room for two lines in every card, and a one-line name sits just above the ticker, so the logos in a
+   row line up; longer names (Australian Dollar / New Zealand Dollar) stop at two lines, the full name in the tooltip */
+.instrument-option .instrument-copy { display: flex; flex-direction: column; justify-content: flex-end; min-height: calc(2 * 1.25 * var(--type-body) + 2px + 1.2 * var(--type-caption)); }
+.instrument-option .instrument-copy strong { display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-height: 1.25; overflow-wrap: anywhere; }
+.instrument-option .instrument-copy small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; line-height: 1.2; }
+.instrument-option .instrument-icon { margin-block: auto; }
+.selected-summary { gap: 12px; padding: 10px 12px; }
+.selected-summary .instrument-copy { text-align: left; }
 .option-price strong, .market-price strong { font-family: var(--font-numeric); font-weight: 600; }
 
 .instrument-icon, .instrument-copy small, .option-price small, .market-price small, .owned { font-size: var(--type-caption); }
 .instrument-copy strong, .option-price strong { font-size: var(--type-body); }
 .selected-summary .market-price strong { font-size: var(--type-card-title); }
 
-@media (max-width: 720px) {
-	.instrument-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
 .instrument-option.active { border-color: var(--ink); background: var(--green-soft); box-shadow: var(--pill-shadow); }
