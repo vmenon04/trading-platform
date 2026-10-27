@@ -1,0 +1,23 @@
+meta {
+  name: Performance
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{apiUrl}}/v1/accounts/{{accountId}}/performance?range=THREE_MONTHS
+  body: none
+  auth: bearer
+}
+
+params:query {
+  range: THREE_MONTHS
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+assert {
+  res.status: eq 200
+}

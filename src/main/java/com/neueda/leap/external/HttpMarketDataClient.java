@@ -2,13 +2,15 @@ package com.neueda.leap.external;
 
 import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.springframework.web.client.RestClient;
 
-// MarketDataClient backed by the Fauxnance API (GET /quotes/{symbol}, and GET /quotes?symbols= for batches)
+// MarketDataClient backed by the Fauxnance API (GET /quotes/{symbol}, GET /quotes?symbols= for batches, and
+// GET /candles/{symbol} for daily history)
 public class HttpMarketDataClient implements MarketDataClient {
 
     // Fauxnance allows up to 25 symbols per batch request, and a batch counts as one request against the quota
@@ -100,6 +102,35 @@ public class HttpMarketDataClient implements MarketDataClient {
                 });
     }
 
+    // GET /candles/{symbol}, daily: the raw close of each day (we value shares actually held, so not adjclose). 404
+    // (unknown symbol) and 202 (history still being backfilled) both mean no history to show yet
+    @Override
+    public List<DailyClose> getCandles(String ticker, LocalDate from, LocalDate to) {
+        CandlesResponse body = restClient.get()
+                .uri(uri -> uri.path("/candles/{symbol}")
+                        .queryParam("from", from)
+                        .queryParam("to", to)
+                        .queryParam("interval", "1d")
+                        .build(ticker))
+                .exchange((request, response) -> {
+                    int status = response.getStatusCode().value();
+                    if (status == 404 || status == 202) {
+                        return null;
+                    }
+                    if (response.getStatusCode().isError()) {
+                        throw new IllegalStateException("Fauxnance returned " + status + " for candles of " + ticker);
+                    }
+                    return response.bodyTo(CandlesResponse.class);
+                });
+        if (body == null || body.data() == null || body.data().candles() == null) {
+            return List.of();
+        }
+        return body.data().candles().stream()
+                .filter(candle -> candle.date() != null && candle.close() != null)
+                .map(candle -> new DailyClose(candle.date(), candle.close()))
+                .toList();
+    }
+
     // take the fields we use from the JSON response
     record QuoteResponse(Quote data, Meta meta) {
     }
@@ -125,5 +156,15 @@ public class HttpMarketDataClient implements MarketDataClient {
     }
 
     record Quote(BigDecimal price) {
+    }
+
+    // GET /candles/{symbol}: {"data": {"candles": [{"date", "close", ...}]}}, oldest first
+    record CandlesResponse(CandlesData data) {
+    }
+
+    record CandlesData(List<Candle> candles) {
+    }
+
+    record Candle(LocalDate date, BigDecimal close) {
     }
 }

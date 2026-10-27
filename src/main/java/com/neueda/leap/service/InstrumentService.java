@@ -2,13 +2,17 @@ package com.neueda.leap.service;
 
 import com.neueda.leap.exception.PriceUnavailableException;
 import com.neueda.leap.entity.Instrument;
+import com.neueda.leap.external.DailyClose;
 import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NoSuchElementException;
+import java.util.TreeMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -110,6 +114,23 @@ public class InstrumentService {
      */
     public BigDecimal getCurrentPrice(Long instrumentId) {
         return getCurrentPrice(getInstrumentById(instrumentId).getTicker());
+    }
+
+    /**
+     * Returns an instrument's daily closing prices, for charts.
+     *
+     * @param ticker instrument ticker symbol
+     * @param from first day, inclusive
+     * @param to last day, inclusive
+     * @return closes by day, oldest first; empty if the market data API has no history for it (yet)
+     * @throws IllegalStateException if the market data API can't say right now (quota, outage)
+     */
+    public NavigableMap<LocalDate, BigDecimal> getDailyCloses(String ticker, LocalDate from, LocalDate to) {
+        NavigableMap<LocalDate, BigDecimal> closes = new TreeMap<>();
+        for (DailyClose close : marketDataClient.getCandles(ticker, from, to)) {
+            closes.put(close.date(), close.close());
+        }
+        return closes;
     }
 
     /**

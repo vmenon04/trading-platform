@@ -3,15 +3,18 @@ package com.neueda.leap.controller;
 import com.neueda.leap.dto.AccountHoldingResponseDTO;
 import com.neueda.leap.dto.AccountSummaryResponseDTO;
 import com.neueda.leap.dto.DepositRequestDTO;
+import com.neueda.leap.dto.PerformancePointDTO;
 import com.neueda.leap.dto.TradeResponseDTO;
 import com.neueda.leap.entity.AccountHolding;
 import com.neueda.leap.entity.AccountTrade;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.ActivityStatus;
+import com.neueda.leap.enums.PerformanceRange;
 import com.neueda.leap.repository.AccountHoldingMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.PerformanceService;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -41,14 +44,16 @@ public class AccountController {
     private final AccountHoldingMapper accountHoldingMapper;
     private final AccountTradeMapper accountTradeMapper;
     private final InstrumentService instrumentService;
+    private final PerformanceService performanceService;
 
     public AccountController(AccountService accountService,
                              AccountHoldingMapper accountHoldingMapper, AccountTradeMapper accountTradeMapper,
-                             InstrumentService instrumentService) {
+                             InstrumentService instrumentService, PerformanceService performanceService) {
         this.accountService = accountService;
         this.accountHoldingMapper = accountHoldingMapper;
         this.accountTradeMapper = accountTradeMapper;
         this.instrumentService = instrumentService;
+        this.performanceService = performanceService;
     }
 
     @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
@@ -102,6 +107,20 @@ public class AccountController {
                             holding.getQuantity(), prices.get(instrument.getTicker()), holding.getInstrumentId(),
                             instrument.getInstrumentType().name());
                 })
+                .toList();
+        return ResponseEntity.ok(response);
+    }
+
+    // the dashboard's performance chart: holdings value and amount invested, one point a day
+    @PreAuthorize("@accessControlService.userOwnsAccount(#accountId, #jwt.getSubject())")
+    @GetMapping("/{accountId}/performance")
+    public ResponseEntity<List<PerformancePointDTO>> getPerformance(@PathVariable UUID accountId,
+                                                                    @RequestParam(defaultValue = "THREE_MONTHS")
+                                                                    PerformanceRange range,
+                                                                    @AuthenticationPrincipal Jwt jwt) {
+        Long internalId = accountService.getAccountIdByExternalAccountId(accountId);
+        List<PerformancePointDTO> response = performanceService.getPerformance(internalId, range).stream()
+                .map(point -> new PerformancePointDTO(point.date(), point.value(), point.invested()))
                 .toList();
         return ResponseEntity.ok(response);
     }

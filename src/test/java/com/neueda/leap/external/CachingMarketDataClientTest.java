@@ -5,6 +5,7 @@ import java.math.BigDecimal;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.util.Arrays;
 import java.util.List;
@@ -384,5 +385,69 @@ class CachingMarketDataClientTest {
 
         assertThrows(IllegalStateException.class, () -> client.getSymbol("ORCL"));
         verifyNoInteractions(delegate);
+    }
+
+    // --- getCandles: daily closes, cached until midnight UTC (Fauxnance adds a day's candle once a day) ------
+
+    private static final LocalDate FROM = LocalDate.of(2026, 10, 19);
+    private static final LocalDate TO = LocalDate.of(2026, 10, 22);
+    private static final String CANDLES_KEY = "candles:AAPL:2026-10-19:2026-10-22";
+    private static final List<DailyClose> CLOSES = List.of(
+            new DailyClose(LocalDate.of(2026, 10, 19), new BigDecimal("100.50")),
+            new DailyClose(LocalDate.of(2026, 10, 20), new BigDecimal("101.25")));
+
+    @Test
+    void getCandles_cached_doesNotCallTheApi() {
+        when(values.get(CANDLES_KEY)).thenReturn("2026-10-19=100.50,2026-10-20=101.25");
+
+        assertEquals(CLOSES, client.getCandles(TICKER, FROM, TO));
+        verifyNoInteractions(delegate);
+    }
+
+    @Test
+    void getCandles_fromTheApi_isCachedUntilMidnightUtcAndCounted() {
+        when(values.get(CANDLES_KEY)).thenReturn(null);
+        when(delegate.getCandles(TICKER, FROM, TO)).thenReturn(CLOSES);
+
+        assertEquals(CLOSES, client.getCandles(TICKER, FROM, TO));
+        verify(values).set(CANDLES_KEY, "2026-10-19=100.50,2026-10-20=101.25", Duration.ofHours(9));
+        verify(values).increment(CALLS, 1L);
+    }
+
+    // e.g. still being backfilled: ask again next time
+    @Test
+    void getCandles_noHistory_isNotCached() {
+        when(values.get(CANDLES_KEY)).thenReturn(null);
+        when(delegate.getCandles(TICKER, FROM, TO)).thenReturn(List.of());
+
+        assertEquals(List.of(), client.getCandles(TICKER, FROM, TO));
+        verify(values, never()).set(eq(CANDLES_KEY), anyString(), any(Duration.class));
+    }
+
+    @Test
+    void getCandles_symbolKnownToBeUnknown_doesNotCallTheApi() {
+        when(values.get(CANDLES_KEY)).thenReturn(null);
+        when(values.get("unknown:AAPL")).thenReturn("1");
+
+        assertEquals(List.of(), client.getCandles(TICKER, FROM, TO));
+        verifyNoInteractions(delegate);
+    }
+
+    @Test
+    void getCandles_displayShareOfTheQuotaUsedUp_throwsWithoutCallingTheApi() {
+        callsUsedToday(1800);
+        when(values.get(CANDLES_KEY)).thenReturn(null);
+
+        assertThrows(IllegalStateException.class, () -> client.getCandles(TICKER, FROM, TO));
+        verifyNoInteractions(delegate);
+    }
+
+    @Test
+    void getCandles_redisDown_fetchesFromTheApi() {
+        when(values.get(CANDLES_KEY)).thenThrow(new RedisConnectionFailureException("down"));
+        when(values.get("unknown:AAPL")).thenThrow(new RedisConnectionFailureException("down"));
+        when(delegate.getCandles(TICKER, FROM, TO)).thenReturn(CLOSES);
+
+        assertEquals(CLOSES, client.getCandles(TICKER, FROM, TO));
     }
 }

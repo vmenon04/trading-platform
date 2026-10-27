@@ -2,6 +2,7 @@ package com.neueda.leap.external;
 
 import com.neueda.leap.exception.PriceUnavailableException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -262,5 +263,58 @@ class HttpMarketDataClientTest {
                 .andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
 
         assertThrows(IllegalStateException.class, () -> client.getPrices(List.of("AAPL")));
+    }
+
+    // --- getCandles: daily closes, for the performance chart -------------------------------------------
+
+    private static final String CANDLES_URL = BASE_URL + "/candles/AAPL?from=2026-10-21&to=2026-10-23&interval=1d";
+
+    @Test
+    void getCandles_returnsTheDailyClosesOldestFirst() {
+        server.expect(requestTo(CANDLES_URL))
+                .andExpect(header("X-Api-Key", API_KEY))
+                .andRespond(withSuccess("""
+                        {"data": {"symbol": "AAPL", "interval": "1d", "currency": "USD", "candles": [
+                           {"date": "2026-10-21", "open": 99, "high": 101, "low": 98, "close": 100.5, "adjclose": 100.1,
+                            "volume": 1000, "synthetic": false},
+                           {"date": "2026-10-22", "open": 100, "high": 103, "low": 99, "close": 102.25, "adjclose": 101.9,
+                            "volume": null, "synthetic": true},
+                           {"date": "2026-10-23", "open": 102, "high": 104, "low": 101, "close": null, "adjclose": null,
+                            "volume": null, "synthetic": false}]},
+                         "meta": {"source": "stored", "partial": false}}
+                        """, MediaType.APPLICATION_JSON));
+
+        // the raw close (we value shares actually held), and a day without one is left out
+        assertEquals(List.of(
+                        new DailyClose(LocalDate.of(2026, 10, 21), new BigDecimal("100.5")),
+                        new DailyClose(LocalDate.of(2026, 10, 22), new BigDecimal("102.25"))),
+                client.getCandles("AAPL", LocalDate.of(2026, 10, 21), LocalDate.of(2026, 10, 23)));
+        server.verify();
+    }
+
+    @Test
+    void getCandles_unknownSymbol_returnsNoCloses() {
+        server.expect(requestTo(CANDLES_URL))
+                .andRespond(withStatus(HttpStatus.NOT_FOUND)
+                        .contentType(MediaType.APPLICATION_JSON).body(errorJson("SYMBOL_NOT_FOUND")));
+
+        assertEquals(List.of(), client.getCandles("AAPL", LocalDate.of(2026, 10, 21), LocalDate.of(2026, 10, 23)));
+    }
+
+    // 202: Fauxnance is still backfilling the history, so there is none to show yet
+    @Test
+    void getCandles_stillBeingFetched_returnsNoCloses() {
+        server.expect(requestTo(CANDLES_URL)).andRespond(withStatus(HttpStatus.ACCEPTED));
+
+        assertEquals(List.of(), client.getCandles("AAPL", LocalDate.of(2026, 10, 21), LocalDate.of(2026, 10, 23)));
+    }
+
+    @Test
+    void getCandles_throwsWhenFauxnanceFails() {
+        server.expect(requestTo(CANDLES_URL)).andRespond(withStatus(HttpStatus.TOO_MANY_REQUESTS));
+
+        LocalDate from = LocalDate.of(2026, 10, 21);
+        LocalDate to = LocalDate.of(2026, 10, 23);
+        assertThrows(IllegalStateException.class, () -> client.getCandles("AAPL", from, to));
     }
 }
