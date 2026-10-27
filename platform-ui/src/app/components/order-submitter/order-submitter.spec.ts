@@ -41,9 +41,9 @@ describe('OrderSubmitter', () => {
     await TestBed.inject(ApplicationRef).whenStable();
   }
 
-  function pager(): HTMLElement | null {
+  function find(selector: string): HTMLElement | null {
     fixture.detectChanges();
-    return (fixture.nativeElement as HTMLElement).querySelector('.pager');
+    return (fixture.nativeElement as HTMLElement).querySelector(selector);
   }
 
   function lookups(): number {
@@ -104,35 +104,57 @@ describe('OrderSubmitter', () => {
     expect(lookups()).toBe(0);
   });
 
-  it('does not look up the symbol from a later page, where its exact match would not be', async () => {
+  it('does not look up the symbol from a later batch, where its exact match would not be', async () => {
     await answerPage('', []);
     instruments.setQuery('MA');
     await answerPage('MA', [ORACLE], 0, 60);
-    // the first page has no MA, so it was looked up there; clear that request
+    // the first batch has no MA, so it was looked up there; clear that request
     http.match((req) => req.params.has('search'));
 
-    instruments.nextPage();
-    await answerPage('MA', [ORACLE], 50, 60);
+    instruments.loadMore();
+    await answerPage('MA', [{ ...ORACLE, instrumentId: 23, ticker: 'MAR' }], 1, 60);
 
     expect(lookups()).toBe(0);
   });
 
-  it('shows where the page is in the matches, once there is more than one page', async () => {
-    await answerPage('', [ORACLE], 0, 334);
-    expect(pager()?.textContent).toContain('1–50 of 334');
-    expect(pager()?.classList).not.toContain('pager-hidden');
+  it('does not look up a symbol while one asset class is picked', async () => {
+    await answerPage('', []);
+    component.pickClass('CRYPTO');
+    TestBed.tick();
+    http.expectOne((req) => req.params.get('assetClass') === 'CRYPTO').flush([], { headers: { 'X-Total-Count': '0' } });
+    await TestBed.inject(ApplicationRef).whenStable();
 
-    instruments.nextPage();
-    await answerPage('', [ORACLE], 50, 334);
-    expect(pager()?.textContent).toContain('51–100 of 334');
+    instruments.setQuery('ORCL');
+    TestBed.tick();
+    http.expectOne((req) => req.params.get('q') === 'ORCL').flush([], { headers: { 'X-Total-Count': '0' } });
+    await TestBed.inject(ApplicationRef).whenStable();
+
+    expect(lookups()).toBe(0);
   });
 
-  // the pager keeps its space so the form doesn't jump, but it is hidden and can't be used
-  it('has no page controls when the matches fit on one page', async () => {
+  it('shows how many are listed, and loads more while there are more', async () => {
+    await answerPage('', [ORACLE], 0, 334);
+    expect(find('.load-more')?.textContent).toContain('Showing 1 of 334');
+
+    (find('.load-more button') as HTMLButtonElement).click();
+    await answerPage('', [{ ...ORACLE, instrumentId: 23, ticker: 'ORLY' }], 1, 334);
+    expect(find('.load-more')?.textContent).toContain('Showing 2 of 334');
+  });
+
+  it('has no Load more button once everything is listed', async () => {
     await answerPage('', [ORACLE], 0, 1);
-    const nav = pager() as HTMLElement;
-    expect(nav.classList).toContain('pager-hidden');
-    expect(nav.getAttribute('aria-hidden')).toBe('true');
-    nav.querySelectorAll('button').forEach((button) => expect(button.disabled).toBe(true));
+    expect(find('.load-more')?.textContent).toContain('Showing 1 of 1');
+    expect(find('.load-more button')).toBeNull();
+  });
+
+  it('shows prices of forex as rates and holdings of crypto in units', () => {
+    component.setMode('sell');
+    const bitcoin = { instrumentId: 7, symbol: 'X:BTC-USD', name: 'Bitcoin', exchange: 'Crypto', price: '$67,000.00',
+      change: '', shares: 0.5, priceValue: 67000, assetClass: 'CRYPTO' };
+    component.selectInstrument(bitcoin);
+    component.quantity = 2;
+
+    expect(find('.order-result.error')?.textContent).toContain('You only own 0.5 units of X:BTC-USD.');
+    expect(find('.estimate')?.textContent).toContain('2 units at the current market price');
   });
 });

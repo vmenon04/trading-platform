@@ -4,8 +4,7 @@ import { RouterLink } from '@angular/router';
 import { TickerLogo } from '../ticker-logo/ticker-logo';
 import { LiveTrade, RejectionCode, TradeStage } from '../../models/account.models';
 import { AccountService } from '../../services/account.service';
-
-const usd = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' });
+import { assetClassOf, formatPrice } from '../../models/instrument-format';
 
 // how often to ask again while a trade is going through
 const POLL_MS = 1000;
@@ -23,7 +22,7 @@ const STAGE_LABELS: Record<TradeStage, string> = {
 const REASONS: Record<RejectionCode, string> = {
   INSUFFICIENT_FUNDS: 'Not enough cash',
   INSUFFICIENT_SHARES: 'Not enough shares',
-  PRICE_UNAVAILABLE: 'No price right now',
+  PRICE_UNAVAILABLE: 'Price unavailable',
   INVALID_ORDER: 'Invalid order',
   UNKNOWN: "Couldn't be processed",
 };
@@ -71,7 +70,7 @@ export class Task {
         ticker: trade.ticker ?? '—',
         quantity: trade.quantity,
         side: trade.side === 'BUY' ? 'Buy' : 'Sell',
-        price: trade.price === null ? '—' : usd.format(trade.price),
+        price: formatPrice(trade.price, assetClassOf(trade.ticker)),
         status: trade.stage.toLowerCase(),
         label: STAGE_LABELS[trade.stage],
         moving: !finished(trade),

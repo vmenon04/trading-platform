@@ -3,7 +3,7 @@
 	@if (account.hasNoAccount()) {
 		<section class="open-account">
 			<h2>Open your trading account</h2>
-			<p>Your login is set up. Add your details to open a trading account, then deposit funds to start trading.</p>
+			<p>You're signed up. Add your details to open a trading account, then deposit funds to start trading.</p>
 			<form class="open-account-form" (ngSubmit)="openAccount()" novalidate>
 				<label>First name<input name="firstName" [(ngModel)]="firstName" autocomplete="given-name"></label>
 				<label>Last name<input name="lastName" [(ngModel)]="lastName" autocomplete="family-name"></label>

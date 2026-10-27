@@ -79,7 +79,7 @@ export class Registration {
     try {
       await this.auth.login(this.username, this.password);
     } catch {
-      this.showError('Your login was created, but sign-in failed. Please contact support.');
+      this.showError("Your account was created, but we couldn't sign you in. Please log in to continue.");
       return;
     }
 
@@ -130,25 +130,24 @@ export class Registration {
         return typeof message === 'string' ? message : 'That username or email is already registered.';
       }
       if (error.status === 400) {
-        const message = error.error?.message;
-        return Array.isArray(message) ? message.join('. ') : message ?? 'Please check your details.';
+        return 'Please check your details and try again.';
       }
       if (error.status === 0 || error.status === 502 || error.status === 504) {
-        return "Couldn't reach the login service. Is auth-service running?";
+        return "We couldn't connect. Check your internet connection and try again.";
       }
     }
-    return 'Registration could not be completed.';
+    return "We couldn't create your account. Please try again.";
   }
 
   private openAccountErrorMessage(error: unknown): string {
     if (error instanceof HttpErrorResponse) {
       if (error.status === 409) {
-        return (error.error?.message ?? 'Those details are already in use.') + ' Your login was created; please contact support.';
+        return 'Your account was created, but that email is already in use. Log in to finish opening your trading account from the Portfolio page.';
       }
       if (error.status === 400) {
-        return 'Your login was created, but account details were rejected.';
+        return "Your account was created, but some of your details weren't accepted. Log in to finish opening your trading account from the Portfolio page.";
       }
     }
-    return "Your login was created, but we couldn't open your trading account. Please contact support.";
+    return "Your account was created, but we couldn't open your trading account. Log in to finish setting it up from the Portfolio page.";
   }
 }

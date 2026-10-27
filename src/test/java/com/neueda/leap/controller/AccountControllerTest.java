@@ -6,6 +6,7 @@ import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.exception.GlobalExceptionHandler;
 import com.neueda.leap.enums.ActivityStatus;
 import com.neueda.leap.enums.InstrumentType;
+import com.neueda.leap.enums.PerformanceRange;
 import com.neueda.leap.enums.TradeSide;
 import com.neueda.leap.enums.TradeStatus;
 import com.neueda.leap.repository.AccountHoldingMapper;
@@ -13,6 +14,8 @@ import com.neueda.leap.repository.AccountMapper;
 import com.neueda.leap.repository.AccountTradeMapper;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.PerformancePoint;
+import com.neueda.leap.service.PerformanceService;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -29,6 +32,7 @@ import org.springframework.test.web.servlet.ResultActions;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Map;
@@ -68,6 +72,9 @@ class AccountControllerTest {
 
     @Mock
     private InstrumentService instrumentService;
+
+    @Mock
+    private PerformanceService performanceService;
 
     @InjectMocks
     private AccountController accountController;
@@ -357,5 +364,43 @@ class AccountControllerTest {
         trade.setTradeStatus(TradeStatus.FULFILLED);
         trade.setTradeTime(OffsetDateTime.parse("2026-10-25T14:30:00Z"));
         return trade;
+    }
+
+    @Test
+    void getPerformance_returnsTheDailyPoints() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(performanceService.getPerformance(ACCOUNT_ID, PerformanceRange.ONE_MONTH)).thenReturn(List.of(
+                new PerformancePoint(LocalDate.of(2026, 10, 22), new BigDecimal("200.00"), new BigDecimal("190.00")),
+                new PerformancePoint(LocalDate.of(2026, 10, 23), new BigDecimal("210.50"), new BigDecimal("190.00"))));
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/performance", externalAccountId)
+                        .contextPath("/api")
+                        .param("range", "ONE_MONTH"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(2)))
+                .andExpect(jsonPath("$[0].date").value("2026-10-22"))
+                .andExpect(jsonPath("$[0].value").value(200.00))
+                .andExpect(jsonPath("$[0].invested").value(190.00))
+                .andExpect(jsonPath("$[1].value").value(210.50));
+    }
+
+    @Test
+    void getPerformance_withoutARange_coversThreeMonths() throws Exception {
+        when(accountService.getAccountIdByExternalAccountId(externalAccountId)).thenReturn(ACCOUNT_ID);
+        when(performanceService.getPerformance(ACCOUNT_ID, PerformanceRange.THREE_MONTHS)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/performance", externalAccountId).contextPath("/api"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(0)));
+    }
+
+    @Test
+    void getPerformance_unknownRange_returns400() throws Exception {
+        mockMvc.perform(get("/api/v1/accounts/{accountId}/performance", externalAccountId)
+                        .contextPath("/api")
+                        .param("range", "FOREVER"))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(performanceService);
     }
 }

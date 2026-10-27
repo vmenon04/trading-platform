@@ -1,7 +1,9 @@
 package com.neueda.leap.external;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 
 // wraps our external market data API
@@ -16,4 +18,8 @@ public interface MarketDataClient {
     // name and type of a symbol, or null if the market data API doesn't know it; throws if it can't say right now
     // (e.g. the symbol is still being fetched)
     SymbolInfo getSymbol(String symbol);
+
+    // daily closing prices from `from` to `to` (inclusive), oldest first; none if the API has no history for the
+    // symbol (yet); throws if it can't say right now
+    List<DailyClose> getCandles(String ticker, LocalDate from, LocalDate to);
 }

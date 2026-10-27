@@ -101,3 +101,13 @@ export interface LiveTrade {
   price: number | null;
   rejectionCode: RejectionCode | null;
 }
+
+export type PerformanceRange = 'ONE_MONTH' | 'THREE_MONTHS' | 'ONE_YEAR' | 'ALL';
+
+// GET /v1/accounts/{accountId}/performance?range=: one point a day, oldest first. value is what the holdings were
+// worth at that day's close (today: at the current price); invested is what was paid for them
+export interface PerformancePoint {
+  date: string;
+  value: number;
+  invested: number;
+}

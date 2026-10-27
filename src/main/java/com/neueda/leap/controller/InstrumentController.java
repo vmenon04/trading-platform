@@ -1,6 +1,7 @@
 package com.neueda.leap.controller;
 
 import com.neueda.leap.dto.InstrumentResponseDTO;
+import com.neueda.leap.enums.InstrumentType;
 import com.neueda.leap.service.InstrumentCatalog;
 import com.neueda.leap.service.InstrumentCatalog.CatalogInstrument;
 import com.neueda.leap.service.InstrumentCatalog.Page;
@@ -35,18 +36,20 @@ public class InstrumentController {
 
     // Instruments with their price to show (cached in Redis, then the API in batches; the last known price if there's
     // no fresh one). Without search: a page (limit, offset) of the instruments in the database whose ticker or name
-    // contains q, or of all of them without q. With search=ORCL: that symbol, looked up in the database and then the
-    // market data API (which adds it to the database), or an empty list if it's unknown. Either way X-Total-Count
-    // says how many match in all.
+    // contains q, or of all of them without q, and only of one assetClass (e.g. CRYPTO) when it's given. With
+    // search=ORCL: that symbol, looked up in the database and then the market data API (which adds it to the
+    // database), or an empty list if it's unknown. Either way X-Total-Count says how many match in all.
     @GetMapping
     public ResponseEntity<List<InstrumentResponseDTO>> getInstruments(@RequestParam(required = false) String search,
                                                                       @RequestParam(required = false) String q,
+                                                                      @RequestParam(required = false) InstrumentType assetClass,
                                                                       @RequestParam(defaultValue = "50") int limit,
                                                                       @RequestParam(defaultValue = "0") int offset) {
         List<CatalogInstrument> instruments;
         long total;
         if (search == null || search.isBlank()) {
-            Page page = instrumentCatalog.search(q, Math.max(1, Math.min(limit, MAX_LIMIT)), Math.max(0, offset));
+            Page page = instrumentCatalog.search(q, assetClass, Math.max(1, Math.min(limit, MAX_LIMIT)),
+                    Math.max(0, offset));
             instruments = page.instruments();
             total = page.total();
         } else {

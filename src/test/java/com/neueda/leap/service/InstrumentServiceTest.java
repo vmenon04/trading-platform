@@ -3,12 +3,15 @@ package com.neueda.leap.service;
 import com.neueda.leap.exception.PriceUnavailableException;
 import com.neueda.leap.entity.Instrument;
 import com.neueda.leap.enums.InstrumentType;
+import com.neueda.leap.external.DailyClose;
 import com.neueda.leap.external.MarketDataClient;
 import com.neueda.leap.external.PriceQuote;
 import com.neueda.leap.repository.InstrumentMapper;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
+import java.util.NavigableMap;
 import java.util.NoSuchElementException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -157,5 +160,19 @@ class InstrumentServiceTest {
         when(marketDataClient.getPrices(List.of("AAPL"))).thenThrow(new IllegalStateException("Fauxnance returned 429"));
 
         assertEquals(Map.of(), instrumentService.getCurrentPrices(List.of("AAPL")));
+    }
+
+    @Test
+    void getDailyClosesReturnsTheClosesByDate() {
+        LocalDate from = LocalDate.of(2026, 10, 19);
+        LocalDate to = LocalDate.of(2026, 10, 22);
+        when(marketDataClient.getCandles("AAPL", from, to)).thenReturn(List.of(
+                new DailyClose(LocalDate.of(2026, 10, 20), new BigDecimal("101.25")),
+                new DailyClose(LocalDate.of(2026, 10, 19), new BigDecimal("100.50"))));
+
+        NavigableMap<LocalDate, BigDecimal> closes = instrumentService.getDailyCloses("AAPL", from, to);
+
+        assertEquals(List.of(LocalDate.of(2026, 10, 19), LocalDate.of(2026, 10, 20)), List.copyOf(closes.keySet()));
+        assertEquals(new BigDecimal("101.25"), closes.get(LocalDate.of(2026, 10, 20)));
     }
 }

@@ -135,7 +135,7 @@ describe('Task', () => {
 
     const text = rows().map((row) => row.textContent);
     expect(text[0]).toContain('Not enough shares');
-    expect(text[1]).toContain('No price right now');
+    expect(text[1]).toContain('Price unavailable');
     expect(text[2]).toContain('Invalid order');
     expect(text[3]).toContain("Couldn't be processed");
   });

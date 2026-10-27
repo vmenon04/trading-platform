@@ -111,6 +111,8 @@ services:
       - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
       - ./src/main/resources/sample-data.sql:/docker-entrypoint-initdb.d/2-sample-data.sql:ro
       - ./src/main/resources/auth_test_data.sql:/docker-entrypoint-initdb.d/3-auth_test_data.sql:ro
+      # a year of made-up past trades for efe, so the performance chart has history (after 3-auth_test_data)
+      - ./src/main/resources/efe_demo_history.sql:/docker-entrypoint-initdb.d/3-efe_demo_history.sql:ro
       # the analyst and admin logins, which registration can't create
       - ./src/main/resources/staff_users.sql:/docker-entrypoint-initdb.d/4-staff_users.sql:ro
       # the analytics database the reporting services fill

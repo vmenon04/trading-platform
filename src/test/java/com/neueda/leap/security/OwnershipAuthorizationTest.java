@@ -11,6 +11,7 @@ import com.neueda.leap.service.AccountOpeningService;
 import com.neueda.leap.service.AccountService;
 import com.neueda.leap.service.ClientService;
 import com.neueda.leap.service.InstrumentService;
+import com.neueda.leap.service.PerformanceService;
 import com.neueda.leap.service.TradeTrackerService;
 import com.nimbusds.jose.JOSEException;
 import com.nimbusds.jose.JWSAlgorithm;
@@ -111,6 +112,11 @@ class OwnershipAuthorizationTest {
         TradeTrackerService tradeTrackerService() {
             return mock(TradeTrackerService.class);
         }
+
+        @Bean
+        PerformanceService performanceService() {
+            return mock(PerformanceService.class);
+        }
     }
 
     @Autowired
@@ -128,6 +134,9 @@ class OwnershipAuthorizationTest {
     @Autowired
     private TradeTrackerService tradeTrackerService;
 
+    @Autowired
+    private PerformanceService performanceService;
+
     private MockMvc mockMvc;
 
     private final UUID accountId = UUID.randomUUID();
@@ -136,7 +145,7 @@ class OwnershipAuthorizationTest {
     @BeforeEach
     void setUp() {
         // the mocks are beans shared by every test, so start each one clean
-        reset(accessControlService, accountService, clientService, tradeTrackerService);
+        reset(accessControlService, accountService, clientService, tradeTrackerService, performanceService);
         mockMvc = MockMvcBuilders.webAppContextSetup(context).apply(springSecurity()).build();
     }
 
@@ -189,6 +198,17 @@ class OwnershipAuthorizationTest {
         mockMvc.perform(get("/v1/accounts/{accountId}/trades/live", accountId)
                         .header("Authorization", "Bearer " + clientToken()))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    void performance_accountOwnedBySomeoneElse_returns403AndReadsNothing() throws Exception {
+        when(accessControlService.userOwnsAccount(accountId, USER_ID)).thenReturn(false);
+
+        mockMvc.perform(get("/v1/accounts/{accountId}/performance", accountId)
+                        .header("Authorization", "Bearer " + clientToken()))
+                .andExpect(status().isForbidden());
+
+        verify(performanceService, never()).getPerformance(any(), any());
     }
 
     @Test

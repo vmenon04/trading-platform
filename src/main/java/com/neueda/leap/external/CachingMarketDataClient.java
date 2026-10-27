@@ -19,6 +19,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.web.client.RestClientException;
 
 // Caches what another MarketDataClient (Fauxnance) returns in Redis, to save its daily quota, and counts that quota.
 // Redis is only a cache: if it is down, everything comes straight from the API (and calls aren't counted).
@@ -28,6 +29,7 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 //   price:last:{T}                last known price, fresh or stale, for a day; shown when there's no fresh one
 //   symbol:{S}                    name and type (a hash), for a day
 //   unknown:{S}                   Fauxnance doesn't know the symbol, for an hour
+//   candles:{T}:{from}:{to}       daily closes ("2026-10-19=100.50,..."), until midnight UTC, when a new day's is added
 //   fauxnance:calls:{yyyy-mm-dd}  API calls made today; expires at midnight UTC, when Fauxnance's quota resets
 public class CachingMarketDataClient implements MarketDataClient {
 
@@ -124,7 +126,7 @@ public class CachingMarketDataClient implements MarketDataClient {
 
         Set<String> newlyUnknown = new HashSet<>();
         if (!toFetch.isEmpty() && trySpend(batches(toFetch.size()), displayLimit())) {
-            delegate.getPrices(toFetch).forEach((ticker, quote) -> {
+            fetchForDisplay(toFetch).forEach((ticker, quote) -> {
                 if (quote.price() == null) {
                     markUnknown(ticker);
                     newlyUnknown.add(ticker);
@@ -151,6 +153,18 @@ public class CachingMarketDataClient implements MarketDataClient {
         return prices;
     }
 
+    // the API's prices for showing; if it fails (an outage, a timeout), none, so the prices Redis already had and the
+    // last known ones are still shown
+    private Map<String, PriceQuote> fetchForDisplay(List<String> tickers) {
+        try {
+            return delegate.getPrices(tickers);
+        } catch (IllegalStateException | RestClientException e) {
+            LOGGER.warn("No prices from Fauxnance for {} symbols, showing the last known ones: {}", tickers.size(),
+                    e.getMessage());
+            return Map.of();
+        }
+    }
+
     // name and type, cached for a day; a symbol Fauxnance doesn't know is remembered for an hour
     @Override
     public SymbolInfo getSymbol(String symbol) {
@@ -172,6 +186,29 @@ public class CachingMarketDataClient implements MarketDataClient {
             writeSymbol(symbol, info);
         }
         return info;
+    }
+
+    // daily closes for a chart, cached until midnight UTC; asking the API counts against the display share of the
+    // quota. No history (still being backfilled) isn't cached, so the next look asks again
+    @Override
+    public List<DailyClose> getCandles(String ticker, LocalDate from, LocalDate to) {
+        String key = candlesKey(ticker, from, to);
+        List<DailyClose> cached = readCandles(key);
+        if (cached != null) {
+            return cached;
+        }
+        if (isUnknown(ticker)) {
+            return List.of();
+        }
+        if (!trySpend(1, displayLimit())) {
+            throw new IllegalStateException("Fauxnance's daily quota is nearly used up; price history is available "
+                    + "again after midnight UTC");
+        }
+        List<DailyClose> closes = delegate.getCandles(ticker, from, to);
+        if (!closes.isEmpty()) {
+            writeCandles(key, closes, Duration.between(clock.instant(), nextMidnightUtc()));
+        }
+        return closes;
     }
 
     // --- the daily quota -------------------------------------------------------------------------------
@@ -235,6 +272,10 @@ public class CachingMarketDataClient implements MarketDataClient {
         return "unknown:" + symbol;
     }
 
+    private static String candlesKey(String ticker, LocalDate from, LocalDate to) {
+        return "candles:" + ticker + ":" + from + ":" + to;
+    }
+
     // --- Redis reads and writes: a failure is logged and treated as a cache miss -------------------------
 
     private BigDecimal readPrice(String key) {
@@ -268,6 +309,39 @@ public class CachingMarketDataClient implements MarketDataClient {
             redis.opsForValue().set(key, price.toPlainString(), expiry);
         } catch (DataAccessException e) {
             LOGGER.warn("Price cache write failed for {}: {}", key, e.getMessage());
+        }
+    }
+
+    private List<DailyClose> readCandles(String key) {
+        try {
+            String value = redis.opsForValue().get(key);
+            if (value == null) {
+                return null;
+            }
+            List<DailyClose> closes = new ArrayList<>();
+            for (String day : value.split(",")) {
+                String[] parts = day.split("=");
+                closes.add(new DailyClose(LocalDate.parse(parts[0]), new BigDecimal(parts[1])));
+            }
+            return closes;
+        } catch (DataAccessException e) {
+            LOGGER.warn("Cache read failed for {}, using the API: {}", key, e.getMessage());
+            return null;
+        }
+    }
+
+    private void writeCandles(String key, List<DailyClose> closes, Duration expiry) {
+        StringBuilder value = new StringBuilder();
+        for (DailyClose close : closes) {
+            if (!value.isEmpty()) {
+                value.append(',');
+            }
+            value.append(close.date()).append('=').append(close.close().toPlainString());
+        }
+        try {
+            redis.opsForValue().set(key, value.toString(), expiry);
+        } catch (DataAccessException e) {
+            LOGGER.warn("Cache write failed for {}: {}", key, e.getMessage());
         }
     }
 

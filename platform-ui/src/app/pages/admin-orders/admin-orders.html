@@ -116,7 +116,7 @@
                   }
                 </ol>
                 @if (row.status === 'REJECTED') {
-                  <p class="why">Why rejected: {{ row.reject_reason ?? 'not recorded (rejected before the Kafka consumer was running)' }}</p>
+                  <p class="why">Why rejected: {{ row.reject_reason ?? 'Not recorded' }}</p>
                 }
               </td>
             </tr>

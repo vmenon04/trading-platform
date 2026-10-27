@@ -14,7 +14,7 @@ export class DataFreshness {
   protected readonly stale = computed(() => !this.status.hasValue() || this.status.value().stale);
 
   protected readonly label = computed(() => {
-    if (this.status.error()) return '▲ Reporting API unreachable';
+    if (this.status.error()) return '▲ Data unavailable';
     if (!this.status.hasValue()) return 'Checking data…';
     const sync = this.status.value().last_sync;
     if (!sync) return '▲ No data yet';
@@ -22,9 +22,9 @@ export class DataFreshness {
   });
 
   protected readonly detail = computed(() => {
-    if (this.status.error()) return 'Could not reach the reporting API. Is reporting/api.py running?';
+    if (this.status.error()) return 'Reporting data is unavailable right now. Please try again shortly.';
     const sync = this.status.hasValue() ? this.status.value().last_sync : null;
-    if (!sync) return 'Run reporting/sync.py to fill the analytics database.';
+    if (!sync) return "Reporting data hasn't been loaded yet. It refreshes hourly.";
     return `Last refreshed ${dateTime(sync.finished_at)}; refreshes hourly`;
   });
 }

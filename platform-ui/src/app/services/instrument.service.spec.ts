@@ -76,43 +76,59 @@ describe('InstrumentService', () => {
     http.expectNone('/v1/instruments');
   });
 
-  it('pages through the matches, using the total the backend sends', async () => {
-    await answerPage('', [APPLE], 0, 120);
-    expect(service.total()).toBe(120);
-    expect(service.hasPrevious()).toBe(false);
-    expect(service.hasNext()).toBe(true);
+  it('loads more matches onto the end of the list, until it has them all', async () => {
+    await answerPage('', [APPLE], 0, 2);
+    expect(service.total()).toBe(2);
+    expect(service.hasMore()).toBe(true);
 
-    service.nextPage();
-    await answerPage('', [ORACLE], 50, 120);
-    service.nextPage();
-    await answerPage('', [ORACLE], 100, 120);
+    service.loadMore();
+    TestBed.tick();
+    // the list loaded so far stays while the next batch loads
+    expect(service.instruments()).toEqual([APPLE]);
+    await answerPage('', [ORACLE], 1, 2);
 
-    expect(service.hasNext()).toBe(false);
-    service.nextPage();
+    expect(service.instruments()).toEqual([APPLE, ORACLE]);
+    expect(service.hasMore()).toBe(false);
+    service.loadMore();
     TestBed.tick();
     http.expectNone('/v1/instruments');
-
-    service.previousPage();
-    await answerPage('', [ORACLE], 50, 120);
-    expect(service.hasPrevious()).toBe(true);
   });
 
-  it('a new search starts from its first page', async () => {
-    await answerPage('', [APPLE], 0, 120);
-    service.nextPage();
-    await answerPage('', [ORACLE], 50, 120);
+  it('a new search starts again from its first batch', async () => {
+    await answerPage('', [APPLE], 0, 2);
+    service.loadMore();
+    await answerPage('', [ORACLE], 1, 2);
 
     service.setQuery('oracle');
 
     await answerPage('oracle', [ORACLE]);
-    expect(service.offset()).toBe(0);
+    expect(service.instruments()).toEqual([ORACLE]);
   });
 
-  it('refresh goes back to the first page', async () => {
+  it('lists one asset class when one is picked, from its first batch', async () => {
+    await answerPage('', [APPLE], 0, 2);
+    service.loadMore();
+    await answerPage('', [ORACLE], 1, 2);
+
+    service.setAssetClass('CRYPTO');
+    TestBed.tick();
+    const request = http.expectOne((req) => req.url === '/v1/instruments');
+    expect(request.request.params.get('assetClass')).toBe('CRYPTO');
+    expect(request.request.params.get('offset')).toBe('0');
+    request.flush([], { headers: { 'X-Total-Count': '0' } });
+  });
+
+  it('asks for every class when none is picked', async () => {
+    TestBed.tick();
+    const request = http.expectOne((req) => req.url === '/v1/instruments');
+    expect(request.request.params.has('assetClass')).toBe(false);
+    request.flush([APPLE], { headers: { 'X-Total-Count': '1' } });
+  });
+
+  it('refresh goes back to the first batch of every instrument', async () => {
     await answerPage('', [APPLE]);
     service.setQuery('oracle');
     await answerPage('oracle', [ORACLE]);
-    service.nextPage();
 
     service.refresh();
 

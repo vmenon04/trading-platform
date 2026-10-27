@@ -1,0 +1,70 @@
+<section class="performance-card">
+	<div class="performance-heading">
+		<div>
+			<h2>Performance</h2>
+			<span>Holdings value against what you paid</span>
+		</div>
+		<div class="ranges" role="group" aria-label="Period">
+			@for (option of ranges; track option.range) {
+				<button type="button" [class.active]="range() === option.range" [attr.aria-pressed]="range() === option.range" (click)="pick(option.range)">{{ option.label }}</button>
+			}
+		</div>
+	</div>
+
+	@if (performance.isLoading() && !performance.hasValue()) {
+		<div class="chart-loading" aria-label="Loading performance"></div>
+	} @else if (performance.error()) {
+		<p class="chart-message">Performance isn't available right now. Try again in a little while.</p>
+	} @else if (!geometry()) {
+		<p class="chart-message">Your performance shows up here after your first trade.</p>
+	} @else {
+		<div class="headline">
+			<strong>{{ current() }}</strong>
+			@if (change(); as change) {
+				<span [class]="'change ' + change.tone">{{ change.text }} <small>this period</small></span>
+			}
+		</div>
+
+		<div class="chart">
+			<!-- tracked by the data, so a new range or account draws the lines in again -->
+			@for (g of [geometry()!]; track g.key) {
+				<svg [attr.viewBox]="'0 0 ' + width + ' ' + height" preserveAspectRatio="none" role="img" [attr.aria-label]="summary()" (pointermove)="hover($event)" (pointerleave)="hovered.set(null)">
+					<defs>
+						<linearGradient id="performance-fill" x1="0" x2="0" y1="0" y2="1">
+							<stop offset="0" stop-color="var(--green-bright)" stop-opacity="0.28" />
+							<stop offset="1" stop-color="var(--green-bright)" stop-opacity="0" />
+						</linearGradient>
+					</defs>
+					<line class="baseline" x1="0" [attr.x2]="width" [attr.y1]="bottom" [attr.y2]="bottom" />
+					<path class="area" [attr.d]="g.area" fill="url(#performance-fill)" />
+					<path class="invested" [attr.d]="g.invested" />
+					<path class="value" [attr.d]="g.line" />
+					@if (tip(); as tip) {
+						<line class="crosshair" [attr.x1]="tip.x" [attr.x2]="tip.x" y1="0" [attr.y2]="bottom" />
+					}
+				</svg>
+			}
+			@if (tip(); as tip) {
+				<!-- html rather than svg, so the dots stay round however wide the chart is stretched (the svg isn't kept in
+				     proportion, so its lines fill the card) -->
+				<i class="dot value-dot" [style.left.%]="tip.left" [style.top.%]="(tip.valueY / height) * 100"></i>
+				<i class="dot invested-dot" [style.left.%]="tip.left" [style.top.%]="(tip.investedY / height) * 100"></i>
+				<div class="tip" [style.left.%]="tip.left" [class.flip]="tip.left > 70" aria-hidden="true">
+					<b>{{ tip.date }}</b>
+					<span><i class="key value-key"></i>Value {{ tip.value }}</span>
+					<span><i class="key invested-key"></i>Invested {{ tip.invested }}</span>
+				</div>
+			}
+		</div>
+
+		@if (geometry(); as g) {
+			<div class="axis">
+				@for (label of g.labels; track $index) {
+					<span [style.left.%]="(label.x / width) * 100" [class]="label.anchor">{{ label.text }}</span>
+				}
+			</div>
+		}
+
+		<div class="legend"><span><i class="key value-key"></i>Holdings value</span><span><i class="key invested-key"></i>Invested</span></div>
+	}
+</section>

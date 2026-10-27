@@ -122,39 +122,49 @@ class InstrumentCatalogTest {
 
     @Test
     void search_findsTickersAndNamesContainingTheQuery() {
-        when(instrumentMapper.search("%apple%", "APPLE", 50, 0)).thenReturn(List.of(
+        when(instrumentMapper.search("%apple%", null, "APPLE", 50, 0)).thenReturn(List.of(
                 instrument(1L, "AAPL", "Apple Inc", InstrumentType.STOCK)));
-        when(instrumentMapper.countMatching("%apple%")).thenReturn(1L);
+        when(instrumentMapper.countMatching("%apple%", null)).thenReturn(1L);
 
         assertEquals(new Page(List.of(new CatalogInstrument(1L, "AAPL", "Apple Inc", "STOCK")), 1),
-                catalog.search(" apple ", 50, 0));
+                catalog.search(" apple ", null, 50, 0));
         verifyNoInteractions(marketDataClient);
     }
 
     @Test
     void search_countsTheMatchesOnEveryPage() {
-        when(instrumentMapper.search("%%", "", 50, 300)).thenReturn(List.of(
+        when(instrumentMapper.search("%%", null, "", 50, 300)).thenReturn(List.of(
                 instrument(334L, "ZTS", "Zoetis Inc", InstrumentType.STOCK)));
-        when(instrumentMapper.countMatching("%%")).thenReturn(334L);
+        when(instrumentMapper.countMatching("%%", null)).thenReturn(334L);
 
-        assertEquals(334, catalog.search("", 50, 300).total());
+        assertEquals(334, catalog.search("", null, 50, 300).total());
     }
 
     @Test
     void search_blankQuery_matchesEveryInstrument() {
-        when(instrumentMapper.search("%%", "", 50, 100)).thenReturn(List.of());
+        when(instrumentMapper.search("%%", null, "", 50, 100)).thenReturn(List.of());
 
-        assertEquals(new Page(List.of(), 0), catalog.search(null, 50, 100));
-        verify(instrumentMapper).search("%%", "", 50, 100);
+        assertEquals(new Page(List.of(), 0), catalog.search(null, null, 50, 100));
+        verify(instrumentMapper).search("%%", null, "", 50, 100);
+    }
+
+    @Test
+    void search_assetClass_onlyMatchesThatClass() {
+        when(instrumentMapper.search("%%", "CRYPTO", "", 20, 0)).thenReturn(List.of(
+                instrument(7L, "X:BTC-USD", "Bitcoin", InstrumentType.CRYPTO)));
+        when(instrumentMapper.countMatching("%%", "CRYPTO")).thenReturn(150L);
+
+        assertEquals(new Page(List.of(new CatalogInstrument(7L, "X:BTC-USD", "Bitcoin", "CRYPTO")), 150),
+                catalog.search("", InstrumentType.CRYPTO, 20, 0));
     }
 
     @Test
     void search_wildcardCharacters_areMatchedLiterally() {
-        when(instrumentMapper.search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0)).thenReturn(List.of());
+        when(instrumentMapper.search("%50\\%\\_x\\\\%", null, "50%_X\\", 50, 0)).thenReturn(List.of());
 
-        catalog.search("50%_x\\", 50, 0);
+        catalog.search("50%_x\\", null, 50, 0);
 
-        verify(instrumentMapper).search("%50\\%\\_x\\\\%", "50%_X\\", 50, 0);
+        verify(instrumentMapper).search("%50\\%\\_x\\\\%", null, "50%_X\\", 50, 0);
     }
 
     @Test
