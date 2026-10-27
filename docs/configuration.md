@@ -26,7 +26,7 @@ Only ports **9092** and **8080–8100** on the Linux machine are reachable from 
 | Service | Image | Does |
 |---|---|---|
 | `kafka` | `apache/kafka:3.9.1` | Broker |
-| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `staff_users.sql` (the `analyst` and `admin` logins) + `reporting/analytics_database.sql` (creates the `analytics` database) once, only when its volume is empty |
+| `postgres` | `postgres:16-alpine` | Database; runs `schema.sql` + `sample-data.sql` + `auth_test_data.sql` + `efe_demo_history.sql` (a year of made-up past trades for `efe`, for the performance chart; run it by hand to add it to an existing database, see its header) + `staff_users.sql` (the `analyst` and `admin` logins) + `reporting/analytics_database.sql` (creates the `analytics` database) once, only when its volume is empty |
 | `redis` | `redis:7.4-alpine` | Fauxnance price cache, daily price history (the dashboard's performance chart, kept until midnight UTC) and daily call count, the Finnhub news cache, and the last hour's trades as they go through (the trade page's live list); password-protected, kept on disk (append-only file) so the count survives a restart |
 | `auth-service` | `trading-platform-auth` (built from `auth-service/Dockerfile`) | Login, registration and token refresh; signs JWTs with `JWT_SHARED_SECRET`. Uses the `users` and `refresh_tokens` tables |
 | `api` | `trading-platform-app` | `POST /accounts/{accountId}/trades` → `trade.submitted` |
