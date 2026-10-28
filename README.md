@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="assets/f-trade.jpg" alt="F-Trade logo" width="480" />
+  <img src="assets/ftrade-logo.jpg" alt="F-Trade Logo" width="480" />
   <p>
     CI/CD: Internal Jenkins Pipeline (<a href="http://10.18.64.177:8080/job/ftrade/">multibranch overview</a>)
   </p>
