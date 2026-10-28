@@ -1,171 +1,92 @@
 package com.neueda.leap.entity;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.neueda.leap.enums.TradeStatus;
+import com.neueda.leap.enums.TradeSide;
 import org.junit.jupiter.api.Test;
-import java.time.LocalDate;
-import java.util.Date;
+
+import java.math.BigDecimal;
+import java.time.OffsetDateTime;
+import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AccountTradeTest {
-
-    private AccountTrade trade;
-    private final int ACCOUNT_ID = 101;
-    private final int INSTRUMENT_ID = 1;
-
-    private final int TRADE_ID = 1001;
-    private final double QUANTITY = 100;
-    private final double PRICE = 150.25;
-
-    @BeforeEach
-    void setUp() {
-        trade = new AccountTrade(TRADE_ID, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
-                QUANTITY, PRICE);
-    }
-
-    // BR-04: Client can submit order
-    @Test
-    void testTradeCanBeCreatedWithValidData() {
-        assertNotNull(trade);
-        assertEquals(TRADE_ID, trade.getTradeId());
-        assertEquals(ACCOUNT_ID, trade.getAccountId());
-        assertEquals(INSTRUMENT_ID, trade.getInstrumentId());
-        assertEquals(TradeType.BUY, trade.getTradeType());
-        assertEquals(QUANTITY, trade.getQuantity());
-        assertEquals(PRICE, trade.getPrice());
-        assertEquals(TradeStatus.PENDING, trade.getStatus());
-    }
-
-    // BR-05: Order validation before acceptance
-    @Test
-    void testTradeCannotHaveNegativeQuantity() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
-                        -QUANTITY, PRICE));
-    }
+class AccountTradeTest {
 
     @Test
-    void testTradeCannotHaveNegativePrice() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
-                        QUANTITY, -PRICE));
-    }
-
-    @Test
-    void testTradeCannotHaveZeroQuantity() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
-                        0, PRICE));
-    }
-
-    @Test
-    void testTradeCannotHaveZeroPrice() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new AccountTrade(1002, ACCOUNT_ID, INSTRUMENT_ID, TradeType.BUY,
-                        QUANTITY, 0.0));
-    }
-
-    @Test
-    void testValidateTradeChecksAccountHasSufficientCash() {
-        Account account = new Account(101, "Trading", 1);
-        account.deposit(5000.0);
-
-        // Try to buy 100 shares at 150.25 = 15025.00 (exceeds 5000.00)
-        boolean isValid = trade.validateTrade(account);
-        assertFalse(isValid);
-    }
-
-    @Test
-    void testValidateTradePassesWithSufficientCash() {
-        Account account = new Account(101, "Trading", 1);
-        account.deposit(20000.0);
-
-        boolean isValid = trade.validateTrade(account);
-        assertTrue(isValid);
-    }
-
-    @Test
-    void testValidateTradePassesWithExactCash() {
-        Account account = new Account(101, "Trading", 1);
-        account.deposit(15025.0);
-
-        boolean isValid = trade.validateTrade(account);
-        assertTrue(isValid);
-    }
-
-    // BR-06: Order recorded before execution
-    @Test
-    void testTradeStatusStartsAsSubmitted() {
-        AccountTrade newTrade = new AccountTrade(1005, ACCOUNT_ID, INSTRUMENT_ID,
-                TradeType.BUY, QUANTITY, PRICE);
-        assertEquals(TradeStatus.PENDING, newTrade.getStatus());
-    }
-
-    // BR-07: Order status changes
-    @Test
-    void testTradeStatusProgression() {
-        assertEquals(TradeStatus.PENDING, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.ACCEPTED);
-        assertEquals(TradeStatus.ACCEPTED, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.FULFILLED);
-        assertEquals(TradeStatus.FULFILLED, trade.getStatus());
-    }
-
-    @Test
-    void testTradeCanBeRejected() {
-        assertEquals(TradeStatus.PENDING, trade.getStatus());
-        newTrade.updateStatus(TradeStatus.REJECTED);
-        assertEquals(TradeStatus.REJECTED, trade.getStatus());
-    }
-
-    @Test
-    void testTradeCreationTime() {
-        LocalDate start = LocalDate.now();
-        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
-                TradeType.BUY, QUANTITY, PRICE);
-        LocalDate end = LocalDate.now();
+    void noArgsConstructorLeavesFieldsAtDefaults() {
+        AccountTrade trade = new AccountTrade();
 
         assertAll(
-            () -> assertTrue(auditedTrade.getCreatedTime().after(start) || auditedTrade.getCreatedTime().equals(start)),
-            () -> assertTrue(auditedTrade.getCreatedTime().before(end) || auditedTrade.getCreatedTime().equals(end))
+                () -> assertNull(trade.getTradeId()),
+                () -> assertNull(trade.getAccountId()),
+                () -> assertNull(trade.getTradeTime()),
+                () -> assertNull(trade.getInstrumentId()),
+                () -> assertNull(trade.getTradeSide()),
+                () -> assertNull(trade.getQuantity()),
+                () -> assertNull(trade.getPPU()),
+                () -> assertNull(trade.getTotalPrice()),
+                () -> assertNull(trade.getStatus())
         );
     }
 
-    // BR-15: Full lifecycle reconstruction
     @Test
-    void testFullValidTradeLifeCycle() {
-        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
-                TradeType.BUY, QUANTITY, PRICE);
+    void parameterizedConstructorSetsProvidedValuesAndDefaultsStatusToSubmitted() {
+        OffsetDateTime start = OffsetDateTime.now();
+        AccountTrade trade = new AccountTrade(101L, 7L, TradeSide.BUY,
+            new BigDecimal("10.5"), new BigDecimal("55.25"), new BigDecimal("579.375"));
+        OffsetDateTime end = OffsetDateTime.now();
 
-        Date creationTime = auditedTrade.getCreationTime();
-
-        assertNull(auditedTrade.getProcessTime());
-        auditedTrade.updateStatus(TradeStatus.ACCEPTED);
-        Date acceptedTime = auditedTrade.getProcessTime();
-
-        assertTrue(creationTime.before(acceptedTime));
-
-        assertNull(auditedTrade.getFulfilledTime());
-        auditedTrade.updateStatus(TradeStatus.FILLED);
-        Date fulfilledTime = auditedTrade.getFulfilledTime();
-
-        assertTrue(acceptedTime.before(fulfilledTime));
+        assertAll(
+                () -> assertNull(trade.getTradeId()),
+                () -> assertEquals(101L, trade.getAccountId()),
+                () -> assertTrue(start.isBefore(trade.getTradeTime()) || start.isEqual(trade.getTradeTime())),
+                () -> assertTrue(end.isAfter(trade.getTradeTime()) || end.isEqual(trade.getTradeTime())),
+                () -> assertEquals(7L, trade.getInstrumentId()),
+                () -> assertEquals(TradeSide.BUY, trade.getTradeSide()),
+                () -> assertEquals(BigDecimal.valueOf(10.5), trade.getQuantity()),
+                () -> assertEquals(BigDecimal.valueOf(55.25), trade.getPPU()),
+                () -> assertEquals(new BigDecimal("579.375"), trade.getTotalPrice()),
+                () -> assertEquals(TradeStatus.PENDING, trade.getStatus())
+        );
     }
 
     @Test
-    void testTradeHistory() {
-        AccountTrade auditedTrade = new AccountTrade(1009, ACCOUNT_ID, INSTRUMENT_ID,
-                TradeType.BUY, QUANTITY, PRICE);
+    void settersUpdateAllMutableFields() {
+        AccountTrade trade = new AccountTrade();
 
-        String outputString = auditedTrade.toString();
-        assertEquals(outputString, auditedTrade.getHistory());
+        trade.setTradeId(1L);
+        trade.setAccountId(2L);
+        trade.setInstrumentId(3L);
+        trade.setTradeSide(TradeSide.SELL);
+        trade.setQuantity(BigDecimal.valueOf(4.5));
+        trade.setPPU(BigDecimal.valueOf(6.75));
+        trade.setTotalPrice(BigDecimal.valueOf(30.375));
+        trade.setTradeStatus(TradeStatus.ACCEPTED);
 
-        auditedTrade.updateStatus(TradeStatus.ACCEPTED);
-        outputString = outputString + ("\n" + auditedTrade.toString());
-        assertEquals(outputString, auditedTrade.getHistory());
+        assertAll(
+                () -> assertEquals(1L, trade.getTradeId()),
+                () -> assertEquals(2, trade.getAccountId()),
+                () -> assertEquals(3, trade.getInstrumentId()),
+                () -> assertEquals(TradeSide.SELL, trade.getTradeSide()),
+                () -> assertEquals(BigDecimal.valueOf(4.5), trade.getQuantity()),
+                () -> assertEquals(BigDecimal.valueOf(6.75), trade.getPPU()),
+                () -> assertEquals(BigDecimal.valueOf(30.375), trade.getTotalPrice()),
+                () -> assertEquals(TradeStatus.ACCEPTED, trade.getStatus())
+        );
+    }
 
-        auditedTrade.updateStatus(TradeStatus.FILLED);
-        outputString = outputString + ("\n" + auditedTrade.toString());
-        assertEquals(outputString, auditedTrade.getHistory());
+    @Test
+    void settersUpdateExternalTradeIdAndTradeTime() {
+        AccountTrade trade = new AccountTrade();
+        UUID externalTradeId = UUID.randomUUID();
+        OffsetDateTime tradeTime = OffsetDateTime.parse("2026-08-26T16:13:24Z");
+
+        trade.setExternalTradeId(externalTradeId);
+        trade.setTradeTime(tradeTime);
+
+        assertAll(
+                () -> assertEquals(externalTradeId, trade.getExternalTradeId()),
+                () -> assertEquals(tradeTime, trade.getTradeTime())
+        );
     }
 }

@@ -1,0 +1,45 @@
+<nav class="navbar" aria-label="Primary navigation">
+  <a class="navbar-brand" [routerLink]="homeUrl()" aria-label="F-trade home" (click)="onLogoClick()">
+    <img src="assets/nav-bar-logo.png" alt="F-trade logo">
+  </a>
+
+  @switch (auth.role()) {
+    @case ('ANALYST') {
+      <span class="nav-section">Analyst</span>
+      <a routerLink="/analyst/clients" routerLinkActive="active">Clients</a>
+      <a routerLink="/analyst/instruments" routerLinkActive="active">Instruments</a>
+    }
+    @case ('ADMIN') {
+      <span class="nav-section">Admin</span>
+      <a routerLink="/admin/orders" routerLinkActive="active">Order history</a>
+    }
+    @default {
+      <app-account-selector></app-account-selector>
+
+      <a routerLink="/dashboard" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Dashboard</a>
+      <a routerLink="/trade" routerLinkActive="active">Trade</a>
+      <a routerLink="/portfolio" routerLinkActive="active">Portfolio</a>
+      <a routerLink="/orders" routerLinkActive="active">Orders</a>
+    }
+  }
+
+  @if (auth.isClient()) {
+    <div class="profile-actions">
+      <button type="button" class="profile-button" (click)="openAccount()" aria-label="Open account">
+        <span class="profile-avatar">{{ initials() }}</span>
+        <span class="profile-copy"><strong>{{ account.clientName() || 'Your account' }}</strong><small>View account</small></span>
+      </button>
+      <button type="button" class="logout-button" (click)="logout()">Log out</button>
+    </div>
+  } @else {
+    <div class="profile-button staff">
+      <span class="profile-avatar">{{ staffInitials() }}</span>
+      <span class="profile-copy"><strong>{{ staffTitle() }}</strong><small>Staff account</small></span>
+    </div>
+    <button type="button" class="logout-button" (click)="logout()">Log out</button>
+  }
+</nav>
+
+@if (showEasterEgg()) {
+  <div class="easter-egg" role="status" (click)="showEasterEgg.set(false)">Made with ❤️ by Annie's Amphibians 🐸</div>
+}

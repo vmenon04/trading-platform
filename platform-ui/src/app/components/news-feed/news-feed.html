@@ -1,0 +1,28 @@
+<section class="news-card">
+	<header class="news-heading">
+		<div><h2>{{ symbol() ? symbol() + ' news' : 'Market news' }}</h2><span>News by <a href="https://finnhub.io" target="_blank" rel="noopener noreferrer">Finnhub</a></span></div>
+		<span class="live">● Live</span>
+	</header>
+	@if (failed()) {
+		<p class="news-empty">News isn't available right now.</p>
+	} @else if (isLoading() && articles().length === 0) {
+		<p class="news-empty">Loading news…</p>
+	} @else {
+		<ul class="news-list">
+			@for (article of articles(); track article.id) {
+				<li>
+					<a [href]="article.url" target="_blank" rel="noopener noreferrer">
+						<span class="news-meta"><b>{{ article.source }}</b><time [attr.datetime]="article.publishedAt">{{ article.age }}</time></span>
+						<strong>{{ article.headline }}</strong>
+						@if (article.summary) {
+							<p>{{ article.summary }}</p>
+						}
+						<span class="read-more" aria-hidden="true">Read ↗</span>
+					</a>
+				</li>
+			} @empty {
+				<li class="news-empty">{{ symbol() ? 'No recent news about ' + symbol() + '.' : 'No news right now.' }}</li>
+			}
+		</ul>
+	}
+</section>

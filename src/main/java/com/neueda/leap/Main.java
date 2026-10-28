@@ -1,13 +1,13 @@
 package com.neueda.leap;
 
+import org.mybatis.spring.annotation.MapperScan;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+
+@SpringBootApplication
+@MapperScan("com.neueda.leap.repository")
 public class Main {
     public static void main(String[] args) {
-        // TODO: replace <team-name> with your team's actual name
-        // System.out.println("Hello world from the Fintech Five's Sprint 1 project skeleton");
-        System.out.println(greeting());
-    }
-
-    public static String greeting() {
-        return "Hello world from the Fintech Five's Sprint 1 project skeleton";
+        SpringApplication.run(Main.class, args);
     }
 }

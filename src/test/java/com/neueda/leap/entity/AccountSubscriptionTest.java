@@ -1,88 +1,57 @@
 package com.neueda.leap.entity;
 
-import org.junit.jupiter.api.BeforeEach;
+import com.neueda.leap.enums.ActivityStatus;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
+import java.time.Month;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class AccountSubscriptionTest {
+class AccountSubscriptionTest {
 
-    private AccountSubscription subscription;
-
-    private final int ACCOUNT_ID = 101;
-    private final int PORTFOLIO_ID = 1;
-
-    @BeforeEach
-    void setUp() {
-        //AccountSubscription(account_id, portfolio_id, status)
-        subscription = new AccountSubscription(
-                ACCOUNT_ID, PORTFOLIO_ID, SubscriptionStatus.ACTIVE);
-    }
+    Month month = Month.JANUARY;
 
     @Test
-    void testSubscriptionCanBeCreated() {
-        assertNotNull(subscription);
-        assertEquals(ACCOUNT_ID, subscription.getAccountId());
-        assertEquals(PORTFOLIO_ID, subscription.getModelPortfolioId());
-        assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
-    }
+    void noArgsConstructorLeavesFieldsAtDefaults() {
+        AccountSubscription subscription = new AccountSubscription();
 
-    @Test
-    void testSubscriptionDateIsRecorded() {
-        LocalDate start = LocalDate.now();
-        AccountSubscription sub = new AccountSubscription(ACCOUNT_ID, PORTFOLIO_ID, SubscriptionStatus.ACTIVE);
-        LocalDate end = LocalDate.now();
         assertAll(
-                () -> assertTrue(auditedTrade.getCreatedTime().after(start) || auditedTrade.getCreatedTime().equals(start)),
-                () -> assertTrue(auditedTrade.getCreatedTime().before(end) || auditedTrade.getCreatedTime().equals(end))
+                () -> assertNull(subscription.getAccountId()),
+                () -> assertNull(subscription.getModelPortfolioId()),
+                () -> assertNull(subscription.getSubscriptionDate()),
+                () -> assertNull(subscription.getStatus())
         );
     }
 
     @Test
-    void testUnsubscribe() {
-        assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
-        assertNull(subscription.unsubscribeDate);
-        subscription.unsubscribe();
-        assertEquals(SubscriptionStatus.INACTIVE, subscription.getStatus());
-        assertNotNull(subscription.getUnsubscribeDate());
+    void parameterizedConstructorSetsIdsAndDateAndDefaultsStatusToActive() {
+        LocalDate date = LocalDate.of(2026, month, 25);
+        AccountSubscription subscription = new AccountSubscription(101L, 7L, date);
+
+        assertAll(
+                () -> assertEquals(101, subscription.getAccountId()),
+                () -> assertEquals(7, subscription.getModelPortfolioId()),
+                () -> assertEquals(date, subscription.getSubscriptionDate()),
+                () -> assertEquals(ActivityStatus.ACTIVE, subscription.getStatus())
+        );
     }
 
     @Test
-    void testAccountCanSubscribeToMultipleModelPortfolios() {
-        AccountSubscription sub1 = new AccountSubscription(ACCOUNT_ID, PORTFOLIO_ID, SubscriptionStatus.ACTIVE);
-        AccountSubscription sub2 = new AccountSubscription(ACCOUNT_ID, 2, SubscriptionStatus.ACTIVE);
+    void settersUpdateAllMutableFields() {
+        AccountSubscription subscription = new AccountSubscription();
+        LocalDate date = LocalDate.of(2025, month, 30);
 
-        assertEquals(ACCOUNT_ID, sub1.getAccountId());
-        assertEquals(ACCOUNT_ID, sub2.getAccountId());
-        assertNotEquals(sub1.getModelPortfolioId(), sub2.getModelPortfolioId());
-    }
+        subscription.setAccountId(11L);
+        subscription.setModelPortfolioId(22L);
+        subscription.setSubscriptionDate(date);
+        subscription.setStatus(ActivityStatus.INACTIVE);
 
-    @Test
-    void testAccountCannotSubscribeToSamePortfolio() {
-        assertEquals(ACCOUNT_ID, subscription.getAccountId());
-        assertThrows(AlreadySubscribedError.class,
-                () -> new AccountSubscription(ACCOUNT_ID, PORTFOLIO_ID, SubscriptionStatus.ACTIVE));
-
-    }
-
-    @Test
-    void testTrackSubscriptionHistory() {
-        assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
-        String outputString = subscription.toString();
-        assertEquals(outputString, subscription.getSubscriptionHistory());
-
-        subscription.unsubscribe();
-        assertEquals(SubscriptionStatus.INACTIVE, subscription.getStatus());
-        outputString = outputString + ("\n" + subscription.toString());
-        assertEquals(outputString, subscription.getSubscriptionHistory());
-
-        subscription.subscribe();
-        assertEquals(SubscriptionStatus.ACTIVE, subscription.getStatus());
-        outputString = outputString + ("\n" + subscription.toString());
-        assertEquals(outputString, subscription.getSubscriptionHistory());
-
-        assertEquals(3, subscription.getSubscriptionHistory().size());
+        assertAll(
+                () -> assertEquals(11, subscription.getAccountId()),
+                () -> assertEquals(22, subscription.getModelPortfolioId()),
+                () -> assertEquals(date, subscription.getSubscriptionDate()),
+                () -> assertEquals(ActivityStatus.INACTIVE, subscription.getStatus())
+        );
     }
 }

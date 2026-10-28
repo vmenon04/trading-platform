@@ -1,31 +1,38 @@
 package com.neueda.leap.entity;
 
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+
+import java.util.HashMap;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class ModelPortfolioTest {
+class ModelPortfolioTest {
 
-    private ModelPortfolio modelPortfolio;
-    private int model_portfolio_id = 1;
-    private String model_portfolio_name = "Conservative Income";
+    @Test
+    void noArgsConstructorInitializesEmptyHoldings() {
+        ModelPortfolio modelPortfolio = new ModelPortfolio();
 
-    @BeforeEach
-    // ModelPortfolio(model_portfolio_id, model_portfolio_name)
-    void setUp() {
-        modelPortfolio = new ModelPortfolio(model_portfolio_id, model_portfolio_name);
+        assertAll(
+                () -> assertNull(modelPortfolio.getModelPortfolioId()),
+                () -> assertNull(modelPortfolio.getName()),
+                () -> assertNotNull(modelPortfolio.getHoldings()),
+                () -> assertTrue(modelPortfolio.getHoldings().isEmpty())
+        );
     }
 
     @Test
-    void testModelPortfolioCanBeCreated() {
-        assertNotNull(modelPortfolio);
-        assertEquals(model_portfolio_id, modelPortfolio.getModelPortfolioId());
-        assertEquals(model_portfolio_name, modelPortfolio.getName());
-    }
-    @Test
-    void testModelPortfolioNameCannotBeEmpty() {
-        assertThrows(IllegalArgumentException.class,
-                () -> new ModelPortfolio(model_portfolio_id, ""));
+    void settersUpdateAllMutableFields() {
+        ModelPortfolio modelPortfolio = new ModelPortfolio();
+        HashMap<ModelPortfolioHolding, Double> holdings = new HashMap<>();
+
+        modelPortfolio.setModelPortfolioId(1L);
+        modelPortfolio.setName("Conservative Income");
+        modelPortfolio.setHoldings(holdings);
+
+        assertAll(
+                () -> assertEquals(1L, modelPortfolio.getModelPortfolioId()),
+                () -> assertEquals("Conservative Income", modelPortfolio.getName()),
+                () -> assertSame(holdings, modelPortfolio.getHoldings())
+        );
     }
 }

@@ -1,0 +1,169 @@
+:host {
+  display: block;
+  flex: 0 0 clamp(180px, 15vw, 240px);
+}
+
+.navbar {
+  position: sticky;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 100vh;
+  padding: 24px 16px;
+  background: var(--color-navigation);
+  view-transition-name: navbar;
+}
+
+.navbar-brand {
+  display: flex;
+  justify-content: center;
+  padding: 4px 4px 18px;
+}
+
+.navbar-brand:hover,
+.navbar-brand.active {
+  background: transparent;
+}
+
+.navbar-brand img {
+  display: block;
+  width: 100%;
+  max-width: 450px;
+  height: auto;
+}
+
+app-account-selector {
+  margin-bottom: 10px;
+}
+
+.navbar a {
+  padding: 11px 16px;
+  border-radius: 999px;
+  color: #d3e3d6;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.navbar a:hover {
+  background: #ffffff14;
+  color: #ffffff;
+}
+
+.navbar a.active {
+  background: var(--color-green-bright);
+  color: var(--color-ink);
+}
+
+.navbar a:focus-visible, .logout-button:focus-visible, .profile-button:focus-visible { outline: 3px solid #8fd9a0; outline-offset: 2px; }
+
+.profile-button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  margin-top: auto;
+  padding: 12px 6px 0;
+  border: 0;
+  border-top: 1px solid #ffffff1f;
+  background: transparent;
+  color: #ffffff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nav-section { padding: 0 16px 4px; color: #8fd9a0; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; }
+.profile-button.staff { cursor: default; }
+
+.profile-avatar { display: grid; flex: 0 0 36px; width: 36px; height: 36px; place-items: center; border-radius: 50%; background: #d4f0c8; color: var(--color-ink); font-size: 0.68rem; font-weight: 700; }
+.profile-copy { display: grid; flex: 1; gap: 3px; }.profile-copy strong { font-size: 0.72rem; }.profile-copy small { color: #a9c4a8; font-size: 0.58rem; }.profile-arrow { font-size: 0.9rem; }
+
+.easter-egg {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  z-index: 1000;
+  padding: 12px 20px;
+  border-radius: 999px;
+  background: var(--color-navigation);
+  box-shadow: 0 8px 24px #10171940;
+  color: #8fd9a0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+  cursor: pointer;
+  transform: translateX(-50%);
+  animation: easter-egg-in 240ms ease-out;
+}
+
+@keyframes easter-egg-in {
+  from { opacity: 0; transform: translate(-50%, 12px); }
+  to { opacity: 1; transform: translate(-50%, 0); }
+}
+
+@media (max-width: 640px) {
+  :host {
+    flex-basis: auto;
+  }
+
+  .navbar {
+    position: static;
+    min-height: auto;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 6px;
+    padding: 10px;
+  }
+
+  .navbar-brand {
+    flex: 0 0 100%;
+    padding: 2px 4px 8px;
+  }
+
+  .navbar-brand img {
+    width: 80px;
+  }
+
+  .navbar a {
+    padding: 9px 10px;
+    font-size: 0.85rem;
+  }
+
+  .profile-button { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
+}
+
+.logout-button {
+  padding: 11px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #d3e3d6;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 160ms ease, color 160ms ease;
+}
+
+.logout-button:hover {
+  background: #ffffff14;
+  color: #ffffff;
+}
+
+/* Shared client typography */
+.navbar a, .logout-button, .easter-egg { font-size: var(--type-body); }
+.nav-section, .profile-avatar, .profile-copy strong, .profile-copy small { font-size: var(--type-caption); }
+.profile-arrow { font-size: var(--type-body); }
+@media (max-width: 640px) { .navbar a { font-size: var(--type-body); } }
+
+.profile-actions { display: flex; align-items: center; gap: 4px; width: 100%; margin-top: auto; padding-top: 12px; border-top: 1px solid #ffffff1f; }
+.profile-actions .profile-button { flex: 1 1 auto; min-width: 0; margin-top: 0; padding: 0 2px; border: 0; }
+.profile-actions .profile-copy { min-width: 0; }
+.profile-actions .profile-copy strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.profile-actions .logout-button { flex: 0 0 auto; padding: 8px 12px; border: 2px solid #ffffff3b; border-radius: 999px; color: #ffffff; font-size: var(--type-caption); }
+@media (max-width: 640px) {
+  .profile-actions { flex: 0 0 100%; margin-top: 2px; padding-top: 10px; }
+  .profile-actions .profile-button { flex: 1 1 auto; margin-top: 0; padding: 0 2px; }
+}

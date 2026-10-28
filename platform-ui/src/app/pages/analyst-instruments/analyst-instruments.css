@@ -1,0 +1,21 @@
+/* the shared look is in src/analytics.css */
+
+/* the opened instrument, above its tiles */
+.instrument-hero { display: flex; flex-wrap: wrap; align-items: center; gap: 16px; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
+.instrument-hero h3 { margin: 0 0 4px; font-family: var(--font-display); font-size: 1.2rem; font-weight: 800; }
+.instrument-hero h3 small { margin-left: 6px; padding: 3px 7px; border-radius: 6px; background: var(--green-soft); color: var(--green); font-size: 0.6rem; vertical-align: middle; }
+.instrument-hero > div > span { color: var(--muted); font-size: 0.75rem; }
+.hero-price { display: grid; gap: 4px; margin-left: auto; text-align: right; }
+.hero-price span { color: var(--muted); font-size: 0.62rem; }
+.hero-price strong { font-family: var(--font-numeric); font-size: 1.1rem; }
+
+.logo { display: grid; flex: 0 0 44px; width: 44px; height: 44px; place-items: center; overflow: hidden; border-radius: 10px; background: #eef5f1; color: var(--green); font-weight: 800; }
+.logo.small { flex-basis: 30px; width: 30px; height: 30px; border-radius: 7px; font-size: 0.75rem; }
+
+tr.pick { cursor: pointer; }
+tr.pick:hover, tr.pick:focus { background: #f7faf8; outline: none; }
+.name { display: flex; align-items: center; gap: 10px; }
+.name > span:last-child { display: grid; gap: 2px; }
+.name small { max-width: 260px; overflow: hidden; text-overflow: ellipsis; }
+
+@media (max-width: 640px) { .hero-price { margin-left: 0; text-align: left; } }

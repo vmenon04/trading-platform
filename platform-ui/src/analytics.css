@@ -1,0 +1,87 @@
+/* The analyst and admin pages. Global (listed in angular.json) because the filter boxes and tiles are small
+   components of their own, which a page's own styles can't reach. Everything sits under .analytics, so none
+   of it touches the client pages. */
+
+:root {
+  /* chart colours. Single series and invested: the site green. Buy/sell and invested/cash were checked for
+     colour-blind separation as pairs; the client colours as an ordered set of 8 (see analytics/charts.ts) */
+  --chart-primary: #177c5b;
+  --chart-secondary: #2a78d6;
+  --chart-buy: #177c5b;
+  --chart-sell: #eb6834;
+  --chart-grid: #edf1ee;
+  --chart-axis: #d8e1dc;
+  --chart-client-1: #2a78d6;
+  --chart-client-2: #eb6834;
+  --chart-client-3: #1baf7a;
+  --chart-client-4: #eda100;
+  --chart-client-5: #e87ba4;
+  --chart-client-6: #008300;
+  --chart-client-7: #6250d6;
+  --chart-client-8: #e34948;
+}
+
+/* the header bar every page has */
+.analytics-header { display: flex; justify-content: space-between; align-items: center; gap: 16px; max-width: 1180px; margin: 0 auto; padding: 36px 36px 0; }
+.analytics-header h1 { margin: 0 0 6px; font-family: var(--font-display); font-size: var(--type-display); font-weight: 800; line-height: 1.05; letter-spacing: -0.02em; }
+.analytics-header > div > span { color: var(--muted); font-size: var(--type-body); }
+
+.analytics { display: grid; gap: 18px; max-width: 1180px; margin: 0 auto; padding: 28px 36px 48px; color: var(--ink); }
+.analytics .eyebrow { color: var(--green); font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.analytics .intro h2 { margin: 7px 0 5px; font-family: var(--font-display); font-size: 1.35rem; font-weight: 800; }
+.analytics .intro p { margin: 0; color: var(--muted); font-size: 0.75rem; }
+.analytics h3 { margin: 10px 0 0; font-size: 0.9rem; }
+.analytics small { color: var(--muted); }
+
+/* filters: one card above the charts */
+.analytics .filter-card { display: grid; gap: 14px; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
+.analytics .filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.analytics .filters label, .analytics .field { display: flex; flex-direction: column; gap: 6px; color: var(--muted); font-size: 0.62rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.analytics .filters .grow { flex: 1 1 280px; min-width: 0; }
+.analytics input, .analytics select { min-height: 40px; padding: 0 14px; border: 2px solid #c7d4c2; border-radius: 12px; background: #fff; color: var(--ink); font: inherit; font-size: 0.78rem; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.analytics input:focus, .analytics select:focus { outline: 3px solid var(--green-soft); border-color: var(--ink); }
+.analytics button { min-height: 40px; padding: 0 16px; border: var(--card-border); border-radius: 999px; background: var(--surface); color: var(--ink); font: inherit; font-size: 0.72rem; font-weight: 700; cursor: pointer; }
+.analytics button:hover:not(:disabled) { background: var(--green-soft); }
+.analytics button:disabled { border-color: #c7d4c2; color: var(--muted); cursor: default; }
+.analytics button.primary { background: var(--green-bright); box-shadow: var(--pill-shadow); }
+.analytics button.primary:hover:not(:disabled) { background: var(--green-bright); transform: translateY(1px); box-shadow: 0 2px 0 var(--ink); }
+
+/* pill buttons for quick picks (account value bands, time periods) */
+.analytics .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.analytics .chips button { min-height: 34px; padding: 0 14px; border-color: #c7d4c2; font-size: 0.68rem; }
+.analytics .chips button.active { border-color: var(--ink); background: var(--green-bright); color: var(--ink); }
+
+/* stat tiles, like the dashboard's cards */
+.analytics .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); gap: 12px; }
+.analytics .tile { display: flex; flex-direction: column; gap: 8px; padding: 16px 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
+.analytics .tile span { color: var(--muted); font-size: 0.65rem; }
+.analytics .tile strong { font-family: var(--font-numeric); font-size: 1.15rem; font-weight: 600; }
+
+/* chart cards */
+.analytics .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 440px), 1fr)); gap: 12px; }
+.analytics .card { min-width: 0; margin: 0; padding: 18px; border: var(--card-border); border-radius: var(--radius); background: var(--surface); }
+.analytics .card.wide { grid-column: 1 / -1; }
+.analytics .card figcaption, .analytics .card-title { display: block; margin-bottom: 12px; font-size: 0.8rem; font-weight: 700; }
+.analytics .card figcaption small { display: block; margin-top: 3px; font-weight: 400; font-size: 0.62rem; }
+.analytics .chart-empty { padding: 30px 14px; border-radius: 12px; background: var(--canvas); color: var(--muted); font-size: 0.72rem; text-align: center; }
+
+/* tables */
+.analytics .table-scroll { overflow-x: auto; }
+.analytics table { width: 100%; border-collapse: collapse; font-size: 0.72rem; }
+.analytics th, .analytics td { padding: 10px 10px; border-bottom: 1px solid var(--line); text-align: left; white-space: nowrap; }
+.analytics th { background: var(--canvas); color: var(--muted); font-size: 0.58rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; }
+.analytics .num { text-align: right; font-family: var(--font-numeric); font-variant-numeric: tabular-nums; }
+.analytics th.num { font-family: var(--font-ui); }
+.analytics .empty { padding: 26px 8px; color: var(--muted); text-align: center; }
+.analytics .problem { margin: 0; padding: 12px 16px; border-radius: 14px; background: var(--red-soft); color: var(--red); font-size: 0.75rem; }
+
+.analytics .pager { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 12px; font-size: 0.72rem; }
+
+/* "Data as of ..." in the header */
+.freshness { padding: 9px 14px; border-radius: 999px; background: var(--green-soft); color: var(--green); font-size: 0.65rem; font-weight: 600; }
+.freshness.stale { background: #fff6e0; color: #8a5a00; }
+
+@media (max-width: 760px) {
+  .analytics-header { flex-direction: column; align-items: flex-start; justify-content: center; padding: 24px 18px 0; }
+  .analytics { padding: 20px 16px 40px; }
+}

@@ -1,0 +1,396 @@
+# Kafka, Postgres, Redis, auth-service, the app, the web app and reporting for the trading platform
+#
+# All values come from .env
+# The app is one image run as four services, one per stage of the trade pipeline.
+# Scale a stage on its own with e.g. `docker compose up -d --scale execution=4`; at most
+# KafkaTopicConfig.PARTITIONS containers of a stage get work, the rest wait as standbys.
+
+name: trading-platform
+
+# shared by the four app services: each one only switches its own stage on
+x-app: &app
+  build: .
+  image: trading-platform-app
+  depends_on:
+    kafka:
+      condition: service_healthy
+    postgres:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD-SHELL", "wget -qO- http://localhost:8080/actuator/health | grep -q '\"status\":\"UP\"'"]
+    interval: 5s
+    timeout: 5s
+    retries: 24
+    start_period: 20s
+  restart: unless-stopped
+
+x-app-environment: &app-environment
+  SPRING_KAFKA_BOOTSTRAP_SERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+  SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+  SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?POSTGRES_USER is not set}
+  SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
+  # Postgres creates the tables once (see the postgres service): schema.sql starts with DROP TABLE, so the app
+  # must never run it, or every container start would wipe the database
+  SPRING_SQL_INIT_MODE: never
+  # Postgres allows 100 connections; 5 per container leaves room to scale
+  SPRING_DATASOURCE_HIKARI_MAXIMUM_POOL_SIZE: 5
+  MARKET_DATA_BASE_URL: ${MARKET_DATA_BASE_URL:?MARKET_DATA_BASE_URL is not set}
+  MARKET_DATA_API_KEY: ${MARKET_DATA_API_KEY:?MARKET_DATA_API_KEY is not set}
+  MARKET_DATA_CACHE_TTL: ${MARKET_DATA_CACHE_TTL:?MARKET_DATA_CACHE_TTL is not set}
+  SPRING_DATA_REDIS_HOST: redis
+  SPRING_DATA_REDIS_PORT: 6379
+  SPRING_DATA_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+  # Redis is only a price cache (prices come from Fauxnance when it is down), so it doesn't decide whether the app is UP
+  MANAGEMENT_HEALTH_REDIS_ENABLED: "false"
+  # Finnhub market news on the dashboard; optional: without a key there is simply no news
+  NEWS_API_KEY: ${FINNHUB_API_KEY:-}
+  # verifies the login tokens issued by auth-service, which compose gives the same secret
+  JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+
+# shared by the three reporting services (reporting/Dockerfile): one image, each runs its own script
+x-reporting: &reporting
+  build:
+    context: ./reporting
+    additional_contexts:
+      # requirements.txt is at the repo root
+      project: .
+  image: trading-platform-reporting
+  restart: unless-stopped
+
+x-reporting-environment: &reporting-environment
+  # the trading database, which reporting only reads (database_connection.py), and its own analytics copy of it
+  MISSION_DB_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+  ANALYTICS_DB_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/analytics
+
+services:
+  kafka:
+    # 3.9.1 matches the kafka-clients version the app uses
+    image: apache/kafka:3.9.1
+    container_name: trading-kafka
+    ports:
+      # published only on the machine's private IP, like Postgres
+      - "${HOST_IP:?HOST_IP is not set}:9092:9092"
+    environment:
+      # a single node in KRaft mode: broker and controller in one process, no ZooKeeper
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENERS: PLAINTEXT://:9092,CONTROLLER://:9093
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      # the address clients are told to reconnect to: must be reachable from the VM and Jenkins, never localhost
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://${HOST_IP:?HOST_IP is not set}:9092
+      # one broker, so every internal topic has one replica
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/kafka/bin/kafka-broker-api-versions.sh --bootstrap-server localhost:9092 > /dev/null 2>&1"]
+      interval: 5s
+      timeout: 10s
+      retries: 24
+      start_period: 10s
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: trading-postgres
+    ports:
+      # the host port is configurable because only some ports are open between the machines
+      - "${HOST_IP:?HOST_IP is not set}:${POSTGRES_PORT:?POSTGRES_PORT is not set}:5432"
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?POSTGRES_DB is not set}
+      POSTGRES_USER: ${POSTGRES_USER:?POSTGRES_USER is not set}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      # run once, only when the data volume is empty (a new database)
+      - ./src/main/resources/schema.sql:/docker-entrypoint-initdb.d/1-schema.sql:ro
+      - ./src/main/resources/sample-data.sql:/docker-entrypoint-initdb.d/2-sample-data.sql:ro
+      - ./src/main/resources/auth_test_data.sql:/docker-entrypoint-initdb.d/3-auth_test_data.sql:ro
+      # a year of made-up past trades for efe, so the performance chart has history (after 3-auth_test_data)
+      - ./src/main/resources/efe_demo_history.sql:/docker-entrypoint-initdb.d/3-efe_demo_history.sql:ro
+      # the analyst and admin logins, which registration can't create
+      - ./src/main/resources/staff_users.sql:/docker-entrypoint-initdb.d/4-staff_users.sql:ro
+      # the analytics database the reporting services fill
+      - ./reporting/analytics_database.sql:/docker-entrypoint-initdb.d/5-analytics_database.sql:ro
+    healthcheck:
+      # $$ so the variables are read inside the container, not by compose
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # caches Fauxnance prices for the validation and execution services
+  redis:
+    image: redis:7.4-alpine
+    container_name: trading-redis
+    # kept on disk in an append-only file (no snapshots), so the count of today's Fauxnance calls survives a restart;
+    # without it the count starts again at 0 while Fauxnance's doesn't, and the reserve kept for trades gets used up
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:?REDIS_PASSWORD is not set}", "--save", "", "--appendonly", "yes"]
+    volumes:
+      - redis-data:/data
+    ports:
+      # published like Postgres, so the app can use it when run on the VM
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_PORT:?REDIS_PORT is not set}:6379"
+    environment:
+      # read by redis-cli, so the healthcheck can log in without the password on its command line
+      REDISCLI_AUTH: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+    healthcheck:
+      test: ["CMD-SHELL", "redis-cli ping | grep -q PONG"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # login, registration and token refresh: issues the JWTs the app services check
+  auth-service:
+    build: ./auth-service
+    image: trading-platform-auth
+    container_name: trading-auth
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${AUTH_PORT:?AUTH_PORT is not set}:3000"
+    environment:
+      # the users and refresh_tokens tables live in the trading database
+      DATABASE_URL: postgresql://${POSTGRES_USER:?POSTGRES_USER is not set}:${POSTGRES_PASSWORD:?POSTGRES_PASSWORD is not set}@postgres:5432/${POSTGRES_DB:?POSTGRES_DB is not set}
+      # signs the tokens; the same secret the app services check them with, so the two can't drift apart
+      JWT_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+    healthcheck:
+      # it has no health endpoint, so any HTTP answer (even a 404) means it is up
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/').then(() => process.exit(0), () => process.exit(1))"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+    restart: unless-stopped
+
+  # Web UIs for looking inside Redis, Kafka and Postgres. In the "tools" profile, so a plain `docker compose up` leaves
+  # them out; start them with `docker compose --profile tools up -d`. Redis Insight and Kafka UI have no login, so
+  # anyone who can reach their ports can use them.
+
+  # browse the price cache: keys, values, TTLs
+  redis-insight:
+    image: redis/redisinsight:3.8
+    container_name: trading-redis-insight
+    profiles: ["tools"]
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set}:5540"
+    environment:
+      # adds the redis service as a database, so there is nothing to set up in the UI
+      RI_REDIS_HOST: redis
+      RI_REDIS_PORT: 6379
+      RI_REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD is not set}
+      RI_REDIS_ALIAS: trading-redis
+      RI_ACCEPT_TERMS_AND_CONDITIONS: "true"
+    restart: unless-stopped
+
+  # browse the trade topics, their messages and the consumer groups
+  kafka-ui:
+    image: ghcr.io/kafbat/kafka-ui:v1.5.0
+    container_name: trading-kafka-ui
+    profiles: ["tools"]
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set}:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: trading
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+      # no deleting topics, clearing messages or sending messages from the UI
+      KAFKA_CLUSTERS_0_READONLY: "true"
+    restart: unless-stopped
+
+  # the API behind the analyst and admin pages (reporting/scripts/api.py); not published, the frontend's nginx
+  # forwards /api to it. It checks login tokens with the same secret auth-service signs them with
+  reporting-api:
+    <<: *reporting
+    container_name: trading-reporting-api
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+      JWT_SHARED_SECRET: ${JWT_SHARED_SECRET:?JWT_SHARED_SECRET is not set}
+    healthcheck:
+      # every /api address needs a login, so check the API's own description instead
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8050/openapi.json')"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+      start_period: 10s
+
+  # copies the trading database into the analytics one: everything the first time, then what changed, every hour
+  # (the pages say the data is out of date if a sync is more than two hours old)
+  reporting-sync:
+    <<: *reporting
+    container_name: trading-reporting-sync
+    command: ["sh", "-c", "while true; do python sync.py; sleep 3600; done"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+
+  # adds trades to the analytics database as they happen, from trade.recorded and trade.finished
+  reporting-consumer:
+    <<: *reporting
+    container_name: trading-reporting-consumer
+    command: ["python", "consumer.py"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    environment:
+      <<: *reporting-environment
+      KAFKA_BOOTSTRAP_SERVERS: ${HOST_IP:?HOST_IP is not set}:9092
+
+  frontend:
+    build: ./platform-ui
+    image: trading-platform-frontend
+    container_name: trading-frontend
+    depends_on:
+      api:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      # nginx needs it to start, for the /api route
+      reporting-api:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}:80"
+    environment:
+      # logo.dev's publishable key, added to /logo requests by nginx; logos fall back to a letter without it
+      LOGO_DEV_CRED_KEY: ${LOGO_DEV_CRED_KEY:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://127.0.0.1/"]
+      interval: 5s
+      timeout: 5s
+      retries: 24
+    restart: unless-stopped
+
+  # Prints where to find everything once every service is up and answering: in the log of `docker compose up`, or
+  # later with `docker compose logs ready`. It then stays running and does nothing, because
+  # `docker compose up --wait` counts a container that exits, even successfully, as a failure
+  ready:
+    image: alpine:3.20
+    container_name: trading-ready
+    depends_on:
+      frontend:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+      validation:
+        condition: service_healthy
+      recording:
+        condition: service_healthy
+      execution:
+        condition: service_healthy
+      auth-service:
+        condition: service_healthy
+      reporting-api:
+        condition: service_healthy
+      # no health checks: started is as much as compose can tell
+      reporting-sync:
+        condition: service_started
+      reporting-consumer:
+        condition: service_started
+    environment:
+      UI_URL: http://${HOST_IP:?HOST_IP is not set}:${UI_PORT:?UI_PORT is not set}
+      API_URL: http://${HOST_IP:?HOST_IP is not set}:${API_PORT:?API_PORT is not set}
+      AUTH_URL: http://${HOST_IP:?HOST_IP is not set}:${AUTH_PORT:?AUTH_PORT is not set}
+      TOOLS: >-
+        Redis Insight :${REDIS_INSIGHT_PORT:?REDIS_INSIGHT_PORT is not set},
+        Kafka UI :${KAFKA_UI_PORT:?KAFKA_UI_PORT is not set},
+        Adminer :${ADMINER_PORT:?ADMINER_PORT is not set}
+    # $$ so the variables are read inside the container, not by compose; the file marks the banner as printed
+    command:
+      - sh
+      - -c
+      - |
+        printf '\n  ✔ Trading platform is up\n\n'
+        printf '  %-8s %s\n' App "$$UI_URL" API "$$API_URL" Auth "$$AUTH_URL"
+        printf '  %-8s %s\n' Tools "docker compose --profile tools up -d ($$TOOLS)"
+        printf '\n'
+        touch /tmp/printed
+        exec tail -f /dev/null
+    # stops at once on `docker compose down` (sh, as process 1, would ignore the stop signal)
+    init: true
+    healthcheck:
+      test: ["CMD", "test", "-f", "/tmp/printed"]
+      interval: 2s
+      timeout: 2s
+      retries: 5
+    restart: unless-stopped
+
+  # browse the database and run SQL. Unlike the other two it asks for a login: the Postgres user and password from .env
+  adminer:
+    image: adminer:6.1.2
+    container_name: trading-adminer
+    profiles: ["tools"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${ADMINER_PORT:?ADMINER_PORT is not set}:8080"
+    environment:
+      # fills in the server on the login page
+      ADMINER_DEFAULT_SERVER: postgres
+    restart: unless-stopped
+
+  # receives POST /accounts/{accountId}/trades and publishes to trade.submitted
+  api:
+    <<: *app
+    ports:
+      - "${HOST_IP:?HOST_IP is not set}:${API_PORT:?API_PORT is not set}:8080"
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "true"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.submitted -> trade.validated
+  validation:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "true"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.validated -> trade.recorded
+  recording:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "true"
+      TRADE_STAGE_EXECUTION_ENABLED: "false"
+
+  # trade.recorded -> trade.accepted (fulfilled trades only), trade.finished
+  execution:
+    <<: *app
+    environment:
+      <<: *app-environment
+      TRADE_STAGE_API_ENABLED: "false"
+      TRADE_STAGE_VALIDATION_ENABLED: "false"
+      TRADE_STAGE_RECORDING_ENABLED: "false"
+      TRADE_STAGE_EXECUTION_ENABLED: "true"
+
+volumes:
+  postgres-data:
+  redis-data:

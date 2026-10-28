@@ -1,0 +1,7 @@
+# installed and built inside the image, never copied in
+node_modules/
+dist/
+
+# never build local settings or secrets into the image
+.env
+.env.*

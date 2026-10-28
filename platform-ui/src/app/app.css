@@ -1,0 +1,18 @@
+.app-shell {
+	display: flex;
+	min-height: 100vh;
+	background: var(--canvas);
+}
+
+.app-content {
+	flex: 1;
+	min-width: 0;
+	/* only the page animates between routes; the navbar stays put */
+	view-transition-name: page;
+}
+
+@media (max-width: 640px) {
+	.app-shell {
+		display: block;
+	}
+}

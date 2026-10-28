@@ -1,0 +1,19 @@
+<header class="page-header"><div><h1>Dashboard</h1><span>{{ today }}</span></div></header>
+
+<section class="dashboard-page">
+	<div class="welcome-row"><div><span class="eyebrow">Portfolio overview</span><h2>{{ greeting }}, {{ firstName() }}.</h2><p>Here’s how your investments are performing today.</p></div><button type="button" class="primary-action" routerLink="/trade">↗ Place a trade</button></div>
+	@if (account.hasNoAccount()) {
+		<p class="no-account">You don't have a trading account yet. <a routerLink="/portfolio">Open one on the Portfolio page</a> to deposit funds and start trading.</p>
+	}
+	<div class="metrics-grid">
+		<app-financial-card label="Total portfolio value" [value]="totalValue()" ></app-financial-card>
+		<app-financial-card label="Cash available" [value]="cashBalance()" ></app-financial-card>
+		<app-financial-card label="Total return" [value]="totalReturn()" [tone]="totalReturnTone()"></app-financial-card>
+	</div>
+	<app-performance-chart></app-performance-chart>
+	<div class="dashboard-grid">
+		<section class="allocation-card"><h2>Allocation</h2><span>By holding</span><div class="allocation-content"><div class="donut"><svg viewBox="0 0 100 100" aria-hidden="true"><circle class="track" cx="50" cy="50" r="40.5" />@for (arc of donutArcs(); track arc.label) {<circle class="arc" cx="50" cy="50" r="40.5" pathLength="100" [attr.stroke]="arc.color" [style.stroke-dasharray]="arc.length + ' 100'" [style.stroke-dashoffset]="-arc.start" [style.animation-delay.ms]="$index * 70" />}</svg><strong>{{ donutTotal() }}<small>Total</small></strong></div><ul>@for (slice of allocation(); track slice.label) {<li [style.animation-delay.ms]="$index * 70"><span><i class="dot" [style.background]="slice.color"></i>{{ slice.label }}</span><b>{{ slice.share }}</b></li>} @empty {<li><span>No holdings or cash yet</span><b>0%</b></li>}</ul></div></section>
+	</div>
+	<app-holdings-summary [data]="account.holdings.value() ?? []"></app-holdings-summary>
+	<app-news-feed></app-news-feed>
+</section>

@@ -1,0 +1,37 @@
+<aside class="task-card">
+	<div class="task-heading">
+		<div class="task-icon">▤</div>
+		<div><span class="eyebrow">Order activity</span><h2>Recent orders</h2></div>
+	</div>
+
+	@if (live.isLoading() && !live.hasValue()) {
+		<p class="task-empty">Loading orders…</p>
+	} @else if (live.error() && !live.hasValue()) {
+		<p class="task-empty">Couldn't load your orders.</p>
+	} @else if (tasks().length === 0) {
+		<p class="task-empty">No recent orders. Orders you place appear here as they go through.</p>
+	} @else {
+		<div class="task-table" role="table" aria-label="Recent orders">
+			<div class="task-head" role="row">
+				<span role="columnheader">Order</span><span role="columnheader">Side</span><span role="columnheader">Qty</span>
+				<span role="columnheader">Price</span><span role="columnheader">Status</span>
+			</div>
+			@for (task of tasks(); track task.key) {
+				<div class="task-row" role="row">
+					<span class="order" role="cell"><span class="logo"><app-ticker-logo [ticker]="task.ticker" /></span><strong>{{ task.ticker }}</strong></span>
+					<span class="side" [class.sell]="task.side === 'Sell'" role="cell">{{ task.side }}</span>
+					<span class="number" role="cell">{{ task.quantity }}</span>
+					<span class="number" role="cell">{{ task.price }}</span>
+					<span class="state" role="cell">
+						<span [class]="'status ' + task.status" [class.moving]="task.moving" [attr.tabindex]="task.reason ? 0 : null" [attr.aria-describedby]="task.reason ? 'reason-' + task.key : null">{{ task.label }}</span>
+						@if (task.reason) {
+							<span class="reason" role="tooltip" [id]="'reason-' + task.key">{{ task.reason }}</span>
+						}
+					</span>
+				</div>
+			}
+		</div>
+	}
+
+	<a routerLink="/orders">View order history <span>›</span></a>
+</aside>

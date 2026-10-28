@@ -1,0 +1,23 @@
+<section class="holdings-card">
+	<div class="section-heading">
+		<div>
+			<h2>{{ showAll() ? 'Positions' : 'Your holdings' }}</h2>
+			<span>{{ showAll() ? holdings().length + ' assets in your portfolio' : 'Top positions by market value' }}</span>
+		</div>
+		@if (showLink()) {
+			<a href="/portfolio">View portfolio <span aria-hidden="true">›</span></a>
+		}
+	</div>
+
+	<div class="holdings-table" role="table" aria-label="Portfolio holdings">
+		<div class="holding-row table-head" role="row">
+			<span>Asset</span><span>Quantity</span><span>Price</span>
+		</div>
+		@for (holding of visibleHoldings(); track holding.symbol) {
+			<div class="holding-row" role="row">
+				<span class="asset"><b><app-ticker-logo [ticker]="holding.symbol" /></b><span>{{ holding.symbol }}<small>{{ holding.name }}</small></span></span>
+				<span>{{ holding.shares }}</span><span>{{ holding.price }}</span>
+			</div>
+		}
+	</div>
+</section>

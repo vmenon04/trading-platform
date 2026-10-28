@@ -1,0 +1,25 @@
+meta {
+  name: Deposit
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{apiUrl}}/v1/accounts/{{accountId}}/deposits
+  body: json
+  auth: bearer
+}
+
+auth:bearer {
+  token: {{accessToken}}
+}
+
+body:json {
+  {
+    "amount": 500.00
+  }
+}
+
+assert {
+  res.status: eq 204
+}
